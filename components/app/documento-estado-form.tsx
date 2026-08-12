@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { cambiarEstadoDocumento } from "@/app/(app)/documentos/actions";
@@ -33,6 +34,7 @@ export function DocumentoEstadoForm({
   const [estado, setEstado] = useState(estadoActual);
   const [nota, setNota] = useState("");
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   function aplicar() {
     startTransition(async () => {
@@ -40,6 +42,7 @@ export function DocumentoEstadoForm({
         await cambiarEstadoDocumento(documentoId, estado, nota || undefined);
         toast.success("Estado actualizado");
         setNota("");
+        router.refresh();
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Ocurrió un error");
       }

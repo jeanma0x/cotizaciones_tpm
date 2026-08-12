@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { alternarActivoServicio } from "@/app/(app)/servicios/actions";
@@ -13,11 +14,13 @@ export function ToggleActivoServicio({
   activo: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   function alternar() {
     startTransition(async () => {
       try {
         await alternarActivoServicio(id);
+        router.refresh();
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Ocurrió un error");
       }

@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ export function EmpresaFormDialog({
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   const {
     register,
@@ -69,6 +71,7 @@ export function EmpresaFormDialog({
       await actualizarEmpresa(empresa.id, datos);
       toast.success("Empresa actualizada");
       setOpen(false);
+      router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Ocurrió un error");
     }

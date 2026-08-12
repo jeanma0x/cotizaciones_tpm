@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserPlusIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ export function InvitarUsuarioDialog({
   empresas: { id: string; nombre: string }[];
 }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   const {
     register,
@@ -69,6 +71,7 @@ export function InvitarUsuarioDialog({
       toast.success(`Invitación enviada a ${datos.email}`);
       reset();
       setOpen(false);
+      router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Ocurrió un error");
     }

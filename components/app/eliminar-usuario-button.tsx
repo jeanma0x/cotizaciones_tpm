@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { eliminarUsuario } from "@/app/(app)/usuarios/actions";
@@ -24,6 +25,7 @@ export function EliminarUsuarioButton({
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   function eliminar() {
     startTransition(async () => {
@@ -31,6 +33,7 @@ export function EliminarUsuarioButton({
         await eliminarUsuario(usuarioId);
         toast.success("Usuario eliminado");
         setOpen(false);
+        router.refresh();
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Ocurrió un error");
       }
