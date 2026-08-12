@@ -1,0 +1,165 @@
+// schema.prisma
+// Ver docs/data-model.md para el razonamiento detrás de cada decisión.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  SUPERUSUARIO
+  MIEMBRO
+}
+
+enum TipoDocumento {
+  COTIZACION
+  PROPUESTA
+  FACTURA
+}
+
+enum EstadoDocumento {
+  BORRADOR
+  ENVIADA
+  EN_NEGOCIACION
+  ACEPTADA
+  RECHAZADA
+  VENCIDA
+  FACTURADA
+}
+
+model Empresa {
+  id                String   @id @default(cuid())
+  nombre            String
+  nit               String?
+  direccion         String?
+  telefono          String?
+  email             String?
+  moneda            String   @default("GTQ")
+  correlativoActual Int      @default(1000) // el próximo asignado será +1 (ver lib/correlativo.ts)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  usuarios   UsuarioEmpresa[]
+  clientes   Cliente[]
+  servicios  Servicio[]
+  documentos Documento[]
+
+  @@map("empresas")
+}
+
+model Usuario {
+  id        String     @id @default(cuid())
+  clerkId   String     @unique // referencia al usuario en Clerk, fuente de verdad de auth
+  nombre    String
+  email     String     @unique
+  rol       RolUsuario @default(MIEMBRO)
+  createdAt DateTime   @default(now())
+
+  empresas UsuarioEmpresa[]
+
+  @@map("usuarios")
+}
+
+// Tabla puente: qué usuario puede acceder a qué empresa.
+// El superusuario igual tiene filas aquí para cada empresa (no se asume acceso total
+// implícito en el código — se hace explícito en la base de datos también).
+model UsuarioEmpresa {
+  id        String  @id @default(cuid())
+  usuarioId String
+  empresaId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, empresaId])
+  @@map("usuario_empresa")
+}
+
+model Cliente {
+  id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  nombre    String
+  nit       String?
+  direccion String?
+  contacto  String?
+  telefono  String?
+  email     String?
+  createdAt DateTime @default(now())
+
+  documentos Documento[]
+
+  @@index([empresaId])
+  @@map("clientes")
+}
+
+model Servicio {
+  id         String  @id @default(cuid())
+  empresaId  String
+  empresa    Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  nombre     String
+  precioFijo Decimal @db.Decimal(12, 2)
+  activo     Boolean @default(true)
+
+  @@index([empresaId])
+  @@map("servicios")
+}
+
+model Documento {
+  id                 String          @id @default(cuid())
+  empresaId          String
+  empresa            Empresa         @relation(fields: [empresaId], references: [id])
+  tipo               TipoDocumento
+  // Un solo correlativo por empresa, compartido entre los 3 tipos de documento —
+  // decisión final confirmada en docs/data-model.md, no agregar `tipo` a la unique.
+  correlativo        Int
+  clienteId          String?
+  cliente            Cliente?        @relation(fields: [clienteId], references: [id])
+  fecha              DateTime
+  vigenciaDias       Int?            @default(15)
+  condicionesPago    String?
+  descripcionGeneral String?         @db.Text // campo "Descripción general" pedido por el cliente
+  subtotal           Decimal         @db.Decimal(12, 2)
+  descuento          Decimal         @default(0) @db.Decimal(12, 2)
+  total              Decimal         @db.Decimal(12, 2)
+  notas              Json // [{ titulo: string, texto: string }]
+  anexos             Json? // string[] — solo aplica a propuestas
+  estado             EstadoDocumento @default(BORRADOR)
+  duplicadoDeId      String? // referencia al documento original si se creó con "Duplicar"
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  items     ItemDocumento[]
+  historial HistorialEstado[]
+
+  @@unique([empresaId, correlativo])
+  @@index([empresaId, tipo, estado])
+  @@map("documentos")
+}
+
+model ItemDocumento {
+  id             String    @id @default(cuid())
+  documentoId    String
+  documento      Documento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  orden          Int // para mantener el orden de renglones al editar
+  cantidad       Decimal   @db.Decimal(10, 2)
+  descripcion    String    @db.Text // sin límite de longitud — ver docs/document-export.md
+  precioUnitario Decimal   @db.Decimal(12, 2)
+
+  @@map("items_documento")
+}
+
+// Historial append-only: nunca se actualiza ni se borra una fila existente.
+model HistorialEstado {
+  id          String          @id @default(cuid())
+  documentoId String
+  documento   Documento       @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  fecha       DateTime        @default(now())
+  estado      EstadoDocumento
+  nota        String?
+
+  @@map("historial_estado")
+}

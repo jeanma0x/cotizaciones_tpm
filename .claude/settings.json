@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npm install *)",
+      "Bash(npx --yes shadcn@latest init -y -b neutral --force)"
+    ]
+  }
+}
