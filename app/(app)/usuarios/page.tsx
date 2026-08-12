@@ -1,4 +1,5 @@
 import { AccesoUsuarioDialog } from "@/components/app/acceso-usuario-dialog";
+import { EliminarUsuarioButton } from "@/components/app/eliminar-usuario-button";
 import { InvitarUsuarioDialog } from "@/components/app/invitar-usuario-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ export default async function UsuariosPage() {
                     ? "Sin empresas asignadas"
                     : usuario.empresas.map((e) => e.empresa.nombre).join(", ")}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="flex justify-end gap-2">
                   <AccesoUsuarioDialog
                     usuario={usuario}
                     empresas={empresas}
@@ -67,6 +68,7 @@ export default async function UsuariosPage() {
                       </Button>
                     }
                   />
+                  <EliminarUsuarioButton usuarioId={usuario.id} nombre={usuario.nombre} />
                 </TableCell>
               </TableRow>
             ))}

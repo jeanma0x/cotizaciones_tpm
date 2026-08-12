@@ -1,6 +1,6 @@
 "use server";
 
-import { clerkClient } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { assertSuperusuario } from "@/lib/auth";
@@ -23,12 +23,56 @@ export async function invitarUsuario(input: unknown) {
   const protocolo = host?.includes("localhost") ? "http" : "https";
 
   const client = await clerkClient();
-  await client.invitations.createInvitation({
-    emailAddress: datos.email,
-    publicMetadata: { rol: datos.rol, empresaIds: datos.empresaIds },
-    redirectUrl: `${protocolo}://${host}/sign-up`,
-  });
+  try {
+    await client.invitations.createInvitation({
+      emailAddress: datos.email,
+      publicMetadata: { rol: datos.rol, empresaIds: datos.empresaIds },
+      redirectUrl: `${protocolo}://${host}/sign-up`,
+    });
+  } catch (error) {
+    const yaExiste =
+      error instanceof Error &&
+      "errors" in error &&
+      Array.isArray((error as { errors?: unknown[] }).errors) &&
+      (error as { errors: unknown[] }).errors.some(
+        (e) =>
+          typeof e === "object" &&
+          e !== null &&
+          "code" in e &&
+          ((e as { code?: string }).code === "duplicate_record" ||
+            (e as { code?: string }).code === "form_identifier_exists"),
+      );
+    if (yaExiste) {
+      throw new Error(
+        "Ese correo ya tiene una cuenta en el sistema. Usá \"Editar acceso\" en su fila de la tabla en vez de invitarlo de nuevo.",
+      );
+    }
+    throw new Error("No se pudo enviar la invitación. Intentá de nuevo.");
+  }
 
+  revalidatePath("/usuarios");
+}
+
+export async function eliminarUsuario(usuarioId: string) {
+  await assertSuperusuario();
+
+  const usuario = await db.usuario.findUnique({ where: { id: usuarioId } });
+  if (!usuario) throw new Error("Usuario no encontrado");
+
+  const { userId } = await auth();
+  if (usuario.clerkId === userId) {
+    throw new Error("No podés eliminar tu propia cuenta");
+  }
+
+  const client = await clerkClient();
+  try {
+    await client.users.deleteUser(usuario.clerkId);
+  } catch {
+    // Si ya no existe en Clerk (por ejemplo, borrado a mano), igual limpiamos
+    // nuestra tabla — no bloquear la eliminación por esto.
+  }
+
+  await db.usuario.delete({ where: { id: usuarioId } });
   revalidatePath("/usuarios");
 }
 
