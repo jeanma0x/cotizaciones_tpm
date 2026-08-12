@@ -1,7 +1,7 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
-import { Building2, Truck, Users } from "lucide-react";
+import { Building2, ClipboardList, FilePlus, Truck, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,8 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
+  { href: "/documentos", label: "Documentos", icon: ClipboardList },
+  { href: "/documentos/nuevo", label: "Nuevo documento", icon: FilePlus },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/servicios", label: "Servicios", icon: Truck },
 ];
@@ -39,7 +41,12 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-3">
         {items.map(({ href, label, icon: Icon }) => {
-          const activo = pathname === href || pathname.startsWith(`${href}/`);
+          const activo =
+            href === "/documentos"
+              ? pathname === "/documentos" ||
+                (pathname.startsWith("/documentos/") &&
+                  !pathname.startsWith("/documentos/nuevo"))
+              : pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={href}
