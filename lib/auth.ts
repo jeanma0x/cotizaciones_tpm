@@ -20,3 +20,15 @@ export async function assertAccesoEmpresa(empresaId: string) {
     throw new Error("No autorizado para esta empresa");
   }
 }
+
+// Restringe acciones/pantallas reservadas al rol SUPERUSUARIO (ej. gestión de
+// empresas). No reemplaza assertAccesoEmpresa — son chequeos independientes.
+export async function assertSuperusuario() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("No autenticado");
+
+  const usuario = await db.usuario.findUnique({ where: { clerkId: userId } });
+  if (!usuario || usuario.rol !== "SUPERUSUARIO") {
+    throw new Error("No autorizado");
+  }
+}

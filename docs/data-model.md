@@ -110,6 +110,7 @@ model Cliente {
   contacto  String?
   telefono  String?
   email     String?
+  activo    Boolean  @default(true) // permite ocultar clientes viejos sin borrarlos
   createdAt DateTime @default(now())
 
   documentos Documento[]
@@ -215,7 +216,8 @@ model HistorialEstado {
   miembro).
 
 - **`Servicio.activo`** permite desactivar un servicio del catálogo sin borrarlo (por si
-  ya está referenciado en documentos históricos).
+  ya está referenciado en documentos históricos). **`Cliente.activo`** cumple el mismo
+  propósito para el catálogo de clientes (agregado en el Día 2 a pedido del cliente).
 
 - **Nunca hacer `DELETE` sobre `Documento` u `HistorialEstado`** desde la aplicación.
   Si se necesita un estado "archivado", agregarlo como un valor más de `EstadoDocumento`

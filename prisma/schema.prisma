@@ -88,6 +88,7 @@ model Cliente {
   contacto  String?
   telefono  String?
   email     String?
+  activo    Boolean  @default(true) // permite ocultar clientes viejos sin borrarlos
   createdAt DateTime @default(now())
 
   documentos Documento[]
