@@ -2,6 +2,7 @@
 
 import { clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { assertSuperusuario } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
@@ -15,10 +16,17 @@ export async function invitarUsuario(input: unknown) {
   const datos: InvitacionInput = invitacionSchema.parse(input);
   await assertSuperusuario();
 
+  // Sin redirectUrl, Clerk manda al usuario invitado a su "Account Portal"
+  // genérico en vez de a nuestras propias páginas de sign-up/sign-in.
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const protocolo = host?.includes("localhost") ? "http" : "https";
+
   const client = await clerkClient();
   await client.invitations.createInvitation({
     emailAddress: datos.email,
     publicMetadata: { rol: datos.rol, empresaIds: datos.empresaIds },
+    redirectUrl: `${protocolo}://${host}/sign-up`,
   });
 
   revalidatePath("/usuarios");
