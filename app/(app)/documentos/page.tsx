@@ -1,6 +1,7 @@
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { DocumentosFiltros } from "@/components/app/documentos-filtros";
+import { EstadoBadge } from "@/components/app/estado-badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 
 const TIPO_LABELS: Record<string, string> = {
   COTIZACION: "Cotización",
@@ -19,24 +21,58 @@ const TIPO_LABELS: Record<string, string> = {
   FACTURA: "Factura",
 };
 
-const ESTADO_LABELS: Record<string, string> = {
-  BORRADOR: "Borrador",
-  ENVIADA: "Enviada",
-  EN_NEGOCIACION: "En negociación",
-  ACEPTADA: "Aceptada",
-  RECHAZADA: "Rechazada",
-  VENCIDA: "Vencida",
-  FACTURADA: "Facturada",
-};
+const TIPOS_VALIDOS = ["COTIZACION", "PROPUESTA", "FACTURA"];
+const ESTADOS_VALIDOS = [
+  "BORRADOR",
+  "ENVIADA",
+  "EN_NEGOCIACION",
+  "ACEPTADA",
+  "RECHAZADA",
+  "VENCIDA",
+  "FACTURADA",
+];
 
-export default async function DocumentosPage() {
+export default async function DocumentosPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const params = await searchParams;
   const empresasPermitidas = await getEmpresasPermitidas();
 
-  const documentos = await db.documento.findMany({
-    where: { empresaId: { in: empresasPermitidas } },
-    include: { empresa: true, cliente: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const empresaIds =
+    params.empresaId && empresasPermitidas.includes(params.empresaId)
+      ? [params.empresaId]
+      : empresasPermitidas;
+
+  const where: Prisma.DocumentoWhereInput = {
+    empresaId: { in: empresaIds },
+  };
+  if (params.tipo && TIPOS_VALIDOS.includes(params.tipo)) {
+    where.tipo = params.tipo as Prisma.DocumentoWhereInput["tipo"];
+  }
+  if (params.estado && ESTADOS_VALIDOS.includes(params.estado)) {
+    where.estado = params.estado as Prisma.DocumentoWhereInput["estado"];
+  }
+  if (params.q) {
+    const correlativo = Number(params.q);
+    where.OR = [
+      { cliente: { nombre: { contains: params.q, mode: "insensitive" } } },
+      ...(Number.isFinite(correlativo) ? [{ correlativo }] : []),
+    ];
+  }
+
+  const [documentos, empresas] = await Promise.all([
+    db.documento.findMany({
+      where,
+      include: { empresa: true, cliente: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.empresa.findMany({
+      where: { id: { in: empresasPermitidas } },
+      orderBy: { nombre: "asc" },
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,6 +83,8 @@ export default async function DocumentosPage() {
           Nuevo documento
         </Button>
       </div>
+
+      <DocumentosFiltros empresas={empresas} />
 
       <div className="rounded border border-line bg-card">
         <Table>
@@ -64,7 +102,7 @@ export default async function DocumentosPage() {
             {documentos.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  Todavía no hay documentos.
+                  No hay documentos que coincidan con estos filtros.
                 </TableCell>
               </TableRow>
             )}
@@ -82,7 +120,7 @@ export default async function DocumentosPage() {
                   {doc.empresa.moneda} {Number(doc.total).toFixed(2)}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{ESTADO_LABELS[doc.estado]}</Badge>
+                  <EstadoBadge estado={doc.estado} />
                 </TableCell>
               </TableRow>
             ))}

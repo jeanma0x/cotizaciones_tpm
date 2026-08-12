@@ -1,7 +1,15 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
-import { Building2, ClipboardList, FilePlus, Truck, Users } from "lucide-react";
+import {
+  Building2,
+  ClipboardList,
+  FilePlus,
+  LayoutGrid,
+  ShieldCheck,
+  Truck,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -13,21 +21,21 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/documentos", label: "Documentos", icon: ClipboardList },
+  { href: "/dashboard", label: "Panel", icon: LayoutGrid },
   { href: "/documentos/nuevo", label: "Nuevo documento", icon: FilePlus },
+  { href: "/documentos", label: "Documentos", icon: ClipboardList },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/servicios", label: "Servicios", icon: Truck },
 ];
 
-const NAV_ITEM_SUPERUSUARIO: NavItem = {
-  href: "/empresas",
-  label: "Empresas",
-  icon: Building2,
-};
+const NAV_ITEMS_SUPERUSUARIO: NavItem[] = [
+  { href: "/empresas", label: "Empresas", icon: Building2 },
+  { href: "/usuarios", label: "Usuarios", icon: ShieldCheck },
+];
 
 export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
   const pathname = usePathname();
-  const items = esSuperusuario ? [...NAV_ITEMS, NAV_ITEM_SUPERUSUARIO] : NAV_ITEMS;
+  const items = esSuperusuario ? [...NAV_ITEMS, ...NAV_ITEMS_SUPERUSUARIO] : NAV_ITEMS;
 
   return (
     <aside className="flex w-60 shrink-0 flex-col bg-navy text-paper">

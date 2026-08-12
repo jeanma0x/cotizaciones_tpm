@@ -2,6 +2,7 @@ import { ArrowLeftIcon, PencilIcon, PrinterIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DocumentoEstadoForm } from "@/components/app/documento-estado-form";
+import { EstadoBadge } from "@/components/app/estado-badge";
 import { DuplicarDocumentoButton } from "@/components/app/duplicar-documento-button";
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
@@ -54,6 +55,7 @@ export default async function DocumentoDetallePage({
             <h1 className="text-xl font-semibold text-ink">
               {TIPO_LABELS[documento.tipo]}
             </h1>
+            <EstadoBadge estado={documento.estado} />
           </div>
         </div>
         <div className="flex gap-2">
@@ -190,7 +192,7 @@ export default async function DocumentoDetallePage({
               <span className="font-mono text-xs text-muted-foreground">
                 {h.fecha.toISOString().slice(0, 16).replace("T", " ")}
               </span>
-              <span className="font-medium">{h.estado}</span>
+              <EstadoBadge estado={h.estado} />
               {h.nota && <span className="text-muted-foreground">— {h.nota}</span>}
             </div>
           ))}
