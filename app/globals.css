@@ -139,3 +139,38 @@
   letter-spacing: 0.5px;
   color: var(--navy);
 }
+
+/* Vista imprimible (docs/document-export.md): el documento fluye a tantas
+   páginas como haga falta. Solo el encabezado y el bloque de firma no deben
+   partirse a la mitad — el resto (ítems, notas) sí puede cortarse entre
+   páginas sin problema. */
+@media print {
+  .no-imprimir {
+    display: none !important;
+  }
+
+  body,
+  .fondo-imprimible {
+    background: #fff !important;
+  }
+
+  .documento-imprimible {
+    max-width: none;
+    padding: 0;
+    box-shadow: none !important;
+  }
+
+  .encabezado-firma {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .page-break-after {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  @page {
+    margin: 1.5cm;
+  }
+}

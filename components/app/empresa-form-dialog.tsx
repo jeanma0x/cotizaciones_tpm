@@ -30,6 +30,7 @@ type Empresa = {
   nombre: string;
   nit: string | null;
   direccion: string | null;
+  contacto: string | null;
   telefono: string | null;
   email: string | null;
   moneda: string;
@@ -56,6 +57,7 @@ export function EmpresaFormDialog({
       nombre: empresa.nombre,
       nit: empresa.nit ?? "",
       direccion: empresa.direccion ?? "",
+      contacto: empresa.contacto ?? "",
       telefono: empresa.telefono ?? "",
       email: empresa.email ?? "",
       moneda: empresa.moneda === "USD" ? "USD" : "GTQ",
@@ -96,6 +98,15 @@ export function EmpresaFormDialog({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="direccion">Dirección</Label>
             <Input id="direccion" {...register("direccion")} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="contacto">Contacto de servicio</Label>
+            <Input id="contacto" {...register("contacto")} />
+            <p className="text-xs text-muted-foreground">
+              Persona de contacto de esta empresa — aparece en el documento exportado
+              junto al correlativo.
+            </p>
           </div>
 
           <div className="flex flex-col gap-1.5">

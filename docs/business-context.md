@@ -72,6 +72,55 @@ usando una función de "Duplicar": copia cliente, servicio y precio de una cotiz
 existente, y solo actualiza el correlativo (siguiente número de esa empresa) y la fecha
 a hoy. El cliente vio esto funcionando en la demo y fue parte de lo que lo convenció.
 
+## Portada institucional (solo Propuesta de servicios)
+
+Texto real, provisto por el cliente el 12 de agosto de 2026. Va antes de la
+cotización detallada en el documento de tipo Propuesta (ver `document-export.md`).
+No es contenido de ejemplo — usar tal cual, sin parafrasear.
+
+### DEFINICIÓN EMPRESARIAL
+
+Somos líderes en brindar servicios profesionales a todo tipo de industria, ya que
+además de satisfacer a cabalidad los requerimientos de nuestros clientes,
+garantizamos el cumplimiento de las exigencias que se requieren.
+
+### MISIÓN
+
+Estamos comprometidos en brindar eficacia y eficiencia en todos nuestros
+servicios, con enfoque de mejora continua para alcanzar la preferencia y
+satisfacción de nuestros clientes.
+
+### VISIÓN
+
+Mantener el liderazgo, por medio de una estrecha relación comercial en la que
+nuestros clientes se sientan respaldados por el servicio de calidad que
+prestamos.
+
+### POLÍTICA DE CALIDAD
+
+Comprometidos con brindar un servicio con excelencia, servimos de forma eficiente
+con personal especializado para lograr los objetivos de nuestros clientes.
+
+### LEMA
+
+"Existimos para Servir y Servirle bien"
+
+### VALORES
+
+Integridad, Responsabilidad, Transparencia, Lealtad
+
+### RECURSO HUMANO
+
+Con el propósito de atender de forma eficiente todos los servicios requeridos por
+nuestros clientes, contamos con equipo de trabajo especializado, capacitado y
+comprometido con el fin común de brindar un servicio de calidad.
+
+### NUESTROS SERVICIOS
+
+1. Servicios de transporte terrestre (Liviano y Pesado).
+2. Servicios modalidad Outsourcing (maquinaria y equipo).
+3. Servicios modalidad Outsourcing (Personal operativo).
+
 ## Terminología del cliente (usar estos términos, no inventar otros)
 
 | Término del cliente | Qué significa en el sistema |

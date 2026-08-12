@@ -25,7 +25,11 @@ Traducción a requisitos concretos abajo.
 2. **Tabla de datos** (una sola tabla continua — "la cuadrícula" que el cliente no
    quiere perder):
    - Fila: Contacto de servicio (izquierda) | Etiqueta de correlativo (derecha, ver
-     `design-system.md`)
+     `design-system.md`). **Aclaración (confirmada con el cliente en el Día 5):**
+     "Contacto de servicio" sale de `Empresa.contacto` + `Empresa.telefono` +
+     `Empresa.email` — el contacto de la empresa que **emite** el documento (Oldemar o
+     quien corresponda según cuál de las 4 empresas esté activa), no del cliente ni un
+     texto fijo igual para todas. Ver `data-model.md`.
    - Fila: Cliente + NIT
    - Fila: Fecha + Dirección
    - Fila: Condiciones de pago (si aplica)

@@ -58,6 +58,7 @@ model Empresa {
   nombre            String
   nit               String?
   direccion         String?
+  contacto          String?
   telefono          String?
   email             String?
   moneda            String   @default("GTQ")
@@ -218,6 +219,13 @@ model HistorialEstado {
 - **`Servicio.activo`** permite desactivar un servicio del catálogo sin borrarlo (por si
   ya está referenciado en documentos históricos). **`Cliente.activo`** cumple el mismo
   propósito para el catálogo de clientes (agregado en el Día 2 a pedido del cliente).
+
+- **`Empresa.contacto`** (agregado en el Día 5) es la persona de contacto de la empresa
+  que **emite** el documento — no confundir con `Cliente.contacto`, que es el contacto
+  del lado del cliente. En el documento exportado, la fila "Contacto de servicio" (ver
+  `document-export.md`) sale de `Empresa.contacto` + `Empresa.telefono` +
+  `Empresa.email` de la empresa emisora de ese documento en particular, no de un texto
+  fijo ni del cliente.
 
 - **Nunca hacer `DELETE` sobre `Documento` u `HistorialEstado`** desde la aplicación.
   Si se necesita un estado "archivado", agregarlo como un valor más de `EstadoDocumento`

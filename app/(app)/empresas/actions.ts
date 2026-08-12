@@ -17,6 +17,7 @@ export async function actualizarEmpresa(id: string, input: unknown) {
       nombre: datos.nombre,
       nit: datos.nit || null,
       direccion: datos.direccion || null,
+      contacto: datos.contacto || null,
       telefono: datos.telefono || null,
       email: datos.email || null,
       moneda: datos.moneda,

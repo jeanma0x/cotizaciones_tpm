@@ -31,6 +31,7 @@ async function main() {
           ...data,
           nit: "000000-0",
           direccion: "[DEMO] Dirección de ejemplo",
+          contacto: "[DEMO] Nombre de contacto",
           telefono: "0000-0000",
           email: `demo@${data.nombre.toLowerCase().replace(/[^a-z]/g, "")}.example`,
         },

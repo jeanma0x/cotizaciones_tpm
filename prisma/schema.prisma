@@ -36,6 +36,11 @@ model Empresa {
   nombre            String
   nit               String?
   direccion         String?
+  // Persona de contacto de ESTA empresa (la que emite el documento) — se muestra
+  // como "Contacto de servicio" en el documento exportado, junto con telefono/email
+  // de esta misma empresa. No confundir con Cliente.contacto (el contacto del
+  // cliente). Ver docs/document-export.md.
+  contacto          String?
   telefono          String?
   email             String?
   moneda            String   @default("GTQ")

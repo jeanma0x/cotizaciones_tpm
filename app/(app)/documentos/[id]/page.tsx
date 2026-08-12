@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, PencilIcon } from "lucide-react";
+import { ArrowLeftIcon, PencilIcon, PrinterIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DocumentoEstadoForm } from "@/components/app/documento-estado-form";
@@ -61,7 +61,14 @@ export default async function DocumentoDetallePage({
             <PencilIcon className="h-4 w-4" />
             Editar
           </Button>
-          <DuplicarDocumentoButton documentoId={documento.id} />
+          <Button variant="outline" render={<Link href={`/documentos/${id}/imprimir`} />}>
+            <PrinterIcon className="h-4 w-4" />
+            Ver / Imprimir
+          </Button>
+          <DuplicarDocumentoButton
+            documentoId={documento.id}
+            correlativo={documento.correlativo}
+          />
         </div>
       </div>
 

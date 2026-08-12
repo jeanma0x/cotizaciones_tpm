@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 export const itemDocumentoSchema = z.object({
-  cantidad: z.coerce.number({ message: "Cantidad inválida" }).positive(),
+  cantidad: z.coerce
+    .number({ message: "Cantidad inválida" })
+    .int("La cantidad debe ser un número entero")
+    .positive(),
   descripcion: z.string().trim().min(1, "La descripción es obligatoria"),
   precioUnitario: z.coerce.number({ message: "Precio inválido" }).nonnegative(),
 });

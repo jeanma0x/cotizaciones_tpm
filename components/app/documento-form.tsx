@@ -11,6 +11,7 @@ import {
 } from "@/app/(app)/documentos/actions";
 import Link from "next/link";
 import { AutosizeTextarea } from "@/components/app/autosize-textarea";
+import { ClienteCombobox } from "@/components/app/cliente-combobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -218,24 +219,11 @@ export function DocumentoForm({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="clienteId">Cliente</Label>
-            <Select
-              items={Object.fromEntries(
-                clientesDeEmpresa.map((c) => [c.id, c.nombre]),
-              )}
+            <ClienteCombobox
+              clientes={clientesDeEmpresa}
               value={watch("clienteId")}
-              onValueChange={(v) => setValue("clienteId", v as string)}
-            >
-              <SelectTrigger id="clienteId" className="w-full">
-                <SelectValue placeholder="Seleccioná un cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientesDeEmpresa.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onValueChange={(v) => setValue("clienteId", v)}
+            />
             {errors.clienteId && (
               <p className="text-xs text-destructive">{errors.clienteId.message}</p>
             )}
@@ -314,11 +302,12 @@ export function DocumentoForm({
             return (
               <div
                 key={field.id}
-                className="grid grid-cols-1 gap-2 border-b border-line pb-3 last:border-b-0 sm:grid-cols-[80px_1fr_140px_140px_36px]"
+                className="grid grid-cols-1 gap-2 border-b border-line pb-3 last:border-b-0 sm:grid-cols-[80px_1fr_140px_140px_36px] sm:items-start"
               >
                 <Input
                   type="number"
-                  step="0.01"
+                  step="1"
+                  min="1"
                   {...register(`items.${index}.cantidad` as const)}
                 />
                 <AutosizeTextarea
@@ -329,7 +318,7 @@ export function DocumentoForm({
                   step="0.01"
                   {...register(`items.${index}.precioUnitario` as const)}
                 />
-                <div className="flex items-center font-mono text-sm">
+                <div className="flex h-8 items-center font-mono text-sm">
                   {(cantidad * precio).toFixed(2)}
                 </div>
                 <Button
