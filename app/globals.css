@@ -402,7 +402,12 @@
 
   .documento-imprimible {
     max-width: none;
-    padding: 0;
+    /* @page abajo va en margin: 0 — si no, Chrome dibuja su encabezado/pie
+       nativo (fecha, título de la pestaña, URL, número de página) dentro de
+       ese margen de página, y no hay forma de apagar eso solo con CSS. El
+       margen visual del documento se mueve acá, como padding del propio
+       contenido, para no perderlo. */
+    padding: 1.5cm;
     box-shadow: none !important;
   }
 
@@ -417,6 +422,6 @@
   }
 
   @page {
-    margin: 1.5cm;
+    margin: 0;
   }
 }

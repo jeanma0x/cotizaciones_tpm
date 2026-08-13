@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { cambiarEstadoDocumento } from "@/app/(app)/documentos/actions";
-import { EstadoBadge } from "@/components/app/estado-badge";
+import { EstadoBadge, getEstiloEstado } from "@/components/app/estado-badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -27,6 +28,16 @@ const ESTADOS: Record<string, string> = {
 };
 
 type Historial = { id: string; fecha: Date; estado: string; nota: string | null };
+
+const UN_DIA_MS = 24 * 60 * 60 * 1000;
+
+function formatearRelativo(fecha: Date) {
+  const dias = Math.floor((Date.now() - fecha.getTime()) / UN_DIA_MS);
+  if (dias <= 0) return "Hoy";
+  if (dias === 1) return "Ayer";
+  if (dias < 30) return `Hace ${dias} días`;
+  return fecha.toLocaleDateString("es-GT", { day: "numeric", month: "short", year: "numeric" });
+}
 
 export function DocumentoEstadoForm({
   documentoId,
@@ -112,16 +123,58 @@ export function DocumentoEstadoForm({
         </Button>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-border pt-4">
-        {estadoOptimista.historial.map((h) => (
-          <div key={h.id} className="flex items-center gap-3 text-sm">
-            <span className="font-mono text-xs text-muted-foreground">
-              {h.fecha.toISOString().slice(0, 16).replace("T", " ")}
-            </span>
-            <EstadoBadge estado={h.estado} />
-            {h.nota && <span className="text-muted-foreground">— {h.nota}</span>}
-          </div>
-        ))}
+      {/* Línea de tiempo, no una lista de filas idénticas: cada paso tiene su
+          propio ícono/color (los mismos del EstadoBadge, ver getEstiloEstado)
+          conectados por un riel vertical, y el paso más reciente se destaca
+          — así se lee como una bitácora de trazabilidad real, que es
+          justamente el valor que se le vendió al cliente (ver CLAUDE.md
+          "Nunca se pierde el historial"), no como una lista genérica. */}
+      <div className="flex flex-col border-t border-border pt-5">
+        {estadoOptimista.historial.map((h, i) => {
+          const estilo = getEstiloEstado(h.estado);
+          const Icon = estilo?.icon;
+          const esActual = i === 0;
+          const esUltimo = i === estadoOptimista.historial.length - 1;
+
+          return (
+            <div key={h.id} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <span
+                  className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-4 ring-card",
+                    estilo?.className ?? "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {Icon && <Icon className="h-3.5 w-3.5" />}
+                </span>
+                {!esUltimo && (
+                  <span className="my-0.5 min-h-6 w-0.5 flex-1 rounded-full bg-border" />
+                )}
+              </div>
+              <div className={cn("flex min-w-0 flex-1 flex-col gap-0.5", !esUltimo && "pb-6")}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={cn(
+                      "text-sm font-medium",
+                      esActual ? "text-text-primary" : "text-muted-foreground",
+                    )}
+                  >
+                    {estilo?.label ?? h.estado}
+                  </span>
+                  {esActual && (
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-accent-hover">
+                      Actual
+                    </span>
+                  )}
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {formatearRelativo(h.fecha)}
+                  </span>
+                </div>
+                {h.nota && <p className="text-sm text-muted-foreground">{h.nota}</p>}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -54,7 +54,19 @@ export function DocumentoImprimirToolbar({
         </p>
       </div>
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" nativeButton={false} render={<a href={mailtoHref} />}>
+        {/* target="_blank", igual que WhatsApp abajo: sin esto, en Chrome el
+            mailto: intenta navegar la MISMA pestaña mientras el sistema
+            operativo decide qué hacer, y si no hay un cliente de correo
+            configurado, esa pestaña se queda en about:blank — perdiendo la
+            vista de impresión activa. Con target="_blank" el intento fallido
+            queda aislado en una pestaña descartable, no en la que el usuario
+            está usando. */}
+        <Button
+          variant="outline"
+          size="sm"
+          nativeButton={false}
+          render={<a href={mailtoHref} target="_blank" rel="noopener noreferrer" />}
+        >
           <MailIcon className="h-4 w-4" />
           Correo
         </Button>

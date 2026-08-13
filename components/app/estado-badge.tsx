@@ -54,6 +54,13 @@ const ESTILOS_ESTADO: Record<
   },
 };
 
+// Usado también por DocumentoEstadoForm (línea de tiempo del historial) para
+// que el ícono/color de cada paso sea exactamente el mismo que el badge —
+// nunca una paleta paralela.
+export function getEstiloEstado(estado: string) {
+  return ESTILOS_ESTADO[estado];
+}
+
 export function EstadoBadge({ estado }: { estado: string }) {
   const estilo = ESTILOS_ESTADO[estado];
   if (!estilo) return <span className="text-sm">{estado}</span>;

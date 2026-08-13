@@ -7,17 +7,19 @@ import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { assertSuperusuario } from "@/lib/auth";
+import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
 
 export default async function UsuariosPage() {
   await assertSuperusuario();
 
-  const [usuarios, empresas] = await Promise.all([
+  const [usuarios, empresas, usuarioActual] = await Promise.all([
     db.usuario.findMany({
       include: { empresas: { include: { empresa: true } } },
       orderBy: { createdAt: "asc" },
     }),
     db.empresa.findMany({ orderBy: { nombre: "asc" } }),
+    getUsuarioActual(),
   ]);
 
   return (
@@ -54,7 +56,7 @@ export default async function UsuariosPage() {
                 </p>
               </div>
             </div>
-            <div className="flex shrink-0 gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <AccesoUsuarioDialog
                 usuario={usuario}
                 empresas={empresas}
@@ -65,7 +67,11 @@ export default async function UsuariosPage() {
                   </Button>
                 }
               />
-              <EliminarUsuarioButton usuarioId={usuario.id} nombre={usuario.nombre} />
+              {usuario.id === usuarioActual?.id ? (
+                <span className="px-2 text-xs text-muted-foreground">Tu cuenta</span>
+              ) : (
+                <EliminarUsuarioButton usuarioId={usuario.id} nombre={usuario.nombre} />
+              )}
             </div>
           </div>
         ))}
