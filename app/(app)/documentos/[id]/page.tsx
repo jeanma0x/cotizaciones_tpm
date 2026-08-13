@@ -50,11 +50,19 @@ export default async function DocumentoDetallePage({
           Volver a documentos
         </Link>
         <div className="flex gap-2">
-          <Button variant="outline" render={<Link href={`/documentos/${id}/editar`} />}>
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href={`/documentos/${id}/editar`} />}
+          >
             <PencilIcon className="h-4 w-4" />
             Editar
           </Button>
-          <Button variant="outline" render={<Link href={`/documentos/${id}/imprimir`} />}>
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href={`/documentos/${id}/imprimir`} />}
+          >
             <PrinterIcon className="h-4 w-4" />
             Ver / Imprimir
           </Button>

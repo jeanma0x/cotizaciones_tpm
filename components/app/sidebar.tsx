@@ -152,7 +152,7 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
         )}
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pt-3">
+      <nav className="flex flex-col gap-1 overflow-y-auto px-3 pt-3">
         {items.map(({ href, label, icon: Icon }) => {
           const activo =
             href === "/documentos"
@@ -191,7 +191,7 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
 
       <div
         className={cn(
-          "flex items-center gap-2 border-t border-sidebar-border px-5 py-4",
+          "mt-auto flex items-center gap-2 border-t border-sidebar-border px-5 py-4",
           colapsado && "flex-col justify-center px-0",
         )}
       >

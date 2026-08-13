@@ -1,4 +1,4 @@
-import { PencilIcon } from "lucide-react";
+import { PencilIcon, ShieldCheckIcon } from "lucide-react";
 import { AccesoUsuarioDialog } from "@/components/app/acceso-usuario-dialog";
 import { AvatarIniciales } from "@/components/app/avatar-iniciales";
 import { EliminarUsuarioButton } from "@/components/app/eliminar-usuario-button";
@@ -22,7 +22,11 @@ export default async function UsuariosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Usuarios" actions={<InvitarUsuarioDialog empresas={empresas} />} />
+      <PageHeader
+        title="Usuarios"
+        icon={ShieldCheckIcon}
+        actions={<InvitarUsuarioDialog empresas={empresas} />}
+      />
 
       {/* Tarjetas, no tabla — nunca van a ser más de un puñado de usuarios. */}
       <div className="flex flex-col gap-3">

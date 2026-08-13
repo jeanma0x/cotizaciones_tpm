@@ -1,27 +1,12 @@
-import { AlertTriangleIcon, PlusIcon } from "lucide-react";
+import { ClipboardListIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { DocumentosFiltros } from "@/components/app/documentos-filtros";
-import { DocumentoVistaRapidaSheet } from "@/components/app/documento-vista-rapida-sheet";
-import { EstadoBadge } from "@/components/app/estado-badge";
+import { DocumentosTable, type FilaDocumento } from "@/components/app/documentos-table";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
-
-const TIPO_LABELS: Record<string, string> = {
-  COTIZACION: "Cotización",
-  PROPUESTA: "Propuesta",
-  FACTURA: "Factura",
-};
 
 const TIPOS_VALIDOS = ["COTIZACION", "PROPUESTA", "FACTURA"];
 const ESTADOS_VALIDOS = [
@@ -93,12 +78,28 @@ export default async function DocumentosPage({
     return dias > 7 ? dias : null;
   }
 
+  const filas: FilaDocumento[] = documentos.map((doc) => ({
+    id: doc.id,
+    correlativo: doc.correlativo,
+    tipo: doc.tipo,
+    empresaNombre: doc.empresa.nombre,
+    empresaMoneda: doc.empresa.moneda,
+    clienteNombre: doc.cliente?.nombre ?? "—",
+    total: Number(doc.total),
+    estado: doc.estado,
+    diasSinRespuesta: diasSinRespuesta(doc),
+    fecha: doc.fecha.toISOString(),
+    vigenciaDias: doc.vigenciaDias,
+    condicionesPago: doc.condicionesPago,
+  }));
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Documentos"
+        icon={ClipboardListIcon}
         actions={
-          <Button render={<Link href="/documentos/nuevo" />}>
+          <Button nativeButton={false} render={<Link href="/documentos/nuevo" />}>
             <PlusIcon className="h-4 w-4" />
             Nuevo documento
           </Button>
@@ -107,73 +108,7 @@ export default async function DocumentosPage({
 
       <DocumentosFiltros empresas={empresas} />
 
-      <div className="rounded border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Correlativo</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Empresa</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {documentos.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
-                  No hay documentos que coincidan con estos filtros.
-                </TableCell>
-              </TableRow>
-            )}
-            {documentos.map((doc) => (
-              <TableRow key={doc.id}>
-                <TableCell>
-                  <Link href={`/documentos/${doc.id}`} className="correlativo-tag">
-                    TPM-{doc.correlativo}
-                  </Link>
-                </TableCell>
-                <TableCell>{TIPO_LABELS[doc.tipo]}</TableCell>
-                <TableCell>{doc.empresa.nombre}</TableCell>
-                <TableCell>{doc.cliente?.nombre ?? "—"}</TableCell>
-                <TableCell className="font-mono text-sm">
-                  {doc.empresa.moneda} {Number(doc.total).toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <EstadoBadge estado={doc.estado} />
-                    {diasSinRespuesta(doc) !== null && (
-                      <span className="flex items-center gap-1 text-xs font-medium text-danger">
-                        <AlertTriangleIcon className="h-3 w-3" />
-                        {diasSinRespuesta(doc)}d
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DocumentoVistaRapidaSheet
-                    documentoId={doc.id}
-                    data={{
-                      correlativo: doc.correlativo,
-                      tipoLabel: TIPO_LABELS[doc.tipo],
-                      empresaNombre: doc.empresa.nombre,
-                      clienteNombre: doc.cliente?.nombre ?? "—",
-                      fecha: doc.fecha,
-                      vigenciaDias: doc.vigenciaDias,
-                      condicionesPago: doc.condicionesPago,
-                      moneda: doc.empresa.moneda,
-                      total: Number(doc.total),
-                      estado: doc.estado,
-                    }}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <DocumentosTable data={filas} />
     </div>
   );
 }

@@ -44,7 +44,11 @@ export function DocumentoVistaRapidaSheet({
           <DocumentoResumen data={data} />
         </div>
         <div className="mt-auto px-4 pb-4">
-          <Button className="w-full" render={<Link href={`/documentos/${documentoId}`} />}>
+          <Button
+            className="w-full"
+            nativeButton={false}
+            render={<Link href={`/documentos/${documentoId}`} />}
+          >
             Ver documento completo
             <ArrowRightIcon className="h-4 w-4" />
           </Button>

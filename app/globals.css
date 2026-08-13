@@ -147,14 +147,25 @@
   --motion-slow: 320ms;
   --motion-ease: cubic-bezier(0.2, 0, 0, 1);
 
-  --radius: 0.25rem;
+  /* 0.5rem, no 0.25rem — "border-radius más generoso" pedido explícitamente
+     tras varias rondas de sentir el sistema demasiado plano/corporativo. */
+  --radius: 0.5rem;
 }
 
 /* ---- Capa 2: semánticos — esto es lo que usan los componentes. Modo claro
    por defecto; el bloque [data-theme="dark"] de abajo remapea estos mismos
-   nombres a otros primitivos, nunca invierte valores automáticamente. ---- */
+   nombres a otros primitivos, nunca invierte valores automáticamente.
+
+   Nota: además de ":root[data-theme]" (next-themes lo pone en <html>) se
+   repite como "[data-theme]" sin restricción de :root, porque la vista de
+   impresión fuerza data-theme="light" en un <div> anidado (el documento
+   exportado siempre debe verse igual sin importar el tema activo de quien
+   lo mira) — ":root[data-theme]" NUNCA matchea ese div porque no es el
+   elemento raíz, así que sin este duplicado la vista de impresión heredaba
+   el tema oscuro del <html> en vez de quedar forzada a claro. ---- */
 :root,
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-theme="light"] {
   --color-brand: var(--navy-900);
   --color-brand-hover: var(--navy-700);
   --color-accent: var(--amber-500);
@@ -212,7 +223,8 @@
   --sidebar-ring: var(--color-accent);
 }
 
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+[data-theme="dark"] {
   --color-brand: var(--navy-500);
   --color-brand-hover: var(--navy-300);
   --color-accent: var(--amber-500);
@@ -281,15 +293,19 @@
   }
 }
 
+/* Antes era borde punteado — se leía como placeholder sin llenar, no como
+   diseño intencional. Ahora es un sello sólido: borde macizo + fondo con
+   tinte de acento, como un tag de carga ya sellado, no un casillero vacío. */
 .correlativo-tag {
   display: inline-block;
-  border: 1.5px dashed var(--color-brand);
+  border: 1.5px solid var(--color-brand);
   border-radius: 4px;
   padding: var(--spacing, 6px) 12px;
   font-family: var(--font-mono);
   font-weight: 800;
   letter-spacing: 0.5px;
   color: var(--color-brand);
+  background: color-mix(in oklch, var(--color-accent) 14%, var(--color-surface));
 }
 
 /* Grupo de "pills" — selector de tipo de documento. Ver design-system.md
@@ -322,8 +338,9 @@
 .form-section {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: 1rem;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Container queries — el mismo componente reacciona a su propio contenedor,

@@ -16,7 +16,7 @@ export default async function EmpresasPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Empresas" />
+      <PageHeader title="Empresas" icon={Building2Icon} />
 
       {/* Tarjetas, no tabla — siempre son pocas (4 hoy), una fila de tabla
           larga con montañas de espacio vacío se ve a medio construir. */}

@@ -1,4 +1,4 @@
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, FilePlusIcon } from "lucide-react";
 import Link from "next/link";
 import { DocumentoForm } from "@/components/app/documento-form";
 import { PageHeader } from "@/components/app/page-header";
@@ -33,7 +33,7 @@ export default async function NuevoDocumentoPage() {
           <ArrowLeftIcon className="h-3.5 w-3.5" />
           Volver a documentos
         </Link>
-        <PageHeader title="Nuevo documento" />
+        <PageHeader title="Nuevo documento" icon={FilePlusIcon} />
       </div>
       <DocumentoForm
         empresas={empresas}

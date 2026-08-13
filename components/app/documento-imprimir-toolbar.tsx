@@ -54,13 +54,14 @@ export function DocumentoImprimirToolbar({
         </p>
       </div>
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" render={<a href={mailtoHref} />}>
+        <Button variant="outline" size="sm" nativeButton={false} render={<a href={mailtoHref} />}>
           <MailIcon className="h-4 w-4" />
           Correo
         </Button>
         <Button
           variant="outline"
           size="sm"
+          nativeButton={false}
           render={<a href={whatsappHref} target="_blank" rel="noopener noreferrer" />}
         >
           <MessageCircleIcon className="h-4 w-4" />

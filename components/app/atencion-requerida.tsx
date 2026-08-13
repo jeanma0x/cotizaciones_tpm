@@ -22,15 +22,22 @@ const MOTIVO_LABEL: Record<ItemAtencion["motivo"], (dias: number) => string> = {
 export function AtencionRequerida({ items }: { items: ItemAtencion[] }) {
   if (items.length === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">
-        <CheckCircle2Icon className="h-4 w-4 text-success" />
-        Todo al día — nada requiere tu atención.
+      <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success-bg p-5 shadow-sm">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15">
+          <CheckCircle2Icon className="h-6 w-6 text-success" />
+        </span>
+        <div>
+          <p className="font-semibold text-success">Todo al día</p>
+          <p className="text-sm text-success/80">
+            Nada requiere tu atención en este momento.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-accent bg-danger-bg/40 p-4">
+    <div className="rounded-xl border border-accent bg-danger-bg/40 p-4 shadow-sm">
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-danger">
         <AlertTriangleIcon className="h-4 w-4" />
         {items.length} {items.length === 1 ? "documento requiere" : "documentos requieren"} tu

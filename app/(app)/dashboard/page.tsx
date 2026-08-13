@@ -1,12 +1,15 @@
+import { AlertTriangleIcon, LayoutGridIcon, TrendingUpIcon, WalletIcon } from "lucide-react";
 import Link from "next/link";
 import { AnimatedNumber } from "@/components/app/animated-number";
 import { AtencionRequerida, type ItemAtencion } from "@/components/app/atencion-requerida";
 import { DistribucionEstadoChart } from "@/components/app/distribucion-estado-chart";
 import { EstadoBadge } from "@/components/app/estado-badge";
 import { PageHeader } from "@/components/app/page-header";
+import { StatCard } from "@/components/app/stat-card";
 import { TendenciaMensualChart } from "@/components/app/tendencia-mensual-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmpresasPermitidas } from "@/lib/auth";
+import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
 
 const TIPO_LABELS: Record<string, string> = {
@@ -36,7 +39,11 @@ const MESES_TENDENCIA = 12;
 // - "Atención hoy" (Zona 1 y 3): unión deduplicada de VENCIDA + sin
 //   respuesta hace más de 7 días + próximas a vencer en 3 días o menos.
 export default async function DashboardPage() {
-  const empresasPermitidas = await getEmpresasPermitidas();
+  const [empresasPermitidas, usuario] = await Promise.all([
+    getEmpresasPermitidas(),
+    getUsuarioActual(),
+  ]);
+  const primerNombre = usuario?.nombre?.split(" ")[0] ?? "";
   const where = { empresaId: { in: empresasPermitidas } };
   const hoy = new Date();
   const hace12Meses = new Date(hoy.getTime() - MESES_TENDENCIA * 31 * UN_DIA_MS);
@@ -229,40 +236,59 @@ export default async function DashboardPage() {
     .sort((a, b) => b.monto - a.monto)
     .slice(0, 5);
 
+  const montoVigenteEntradas = Object.entries(montoVigentePorMoneda);
+
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader title="Panel" />
+      <PageHeader
+        title="Panel"
+        icon={LayoutGridIcon}
+        description={primerNombre ? `Bienvenido, ${primerNombre}` : undefined}
+      />
 
-      {/* Zona 1 — estado del negocio ahora mismo: ancho completo, cifras --text-3xl */}
-      <div className="grid grid-cols-1 gap-6 rounded-lg border border-border bg-card p-6 sm:grid-cols-3">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Monto vigente cotizado
-          </p>
-          {Object.entries(montoVigentePorMoneda).length === 0 ? (
-            <p className="font-mono text-3xl font-bold text-brand">0.00</p>
-          ) : (
-            Object.entries(montoVigentePorMoneda).map(([moneda, monto]) => (
-              <p key={moneda} className="font-mono text-3xl font-bold text-brand">
-                {moneda} <AnimatedNumber value={monto} decimals={2} />
-              </p>
-            ))
-          )}
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Tasa de conversión
-          </p>
-          <p className="font-mono text-3xl font-bold text-brand">
-            <AnimatedNumber value={tasaConversion} suffix="%" />
-          </p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Atención hoy</p>
-          <p className={itemsAtencion.length > 0 ? "font-mono text-3xl font-bold text-danger" : "font-mono text-3xl font-bold text-success"}>
-            <AnimatedNumber value={itemsAtencion.length} />
-          </p>
-        </div>
+      {/* Zona 1 — estado del negocio ahora mismo: cifras hero, --text-3xl,
+          --color-accent en vez de --color-brand para que se lean también
+          en modo oscuro (navy-500 sobre fondo oscuro casi no se distingue). */}
+      <div className="stat-cards-grid !grid-cols-1 sm:!grid-cols-3">
+        <StatCard
+          label="Monto vigente cotizado"
+          icon={<WalletIcon className="h-4.5 w-4.5" />}
+          tono="accent"
+          size="hero"
+          value={
+            montoVigenteEntradas.length === 0 ? (
+              <span className="text-accent-hover">0.00</span>
+            ) : (
+              montoVigenteEntradas.map(([moneda, monto]) => (
+                <span key={moneda} className="text-accent-hover">
+                  {moneda} <AnimatedNumber value={monto} decimals={2} />
+                </span>
+              ))
+            )
+          }
+        />
+        <StatCard
+          label="Tasa de conversión"
+          icon={<TrendingUpIcon className="h-4.5 w-4.5" />}
+          tono="accent"
+          size="hero"
+          value={
+            <span className="text-accent-hover">
+              <AnimatedNumber value={tasaConversion} suffix="%" />
+            </span>
+          }
+        />
+        <StatCard
+          label="Atención hoy"
+          icon={<AlertTriangleIcon className="h-4.5 w-4.5" />}
+          tono={itemsAtencion.length > 0 ? "danger" : "success"}
+          size="hero"
+          value={
+            <span className={itemsAtencion.length > 0 ? "text-danger" : "text-success"}>
+              <AnimatedNumber value={itemsAtencion.length} />
+            </span>
+          }
+        />
       </div>
 
       {/* Zona 3 — atención requerida: lista accionable, nunca solo un número */}

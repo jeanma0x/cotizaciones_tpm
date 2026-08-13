@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { AutosizeTextarea } from "@/components/app/autosize-textarea";
 import { ClienteCombobox } from "@/components/app/cliente-combobox";
+import { FormSection } from "@/components/app/form-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -196,14 +197,7 @@ export function DocumentoForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-      <div className="form-section">
-        <div className="mb-4 flex items-center gap-2">
-          <Building2Icon className="h-4 w-4 text-accent" />
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Cliente y empresa
-          </h2>
-        </div>
-
+      <FormSection title="Cliente y empresa" icon={Building2Icon}>
         <div className="mb-4 flex flex-col gap-1.5">
           <Label htmlFor="tipo">Tipo de documento</Label>
           <div className="pill-group" role="radiogroup" aria-label="Tipo de documento" id="tipo">
@@ -260,16 +254,9 @@ export function DocumentoForm({
             )}
           </div>
         </div>
-      </div>
+      </FormSection>
 
-      <div className="form-section">
-        <div className="mb-4 flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-accent" />
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Detalles de la oferta
-          </h2>
-        </div>
-
+      <FormSection title="Detalles de la oferta" icon={CalendarIcon}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="fecha">Fecha</Label>
@@ -294,16 +281,12 @@ export function DocumentoForm({
             {...register("descripcionGeneral")}
           />
         </div>
-      </div>
+      </FormSection>
 
-      <div className="form-section">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ListChecksIcon className="h-4 w-4 text-accent" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Ítems
-            </h2>
-          </div>
+      <FormSection
+        title="Ítems"
+        icon={ListChecksIcon}
+        actions={
           <div className="flex gap-2">
             {serviciosDeEmpresa.length > 0 && (
               <Select onValueChange={agregarDesdeServicio} value="">
@@ -331,8 +314,8 @@ export function DocumentoForm({
               Renglón
             </Button>
           </div>
-        </div>
-
+        }
+      >
         <div ref={itemsListRef} className="flex flex-col gap-3">
           <div className="hidden grid-cols-[80px_1fr_140px_140px_36px] gap-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground sm:grid">
             <span>Cantidad</span>
@@ -417,16 +400,12 @@ export function DocumentoForm({
             </span>
           </div>
         </div>
-      </div>
+      </FormSection>
 
-      <div className="form-section">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <StickyNoteIcon className="h-4 w-4 text-accent" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Notas
-            </h2>
-          </div>
+      <FormSection
+        title="Notas"
+        icon={StickyNoteIcon}
+        actions={
           <Button
             type="button"
             variant="outline"
@@ -436,7 +415,8 @@ export function DocumentoForm({
             <PlusIcon className="h-4 w-4" />
             Nota
           </Button>
-        </div>
+        }
+      >
         <div ref={notasListRef} className="flex flex-col gap-3">
           {notasArray.fields.map((field, index) => (
             <div key={field.id} className="flex flex-col gap-2 sm:flex-row">
@@ -468,17 +448,13 @@ export function DocumentoForm({
             </div>
           ))}
         </div>
-      </div>
+      </FormSection>
 
       {tipo === "PROPUESTA" && (
-        <div className="form-section">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <PaperclipIcon className="h-4 w-4 text-accent" />
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Anexos
-              </h2>
-            </div>
+        <FormSection
+          title="Anexos"
+          icon={PaperclipIcon}
+          actions={
             <Button
               type="button"
               variant="outline"
@@ -488,7 +464,8 @@ export function DocumentoForm({
               <PlusIcon className="h-4 w-4" />
               Anexo
             </Button>
-          </div>
+          }
+        >
           <div ref={anexosListRef} className="flex flex-col gap-2">
             {anexosArray.fields.map((field, index) => (
               <div key={field.id} className="flex gap-2">
@@ -512,13 +489,14 @@ export function DocumentoForm({
               </div>
             ))}
           </div>
-        </div>
+        </FormSection>
       )}
 
       <div className="flex justify-end gap-2">
         <Button
           type="button"
           variant="outline"
+          nativeButton={false}
           render={
             <Link href={documento ? `/documentos/${documento.id}` : "/documentos"} />
           }
