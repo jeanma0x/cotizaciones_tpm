@@ -402,16 +402,24 @@
 
   .documento-imprimible {
     max-width: none;
-    /* @page abajo va en margin: 0 — si no, Chrome dibuja su encabezado/pie
-       nativo (fecha, título de la pestaña, URL, número de página) dentro de
-       ese margen de página, y no hay forma de apagar eso solo con CSS. El
-       margen visual del documento se mueve acá, como padding del propio
-       contenido, para no perderlo. */
-    padding: 1.5cm;
+    padding: 0;
     box-shadow: none !important;
   }
 
-  .encabezado-firma {
+  /* Nota sobre @page margin: se probó margin: 0 (moviendo el espacio a
+     padding en .documento-imprimible) para apagar el encabezado/pie nativo
+     del navegador — rompía la paginación real: el padding de un elemento
+     solo se aplica en el borde superior de la PRIMERA página y el inferior
+     de la ÚLTIMA, nunca se repite en los saltos de página internos. Sin el
+     margen del @page, cada salto de página quedaba con el contenido pegado
+     al borde. No hay forma en CSS de reservar espacio por página sin pasar
+     por @page margin — que es el mismo mecanismo que usa el navegador para
+     dibujar su encabezado/pie. Si aparece, se apaga desde el diálogo de
+     impresión (checkbox "Encabezados y pies de página"), Chrome recuerda
+     esa preferencia para la próxima vez. */
+  .encabezado-firma,
+  .nota-imprimible,
+  .item-imprimible {
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -422,6 +430,6 @@
   }
 
   @page {
-    margin: 0;
+    margin: 1.5cm;
   }
 }

@@ -234,7 +234,10 @@ export default async function ImprimirDocumentoPage({
           </thead>
           <tbody>
             {documento.items.map((item, i) => (
-              <tr key={item.id} className={i % 2 === 1 ? "bg-muted/30" : undefined}>
+              <tr
+                key={item.id}
+                className={`item-imprimible ${i % 2 === 1 ? "bg-muted/30" : ""}`}
+              >
                 <td className="border border-border p-2 align-top font-mono">
                   {Number(item.cantidad)}
                 </td>
@@ -286,7 +289,7 @@ export default async function ImprimirDocumentoPage({
             </h2>
             <div className="flex flex-col gap-2 text-sm">
               {notas.map((nota, i) => (
-                <div key={i}>
+                <div key={i} className="nota-imprimible">
                   <p className="font-medium">{nota.titulo}</p>
                   <p className="whitespace-pre-wrap text-muted-foreground">{nota.texto}</p>
                 </div>
