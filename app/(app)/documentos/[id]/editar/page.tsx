@@ -1,7 +1,6 @@
-import { ArrowLeftIcon } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DocumentoForm } from "@/components/app/documento-form";
+import { VolverLink } from "@/components/app/volver-link";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -54,14 +53,8 @@ export default async function EditarDocumentoPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <Link
-          href={`/documentos/${documento.id}`}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="h-3.5 w-3.5" />
-          Volver al documento
-        </Link>
+      <div className="flex flex-col gap-2">
+        <VolverLink href={`/documentos/${documento.id}`} label="Volver al documento" />
         <h1 className="text-xl font-semibold text-text-primary">
           Editar documento TPM-{documento.correlativo}
         </h1>

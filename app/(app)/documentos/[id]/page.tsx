@@ -1,10 +1,11 @@
-import { ArrowLeftIcon, PencilIcon, PrinterIcon } from "lucide-react";
+import { PencilIcon, PrinterIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConvertirAFacturaButton } from "@/components/app/convertir-a-factura-button";
 import { DocumentoEstadoForm } from "@/components/app/documento-estado-form";
 import { DocumentoResumen } from "@/components/app/documento-resumen";
 import { DuplicarDocumentoButton } from "@/components/app/duplicar-documento-button";
+import { VolverLink } from "@/components/app/volver-link";
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -42,15 +43,9 @@ export default async function DocumentoDetallePage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/documentos"
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="h-3.5 w-3.5" />
-          Volver a documentos
-        </Link>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <VolverLink href="/documentos" label="Volver a documentos" />
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             nativeButton={false}
@@ -102,18 +97,35 @@ export default async function DocumentoDetallePage({
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Ítems
         </h2>
+        {/* Cabecera de columnas solo de sm para arriba — en mobile cada renglón
+            se apila en una sola columna con su propia etiqueta inline (ver
+            abajo), así que un encabezado compartido no tendría con qué
+            alinearse. */}
+        <div className="hidden grid-cols-[80px_1fr_120px_120px] gap-3 px-1 pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground sm:grid">
+          <span>Cantidad</span>
+          <span>Descripción</span>
+          <span>Precio unitario</span>
+          <span>Total</span>
+        </div>
         <div className="flex flex-col gap-3">
           {documento.items.map((item) => (
             <div
               key={item.id}
-              className="grid grid-cols-[80px_1fr_120px_120px] gap-3 border-b border-border pb-2 text-sm last:border-b-0"
+              className="grid grid-cols-1 gap-1 border-b border-border pb-3 text-sm last:border-b-0 sm:grid-cols-[80px_1fr_120px_120px] sm:items-start sm:gap-3 sm:pb-2"
             >
-              <span className="font-mono">{Number(item.cantidad)}</span>
-              <span className="whitespace-pre-wrap">{item.descripcion}</span>
-              <span className="font-mono">
+              <span className="whitespace-pre-wrap sm:order-2">{item.descripcion}</span>
+              <span className="font-mono sm:order-1">
+                <span className="text-xs text-muted-foreground sm:hidden">Cantidad: </span>
+                {Number(item.cantidad)}
+              </span>
+              <span className="font-mono sm:order-3">
+                <span className="text-xs text-muted-foreground sm:hidden">
+                  Precio unitario:{" "}
+                </span>
                 {Number(item.precioUnitario).toFixed(2)}
               </span>
-              <span className="font-mono">
+              <span className="font-mono sm:order-4">
+                <span className="text-xs text-muted-foreground sm:hidden">Total: </span>
                 {(Number(item.cantidad) * Number(item.precioUnitario)).toFixed(2)}
               </span>
             </div>

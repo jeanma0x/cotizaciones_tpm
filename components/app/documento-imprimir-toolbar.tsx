@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowLeftIcon, DownloadIcon, MailIcon, MessageCircleIcon } from "lucide-react";
-import Link from "next/link";
+import { DownloadIcon, MailIcon, MessageCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { VolverLink } from "@/components/app/volver-link";
 
 function soloDigitos(valor: string | null | undefined) {
   return (valor ?? "").replace(/\D/g, "");
@@ -39,21 +39,15 @@ export function DocumentoImprimirToolbar({
 
   return (
     <div className="no-imprimir sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface/95 px-6 py-3 backdrop-blur">
-      <div className="flex flex-col gap-1">
-        <Link
-          href={`/documentos/${documentoId}`}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="h-3.5 w-3.5" />
-          Volver al documento
-        </Link>
+      <div className="flex flex-col gap-2">
+        <VolverLink href={`/documentos/${documentoId}`} label="Volver al documento" />
         <p className="text-xs text-muted-foreground">
           Exportá el PDF primero y adjuntalo manualmente al correo o WhatsApp. Ninguna de
           las dos plataformas permite adjuntar archivos automáticamente desde un enlace
           externo.
         </p>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {/* target="_blank", igual que WhatsApp abajo: sin esto, en Chrome el
             mailto: intenta navegar la MISMA pestaña mientras el sistema
             operativo decide qué hacer, y si no hay un cliente de correo
