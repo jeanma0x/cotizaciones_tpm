@@ -126,6 +126,10 @@
   }
   html {
     @apply bg-background font-sans;
+    /* El color de fondo no alcanza para pintar el "rebote" elástico del
+       scroll en Mac (Chrome/Safari) — ese efecto es un comportamiento nativo
+       separado. Lo desactivamos en vez de perseguir su color. */
+    overscroll-behavior: none;
   }
 }
 
