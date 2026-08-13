@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusIcon, TrashIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import autoAnimate from "@formkit/auto-animate";
+import { CheckIcon, PlusIcon, TrashIcon, XIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -22,6 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   type DocumentoFormValues,
   type DocumentoInput,
@@ -125,6 +131,17 @@ export function DocumentoForm({
     name: "anexos" as never,
   });
 
+  // Transición visible al agregar/quitar renglones, notas y anexos — ver
+  // design-system.md "Movimiento e interacción" (@formkit/auto-animate).
+  const itemsListRef = useRef<HTMLDivElement>(null);
+  const notasListRef = useRef<HTMLDivElement>(null);
+  const anexosListRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (itemsListRef.current) autoAnimate(itemsListRef.current);
+    if (notasListRef.current) autoAnimate(notasListRef.current);
+    if (anexosListRef.current) autoAnimate(anexosListRef.current);
+  }, []);
+
   const clientesDeEmpresa = useMemo(
     () => clientes.filter((c) => c.empresaId === empresaId),
     [clientes, empresaId],
@@ -169,30 +186,27 @@ export function DocumentoForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-      <div className="rounded border border-line bg-card p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="tipo">Tipo de documento</Label>
-            <Select
-              items={TIPO_LABELS}
-              value={tipo}
-              onValueChange={(v) =>
-                setValue("tipo", v as DocumentoFormValues["tipo"])
-              }
-            >
-              <SelectTrigger id="tipo" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(TIPO_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <div className="form-section">
+        <div className="mb-4 flex flex-col gap-1.5">
+          <Label htmlFor="tipo">Tipo de documento</Label>
+          <div className="pill-group" role="radiogroup" aria-label="Tipo de documento" id="tipo">
+            {Object.entries(TIPO_LABELS).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={tipo === value}
+                data-active={tipo === value}
+                className="pill"
+                onClick={() => setValue("tipo", value as DocumentoFormValues["tipo"])}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+        </div>
 
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="empresaId">Empresa</Label>
             <Select
@@ -254,7 +268,7 @@ export function DocumentoForm({
         </div>
       </div>
 
-      <div className="rounded border border-line bg-card p-4">
+      <div className="form-section">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Ítems
@@ -288,7 +302,7 @@ export function DocumentoForm({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div ref={itemsListRef} className="flex flex-col gap-3">
           <div className="hidden grid-cols-[80px_1fr_140px_140px_36px] gap-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground sm:grid">
             <span>Cantidad</span>
             <span>Descripción</span>
@@ -302,7 +316,7 @@ export function DocumentoForm({
             return (
               <div
                 key={field.id}
-                className="grid grid-cols-1 gap-2 border-b border-line pb-3 last:border-b-0 sm:grid-cols-[80px_1fr_140px_140px_36px] sm:items-start"
+                className="grid grid-cols-1 gap-2 border-b border-border pb-3 last:border-b-0 sm:grid-cols-[80px_1fr_140px_140px_36px] sm:items-start"
               >
                 <Input
                   type="number"
@@ -321,15 +335,23 @@ export function DocumentoForm({
                 <div className="flex h-8 items-center font-mono text-sm">
                   {(cantidad * precio).toFixed(2)}
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => itemsArray.remove(index)}
-                  disabled={itemsArray.fields.length <= 1}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Quitar renglón"
+                        onClick={() => itemsArray.remove(index)}
+                        disabled={itemsArray.fields.length <= 1}
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Quitar renglón</TooltipContent>
+                </Tooltip>
               </div>
             );
           })}
@@ -357,7 +379,7 @@ export function DocumentoForm({
               {...register("descuento")}
             />
           </div>
-          <div className="flex w-full max-w-xs items-center justify-between gap-4 border-t border-line pt-1 font-semibold sm:w-64">
+          <div className="flex w-full max-w-xs items-center justify-between gap-4 border-t border-border pt-1 font-semibold sm:w-64">
             <span>Total</span>
             <span className="font-mono">
               {empresaActual?.moneda} {total.toFixed(2)}
@@ -366,7 +388,7 @@ export function DocumentoForm({
         </div>
       </div>
 
-      <div className="rounded border border-line bg-card p-4">
+      <div className="form-section">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Notas
@@ -381,7 +403,7 @@ export function DocumentoForm({
             Nota
           </Button>
         </div>
-        <div className="flex flex-col gap-3">
+        <div ref={notasListRef} className="flex flex-col gap-3">
           {notasArray.fields.map((field, index) => (
             <div key={field.id} className="flex flex-col gap-2 sm:flex-row">
               <Input
@@ -393,21 +415,29 @@ export function DocumentoForm({
                 placeholder="Texto"
                 {...register(`notas.${index}.texto` as const)}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => notasArray.remove(index)}
-              >
-                <TrashIcon className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Quitar nota"
+                      onClick={() => notasArray.remove(index)}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Quitar nota</TooltipContent>
+              </Tooltip>
             </div>
           ))}
         </div>
       </div>
 
       {tipo === "PROPUESTA" && (
-        <div className="rounded border border-line bg-card p-4">
+        <div className="form-section">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Anexos
@@ -422,18 +452,26 @@ export function DocumentoForm({
               Anexo
             </Button>
           </div>
-          <div className="flex flex-col gap-2">
+          <div ref={anexosListRef} className="flex flex-col gap-2">
             {anexosArray.fields.map((field, index) => (
               <div key={field.id} className="flex gap-2">
                 <Input {...register(`anexos.${index}` as const)} />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => anexosArray.remove(index)}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Quitar anexo"
+                        onClick={() => anexosArray.remove(index)}
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Quitar anexo</TooltipContent>
+                </Tooltip>
               </div>
             ))}
           </div>
@@ -448,9 +486,11 @@ export function DocumentoForm({
             <Link href={documento ? `/documentos/${documento.id}` : "/documentos"} />
           }
         >
+          <XIcon className="h-4 w-4" />
           Cancelar
         </Button>
         <Button type="submit" disabled={isSubmitting || submitting}>
+          <CheckIcon className="h-4 w-4" />
           {esEdicion ? "Guardar cambios" : `Crear ${TIPO_LABELS[tipo]?.toLowerCase()}`}
         </Button>
       </div>

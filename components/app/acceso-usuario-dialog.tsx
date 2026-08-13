@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CheckIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -115,7 +116,7 @@ export function AccesoUsuarioDialog({
 
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium">Empresas</span>
-            <div className="flex flex-col gap-2 rounded border border-line p-2">
+            <div className="flex flex-col gap-2 rounded border border-border p-2">
               {empresas.map((empresa) => (
                 <label key={empresa.id} className="flex items-center gap-2 text-sm">
                   <Checkbox
@@ -132,6 +133,7 @@ export function AccesoUsuarioDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
+              <CheckIcon className="h-4 w-4" />
               Guardar cambios
             </Button>
           </DialogFooter>

@@ -2,7 +2,7 @@ import { ArrowLeftIcon, PencilIcon, PrinterIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DocumentoEstadoForm } from "@/components/app/documento-estado-form";
-import { EstadoBadge } from "@/components/app/estado-badge";
+import { DocumentoResumen } from "@/components/app/documento-resumen";
 import { DuplicarDocumentoButton } from "@/components/app/duplicar-documento-button";
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
@@ -42,22 +42,13 @@ export default async function DocumentoDetallePage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <Link
-            href="/documentos"
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeftIcon className="h-3.5 w-3.5" />
-            Volver a documentos
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="correlativo-tag">TPM-{documento.correlativo}</span>
-            <h1 className="text-xl font-semibold text-ink">
-              {TIPO_LABELS[documento.tipo]}
-            </h1>
-            <EstadoBadge estado={documento.estado} />
-          </div>
-        </div>
+        <Link
+          href="/documentos"
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeftIcon className="h-3.5 w-3.5" />
+          Volver a documentos
+        </Link>
         <div className="flex gap-2">
           <Button variant="outline" render={<Link href={`/documentos/${id}/editar`} />}>
             <PencilIcon className="h-4 w-4" />
@@ -74,52 +65,25 @@ export default async function DocumentoDetallePage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 rounded border border-line bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Empresa
-          </p>
-          <p>{documento.empresa.nombre}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Cliente
-          </p>
-          <p>{documento.cliente?.nombre ?? "—"}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Fecha
-          </p>
-          <p className="font-mono text-sm">
-            {documento.fecha.toISOString().slice(0, 10)}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Oferta válida hasta
-          </p>
-          <p>{documento.vigenciaDias ?? "—"} días</p>
-        </div>
-        {documento.condicionesPago && (
-          <div className="sm:col-span-2 lg:col-span-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Condiciones de pago
-            </p>
-            <p>{documento.condicionesPago}</p>
-          </div>
-        )}
-        {documento.descripcionGeneral && (
-          <div className="sm:col-span-2 lg:col-span-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Descripción general
-            </p>
-            <p className="whitespace-pre-wrap">{documento.descripcionGeneral}</p>
-          </div>
-        )}
+      <div className="rounded border border-border bg-card p-4">
+        <DocumentoResumen
+          data={{
+            correlativo: documento.correlativo,
+            tipoLabel: TIPO_LABELS[documento.tipo],
+            empresaNombre: documento.empresa.nombre,
+            clienteNombre: documento.cliente?.nombre ?? "—",
+            fecha: documento.fecha,
+            vigenciaDias: documento.vigenciaDias,
+            condicionesPago: documento.condicionesPago,
+            descripcionGeneral: documento.descripcionGeneral,
+            moneda: documento.empresa.moneda,
+            total: Number(documento.total),
+            estado: documento.estado,
+          }}
+        />
       </div>
 
-      <div className="rounded border border-line bg-card p-4">
+      <div className="rounded border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Ítems
         </h2>
@@ -127,7 +91,7 @@ export default async function DocumentoDetallePage({
           {documento.items.map((item) => (
             <div
               key={item.id}
-              className="grid grid-cols-[80px_1fr_120px_120px] gap-3 border-b border-line pb-2 text-sm last:border-b-0"
+              className="grid grid-cols-[80px_1fr_120px_120px] gap-3 border-b border-border pb-2 text-sm last:border-b-0"
             >
               <span className="font-mono">{Number(item.cantidad)}</span>
               <span className="whitespace-pre-wrap">{item.descripcion}</span>
@@ -153,7 +117,7 @@ export default async function DocumentoDetallePage({
               {documento.empresa.moneda} {Number(documento.descuento).toFixed(2)}
             </span>
           </div>
-          <div className="flex w-64 justify-between border-t border-line pt-1 font-semibold">
+          <div className="flex w-64 justify-between border-t border-border pt-1 font-semibold">
             <span>Total</span>
             <span className="font-mono">
               {documento.empresa.moneda} {Number(documento.total).toFixed(2)}
@@ -163,7 +127,7 @@ export default async function DocumentoDetallePage({
       </div>
 
       {notas.length > 0 && (
-        <div className="rounded border border-line bg-card p-4">
+        <div className="rounded border border-border bg-card p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Notas
           </h2>
@@ -180,23 +144,15 @@ export default async function DocumentoDetallePage({
         </div>
       )}
 
-      <div className="rounded border border-line bg-card p-4">
+      <div className="rounded border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Estado
         </h2>
-        <DocumentoEstadoForm documentoId={documento.id} estadoActual={documento.estado} />
-
-        <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4">
-          {documento.historial.map((h) => (
-            <div key={h.id} className="flex items-center gap-3 text-sm">
-              <span className="font-mono text-xs text-muted-foreground">
-                {h.fecha.toISOString().slice(0, 16).replace("T", " ")}
-              </span>
-              <EstadoBadge estado={h.estado} />
-              {h.nota && <span className="text-muted-foreground">— {h.nota}</span>}
-            </div>
-          ))}
-        </div>
+        <DocumentoEstadoForm
+          documentoId={documento.id}
+          estadoActual={documento.estado}
+          historialInicial={documento.historial}
+        />
       </div>
     </div>
   );

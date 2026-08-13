@@ -1,9 +1,27 @@
 import { AlertTriangleIcon } from "lucide-react";
 import Link from "next/link";
+import { AnimatedNumber } from "@/components/app/animated-number";
+import { DistribucionEstadoChart } from "@/components/app/distribucion-estado-chart";
 import { EstadoBadge } from "@/components/app/estado-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
+
+const TIPO_LABELS: Record<string, string> = {
+  COTIZACION: "Cotizaciones",
+  PROPUESTA: "Propuestas",
+  FACTURA: "Facturas",
+};
+
+const ESTADO_LABELS: Record<string, string> = {
+  BORRADOR: "Borrador",
+  ENVIADA: "Enviada",
+  EN_NEGOCIACION: "En negociación",
+  ACEPTADA: "Aceptada",
+  RECHAZADA: "Rechazada",
+  VENCIDA: "Vencida",
+  FACTURADA: "Facturada",
+};
 
 // Definiciones de las métricas (no especificadas al detalle en scope.md,
 // decisión tomada acá — avisar si el cliente las quiere distintas):
@@ -19,7 +37,17 @@ export default async function DashboardPage() {
   const empresasPermitidas = await getEmpresasPermitidas();
   const where = { empresaId: { in: empresasPermitidas } };
 
-  const [totalDocumentos, vigentes, resueltos, pendientes] = await Promise.all([
+  const [
+    totalDocumentos,
+    vigentes,
+    resueltos,
+    pendientes,
+    porEmpresa,
+    porTipo,
+    porEstado,
+    empresas,
+    recientes,
+  ] = await Promise.all([
     db.documento.count({ where }),
     db.documento.findMany({
       where: { ...where, estado: { in: ["ENVIADA", "EN_NEGOCIACION"] } },
@@ -37,6 +65,32 @@ export default async function DashboardPage() {
         cliente: true,
         historial: { orderBy: { fecha: "desc" }, take: 1 },
       },
+    }),
+    db.documento.groupBy({
+      by: ["empresaId", "estado"],
+      where,
+      _count: true,
+      _sum: { total: true },
+    }),
+    db.documento.groupBy({
+      by: ["tipo"],
+      where,
+      _count: true,
+    }),
+    db.documento.groupBy({
+      by: ["estado"],
+      where,
+      _count: true,
+    }),
+    db.empresa.findMany({
+      where: { id: { in: empresasPermitidas } },
+      orderBy: { nombre: "asc" },
+    }),
+    db.documento.findMany({
+      where,
+      include: { cliente: true, empresa: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
     }),
   ]);
 
@@ -59,11 +113,35 @@ export default async function DashboardPage() {
     return ultimoCambio < hace7Dias;
   });
 
+  const desgloseEmpresa = empresas.map((empresa) => {
+    const filas = porEmpresa.filter((f) => f.empresaId === empresa.id);
+    const totalDocs = filas.reduce((acc, f) => acc + f._count, 0);
+    const facturado = filas
+      .filter((f) => f.estado === "FACTURADA")
+      .reduce((acc, f) => acc + Number(f._sum.total ?? 0), 0);
+    const cotizado = filas
+      .filter((f) => f.estado === "ENVIADA" || f.estado === "EN_NEGOCIACION")
+      .reduce((acc, f) => acc + Number(f._sum.total ?? 0), 0);
+    return { empresa, totalDocs, facturado, cotizado };
+  });
+
+  const desgloseTipo = (["COTIZACION", "PROPUESTA", "FACTURA"] as const).map((tipo) => ({
+    tipo,
+    label: TIPO_LABELS[tipo],
+    cantidad: porTipo.find((f) => f.tipo === tipo)?._count ?? 0,
+  }));
+
+  const chartData = porEstado.map((f) => ({
+    estado: f.estado,
+    label: ESTADO_LABELS[f.estado] ?? f.estado,
+    cantidad: f._count,
+  }));
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold text-ink">Panel</h1>
+      <h1 className="text-xl font-semibold text-text-primary">Panel</h1>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stat-cards-grid">
         <Card>
           <CardHeader>
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -71,7 +149,9 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-mono text-2xl font-bold text-navy">{totalDocumentos}</p>
+            <p className="font-mono text-2xl font-bold text-brand">
+              <AnimatedNumber value={totalDocumentos} />
+            </p>
           </CardContent>
         </Card>
 
@@ -83,11 +163,11 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {Object.entries(montoVigentePorMoneda).length === 0 ? (
-              <p className="font-mono text-2xl font-bold text-navy">0.00</p>
+              <p className="font-mono text-2xl font-bold text-brand">0.00</p>
             ) : (
               Object.entries(montoVigentePorMoneda).map(([moneda, monto]) => (
-                <p key={moneda} className="font-mono text-2xl font-bold text-navy">
-                  {moneda} {monto.toFixed(2)}
+                <p key={moneda} className="font-mono text-2xl font-bold text-brand">
+                  {moneda} <AnimatedNumber value={monto} formato={(n) => n.toFixed(2)} />
                 </p>
               ))
             )}
@@ -101,8 +181,8 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-mono text-2xl font-bold text-navy">
-              {tasaConversion.toFixed(0)}%
+            <p className="font-mono text-2xl font-bold text-brand">
+              <AnimatedNumber value={tasaConversion} formato={(n) => `${n.toFixed(0)}%`} />
             </p>
           </CardContent>
         </Card>
@@ -115,8 +195,91 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="font-mono text-2xl font-bold text-danger">
-              {sinRespuesta.length}
+              <AnimatedNumber value={sinRespuesta.length} />
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+              Desglose por empresa
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {desgloseEmpresa.map(({ empresa, totalDocs, facturado, cotizado }) => (
+              <div
+                key={empresa.id}
+                className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2 text-sm last:border-b-0 last:pb-0"
+              >
+                <span className="font-medium text-text-primary">{empresa.nombre}</span>
+                <span className="text-muted-foreground">{totalDocs} documentos</span>
+                <span className="font-mono text-brand">
+                  Facturado {empresa.moneda} {facturado.toFixed(2)}
+                </span>
+                <span className="font-mono text-status-enviada">
+                  Cotizado {empresa.moneda} {cotizado.toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+              Desglose por tipo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {desgloseTipo.map(({ tipo, label, cantidad }) => (
+              <div key={tipo} className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-mono font-semibold text-text-primary">{cantidad}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+              Documentos recientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {recientes.length === 0 && (
+              <p className="text-sm text-muted-foreground">Todavía no hay documentos.</p>
+            )}
+            {recientes.map((doc) => (
+              <Link
+                key={doc.id}
+                href={`/documentos/${doc.id}`}
+                className="flex items-center justify-between gap-3 rounded p-2 text-sm hover:bg-muted/50"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="correlativo-tag">TPM-{doc.correlativo}</span>
+                  {doc.cliente?.nombre ?? "—"}
+                  <span className="text-xs text-muted-foreground">{doc.empresa.nombre}</span>
+                </span>
+                <EstadoBadge estado={doc.estado} />
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+              Distribución por estado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DistribucionEstadoChart data={chartData} />
           </CardContent>
         </Card>
       </div>
@@ -132,7 +295,7 @@ export default async function DashboardPage() {
               <Link
                 key={doc.id}
                 href={`/documentos/${doc.id}`}
-                className="flex items-center justify-between gap-3 rounded bg-paper p-2 text-sm hover:bg-muted/50"
+                className="flex items-center justify-between gap-3 rounded bg-surface p-2 text-sm hover:bg-muted/50"
               >
                 <span className="flex items-center gap-2">
                   <span className="correlativo-tag">TPM-{doc.correlativo}</span>

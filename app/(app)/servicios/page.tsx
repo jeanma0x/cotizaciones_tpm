@@ -1,4 +1,5 @@
-import { PlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon } from "lucide-react";
+import { BuscadorLista } from "@/components/app/buscador-lista";
 import { ServicioFormDialog } from "@/components/app/servicio-form-dialog";
 import { ToggleActivoServicio } from "@/components/app/toggle-activo-servicio";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +15,20 @@ import {
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-export default async function ServiciosPage() {
+export default async function ServiciosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const empresasPermitidas = await getEmpresasPermitidas();
 
   const [servicios, empresas] = await Promise.all([
     db.servicio.findMany({
-      where: { empresaId: { in: empresasPermitidas } },
+      where: {
+        empresaId: { in: empresasPermitidas },
+        ...(q ? { nombre: { contains: q, mode: "insensitive" } } : {}),
+      },
       include: { empresa: true },
       orderBy: { nombre: "asc" },
     }),
@@ -32,7 +41,7 @@ export default async function ServiciosPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-ink">Servicios</h1>
+        <h1 className="text-xl font-semibold text-text-primary">Servicios</h1>
         <ServicioFormDialog
           empresas={empresas}
           trigger={
@@ -44,7 +53,9 @@ export default async function ServiciosPage() {
         />
       </div>
 
-      <div className="rounded border border-line bg-card">
+      <BuscadorLista basePath="/servicios" placeholder="Buscar por nombre…" />
+
+      <div className="rounded border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -59,7 +70,7 @@ export default async function ServiciosPage() {
             {servicios.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  Todavía no hay servicios.
+                  {q ? "Ningún servicio coincide con la búsqueda." : "Todavía no hay servicios."}
                 </TableCell>
               </TableRow>
             )}
@@ -81,6 +92,7 @@ export default async function ServiciosPage() {
                     servicio={servicio}
                     trigger={
                       <Button variant="outline" size="sm">
+                        <PencilIcon className="h-4 w-4" />
                         Editar
                       </Button>
                     }

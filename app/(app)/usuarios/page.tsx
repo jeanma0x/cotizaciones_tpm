@@ -1,3 +1,4 @@
+import { PencilIcon } from "lucide-react";
 import { AccesoUsuarioDialog } from "@/components/app/acceso-usuario-dialog";
 import { EliminarUsuarioButton } from "@/components/app/eliminar-usuario-button";
 import { InvitarUsuarioDialog } from "@/components/app/invitar-usuario-dialog";
@@ -28,11 +29,11 @@ export default async function UsuariosPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-ink">Usuarios</h1>
+        <h1 className="text-xl font-semibold text-text-primary">Usuarios</h1>
         <InvitarUsuarioDialog empresas={empresas} />
       </div>
 
-      <div className="rounded border border-line bg-card">
+      <div className="rounded border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -64,6 +65,7 @@ export default async function UsuariosPage() {
                     empresas={empresas}
                     trigger={
                       <Button variant="outline" size="sm">
+                        <PencilIcon className="h-4 w-4" />
                         Editar acceso
                       </Button>
                     }

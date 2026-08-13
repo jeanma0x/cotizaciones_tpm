@@ -1,8 +1,13 @@
 "use client";
 
+import { SearchIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -62,12 +67,16 @@ export function DocumentosFiltros({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Input
-        placeholder="Buscar por cliente o correlativo…"
-        value={q}
-        onChange={(e) => onBuscarChange(e.target.value)}
-        className="w-64"
-      />
+      <InputGroup className="w-64">
+        <InputGroupAddon>
+          <SearchIcon className="h-4 w-4" />
+        </InputGroupAddon>
+        <InputGroupInput
+          placeholder="Buscar por cliente o correlativo…"
+          value={q}
+          onChange={(e) => onBuscarChange(e.target.value)}
+        />
+      </InputGroup>
       <Select
         items={TIPOS}
         value={searchParams.get("tipo") ?? "TODOS"}

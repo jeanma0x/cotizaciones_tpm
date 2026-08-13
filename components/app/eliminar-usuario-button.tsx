@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2Icon } from "lucide-react";
+import { Trash2Icon, XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -60,9 +60,11 @@ export function EliminarUsuarioButton({
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+            <XIcon className="h-4 w-4" />
             Cancelar
           </Button>
           <Button variant="destructive" onClick={eliminar} disabled={isPending}>
+            <Trash2Icon className="h-4 w-4" />
             Sí, eliminar
           </Button>
         </DialogFooter>

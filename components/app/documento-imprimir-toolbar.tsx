@@ -38,7 +38,7 @@ export function DocumentoImprimirToolbar({
     : `https://wa.me/?text=${textoWhatsapp}`;
 
   return (
-    <div className="no-imprimir sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-paper/95 px-6 py-3 backdrop-blur">
+    <div className="no-imprimir sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface/95 px-6 py-3 backdrop-blur">
       <div className="flex flex-col gap-1">
         <Link
           href={`/documentos/${documentoId}`}

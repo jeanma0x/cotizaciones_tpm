@@ -1,6 +1,7 @@
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { DocumentosFiltros } from "@/components/app/documentos-filtros";
+import { DocumentoVistaRapidaSheet } from "@/components/app/documento-vista-rapida-sheet";
 import { EstadoBadge } from "@/components/app/estado-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,7 +82,7 @@ export default async function DocumentosPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-ink">Documentos</h1>
+        <h1 className="text-xl font-semibold text-text-primary">Documentos</h1>
         <Button render={<Link href="/documentos/nuevo" />}>
           <PlusIcon className="h-4 w-4" />
           Nuevo documento
@@ -90,7 +91,7 @@ export default async function DocumentosPage({
 
       <DocumentosFiltros empresas={empresas} />
 
-      <div className="rounded border border-line bg-card">
+      <div className="rounded border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -100,12 +101,13 @@ export default async function DocumentosPage({
               <TableHead>Cliente</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {documentos.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   No hay documentos que coincidan con estos filtros.
                 </TableCell>
               </TableRow>
@@ -125,6 +127,23 @@ export default async function DocumentosPage({
                 </TableCell>
                 <TableCell>
                   <EstadoBadge estado={doc.estado} />
+                </TableCell>
+                <TableCell className="text-right">
+                  <DocumentoVistaRapidaSheet
+                    documentoId={doc.id}
+                    data={{
+                      correlativo: doc.correlativo,
+                      tipoLabel: TIPO_LABELS[doc.tipo],
+                      empresaNombre: doc.empresa.nombre,
+                      clienteNombre: doc.cliente?.nombre ?? "—",
+                      fecha: doc.fecha,
+                      vigenciaDias: doc.vigenciaDias,
+                      condicionesPago: doc.condicionesPago,
+                      moneda: doc.empresa.moneda,
+                      total: Number(doc.total),
+                      estado: doc.estado,
+                    }}
+                  />
                 </TableCell>
               </TableRow>
             ))}

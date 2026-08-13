@@ -1,4 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
+import { CommandPalette } from "@/components/app/command-palette";
+import { PageTransition } from "@/components/app/page-transition";
 import { Sidebar } from "@/components/app/sidebar";
 import { getUsuarioActual } from "@/lib/current-usuario";
 
@@ -13,7 +15,7 @@ export default async function AppLayout({
 
   if (!usuario) {
     return (
-      <div className="flex min-h-screen flex-1 items-center justify-center bg-paper p-8 text-center">
+      <div className="flex min-h-screen flex-1 items-center justify-center bg-surface-sunken p-8 text-center">
         <p className="max-w-md text-sm text-muted-foreground">
           Tu cuenta todavía no tiene acceso asignado a ninguna empresa. Contactá al
           administrador del sistema.
@@ -25,7 +27,10 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen">
       <Sidebar esSuperusuario={usuario.rol === "SUPERUSUARIO"} />
-      <main className="flex-1 bg-paper p-8">{children}</main>
+      <main className="flex-1 bg-surface-sunken p-8">
+        <PageTransition>{children}</PageTransition>
+      </main>
+      <CommandPalette />
     </div>
   );
 }

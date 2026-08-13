@@ -1,7 +1,9 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
+import { ThemeProvider } from "@/components/app/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,12 +13,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className="h-full antialiased">
+    <html lang="es" className="h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
-        <ClerkProvider appearance={{ theme: shadcn }}>
-          {children}
-          <Toaster />
-        </ClerkProvider>
+        <ThemeProvider>
+          <ClerkProvider appearance={{ theme: shadcn }}>
+            <TooltipProvider delay={300}>
+              {children}
+              <Toaster />
+            </TooltipProvider>
+          </ClerkProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

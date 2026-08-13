@@ -4,14 +4,22 @@ import { UserButton } from "@clerk/nextjs";
 import {
   Building2,
   ClipboardList,
+  Cog,
   FilePlus,
   LayoutGrid,
+  MoonIcon,
+  SearchIcon,
   ShieldCheck,
+  SunIcon,
   Truck,
   Users,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -33,21 +41,68 @@ const NAV_ITEMS_SUPERUSUARIO: NavItem[] = [
   { href: "/usuarios", label: "Usuarios", icon: ShieldCheck },
 ];
 
+function SelectorTema() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
+
+  if (!montado) return <div className="h-7 w-7" aria-hidden="true" />;
+
+  const esOscuro = resolvedTheme === "dark";
+  const etiqueta = esOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={etiqueta}
+            onClick={() => setTheme(esOscuro ? "light" : "dark")}
+            className="text-sidebar-foreground/70 hover:bg-white/10 hover:text-sidebar-foreground"
+          >
+            {esOscuro ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+          </Button>
+        }
+      />
+      <TooltipContent side="right">{etiqueta}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
   const pathname = usePathname();
   const items = esSuperusuario ? [...NAV_ITEMS, ...NAV_ITEMS_SUPERUSUARIO] : NAV_ITEMS;
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col bg-navy text-paper">
+    <aside className="flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
       <div className="flex items-center gap-2 px-5 py-6">
-        <span className="font-mono text-lg font-extrabold tracking-wide text-amber">
-          TPM
-        </span>
-        <span className="text-xs uppercase tracking-widest text-paper/70">
-          Servicios Generales
-        </span>
+        <Cog className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+        <div className="flex flex-col">
+          <span className="font-mono text-lg font-extrabold tracking-wide text-sidebar-foreground">
+            TPM
+          </span>
+          <span className="text-xs uppercase tracking-widest text-sidebar-foreground/70">
+            Servicios Generales
+          </span>
+        </div>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 px-3">
+      <div className="px-3">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event("abrir-command-palette"))}
+          className="flex w-full items-center justify-between gap-2 rounded border border-sidebar-border bg-white/5 px-3 py-1.5 text-sm text-sidebar-foreground/70 transition-colors duration-(--motion-fast) hover:bg-white/10 hover:text-sidebar-foreground"
+        >
+          <span className="flex items-center gap-2">
+            <SearchIcon className="h-4 w-4" />
+            Buscar
+          </span>
+          <kbd className="rounded border border-sidebar-border bg-black/20 px-1.5 py-0.5 font-mono text-xs text-sidebar-foreground/70">
+            ⌘K
+          </kbd>
+        </button>
+      </div>
+      <nav className="flex flex-1 flex-col gap-1 px-3 pt-3">
         {items.map(({ href, label, icon: Icon }) => {
           const activo =
             href === "/documentos"
@@ -60,10 +115,10 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 rounded px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded px-3 py-2 text-sm font-medium transition-colors duration-(--motion-fast)",
                 activo
-                  ? "bg-amber text-ink"
-                  : "text-paper/85 hover:bg-navy-2 hover:text-paper",
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/80 hover:bg-white/10 hover:text-sidebar-foreground",
               )}
             >
               <Icon className="h-4 w-4" />
@@ -72,8 +127,9 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
           );
         })}
       </nav>
-      <div className="flex items-center gap-2 border-t border-navy-2 px-5 py-4">
+      <div className="flex items-center justify-between gap-2 border-t border-sidebar-border px-5 py-4">
         <UserButton />
+        <SelectorTema />
       </div>
     </aside>
   );

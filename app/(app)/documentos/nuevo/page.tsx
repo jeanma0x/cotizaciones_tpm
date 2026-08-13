@@ -32,7 +32,7 @@ export default async function NuevoDocumentoPage() {
           <ArrowLeftIcon className="h-3.5 w-3.5" />
           Volver a documentos
         </Link>
-        <h1 className="text-xl font-semibold text-ink">Nuevo documento</h1>
+        <h1 className="text-xl font-semibold text-text-primary">Nuevo documento</h1>
       </div>
       <DocumentoForm empresas={empresas} clientes={clientes} servicios={servicios} />
     </div>

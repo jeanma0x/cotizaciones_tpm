@@ -1,6 +1,6 @@
 "use client";
 
-import { CopyIcon } from "lucide-react";
+import { CopyIcon, XIcon } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { duplicarDocumento } from "@/app/(app)/documentos/actions";
@@ -58,9 +58,11 @@ export function DuplicarDocumentoButton({
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+            <XIcon className="h-4 w-4" />
             Cancelar
           </Button>
           <Button onClick={duplicar} disabled={isPending}>
+            <CopyIcon className="h-4 w-4" />
             Sí, duplicar
           </Button>
         </DialogFooter>

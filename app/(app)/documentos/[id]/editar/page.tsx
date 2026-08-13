@@ -45,7 +45,7 @@ export default async function EditarDocumentoPage({
           <ArrowLeftIcon className="h-3.5 w-3.5" />
           Volver al documento
         </Link>
-        <h1 className="text-xl font-semibold text-ink">
+        <h1 className="text-xl font-semibold text-text-primary">
           Editar documento TPM-{documento.correlativo}
         </h1>
       </div>

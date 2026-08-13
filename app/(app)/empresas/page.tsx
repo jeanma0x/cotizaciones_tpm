@@ -1,3 +1,4 @@
+import { PencilIcon } from "lucide-react";
 import { EmpresaFormDialog } from "@/components/app/empresa-form-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,9 +23,9 @@ export default async function EmpresasPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold text-ink">Empresas</h1>
+      <h1 className="text-xl font-semibold text-text-primary">Empresas</h1>
 
-      <div className="rounded border border-line bg-card">
+      <div className="rounded border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -51,6 +52,7 @@ export default async function EmpresasPage() {
                     empresa={empresa}
                     trigger={
                       <Button variant="outline" size="sm">
+                        <PencilIcon className="h-4 w-4" />
                         Editar
                       </Button>
                     }

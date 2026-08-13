@@ -7,31 +7,51 @@ import {
   Send,
   XCircle,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Colores e íconos fijos por estado — ver la tabla exacta en
 // docs/design-system.md. Ya se mostraron al cliente en la demo y en la
-// propuesta firmada, no cambiar.
+// propuesta firmada, no cambiar. Todo a través de la capa semántica de
+// tokens (nunca un hex suelto ni un primitivo directo).
 const ESTILOS_ESTADO: Record<
   string,
-  { color: string; background: string; label: string; icon: typeof Send }
+  { className: string; label: string; icon: typeof Send }
 > = {
-  BORRADOR: { color: "#6B6459", background: "#EDEAE2", label: "Borrador", icon: FileText },
-  ENVIADA: { color: "#2F5A78", background: "#E4EDF2", label: "Enviada", icon: Send },
+  BORRADOR: {
+    className: "text-muted-foreground bg-muted",
+    label: "Borrador",
+    icon: FileText,
+  },
+  ENVIADA: {
+    className: "text-status-enviada bg-status-enviada-bg",
+    label: "Enviada",
+    icon: Send,
+  },
   EN_NEGOCIACION: {
-    color: "#C97B22",
-    background: "#FBEEDD",
+    className: "text-accent-hover bg-accent/15",
     label: "En negociación",
     icon: Handshake,
   },
   ACEPTADA: {
-    color: "#4B7A5B",
-    background: "#E7EFE9",
+    className: "text-success bg-success-bg",
     label: "Aceptada",
     icon: CheckCircle2,
   },
-  RECHAZADA: { color: "#B5503A", background: "#F5E7E2", label: "Rechazada", icon: XCircle },
-  VENCIDA: { color: "#8A4B3A", background: "#F1E7DE", label: "Vencida", icon: Clock },
-  FACTURADA: { color: "#16324F", background: "#E2E8ED", label: "Facturada", icon: Receipt },
+  RECHAZADA: {
+    className: "text-danger bg-danger-bg",
+    label: "Rechazada",
+    icon: XCircle,
+  },
+  VENCIDA: {
+    className: "text-status-vencida bg-status-vencida-bg",
+    label: "Vencida",
+    icon: Clock,
+  },
+  FACTURADA: {
+    className: "text-brand bg-brand/10",
+    label: "Facturada",
+    icon: Receipt,
+  },
 };
 
 export function EstadoBadge({ estado }: { estado: string }) {
@@ -41,8 +61,10 @@ export function EstadoBadge({ estado }: { estado: string }) {
 
   return (
     <span
-      className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium"
-      style={{ color: estilo.color, backgroundColor: estilo.background }}
+      className={cn(
+        "inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium transition-colors duration-(--motion-normal)",
+        estilo.className,
+      )}
     >
       <Icon className="h-3 w-3" />
       {estilo.label}

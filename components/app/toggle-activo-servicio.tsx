@@ -1,5 +1,6 @@
 "use client";
 
+import { PowerIcon, PowerOffIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -29,11 +30,12 @@ export function ToggleActivoServicio({
 
   return (
     <Button
-      variant="outline"
+      variant={activo ? "destructive" : "outline"}
       size="sm"
       onClick={alternar}
       disabled={isPending}
     >
+      {activo ? <PowerOffIcon className="h-4 w-4" /> : <PowerIcon className="h-4 w-4" />}
       {activo ? "Desactivar" : "Activar"}
     </Button>
   );

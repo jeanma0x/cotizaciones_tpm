@@ -1,4 +1,5 @@
-import { PlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon } from "lucide-react";
+import { BuscadorLista } from "@/components/app/buscador-lista";
 import { ClienteFormDialog } from "@/components/app/cliente-form-dialog";
 import { ToggleActivoCliente } from "@/components/app/toggle-activo-cliente";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +15,27 @@ import {
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-export default async function ClientesPage() {
+export default async function ClientesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const empresasPermitidas = await getEmpresasPermitidas();
 
   const [clientes, empresas] = await Promise.all([
     db.cliente.findMany({
-      where: { empresaId: { in: empresasPermitidas } },
+      where: {
+        empresaId: { in: empresasPermitidas },
+        ...(q
+          ? {
+              OR: [
+                { nombre: { contains: q, mode: "insensitive" } },
+                { nit: { contains: q, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      },
       include: { empresa: true },
       orderBy: { createdAt: "desc" },
     }),
@@ -32,7 +48,7 @@ export default async function ClientesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-ink">Clientes</h1>
+        <h1 className="text-xl font-semibold text-text-primary">Clientes</h1>
         <ClienteFormDialog
           empresas={empresas}
           trigger={
@@ -44,7 +60,9 @@ export default async function ClientesPage() {
         />
       </div>
 
-      <div className="rounded border border-line bg-card">
+      <BuscadorLista basePath="/clientes" placeholder="Buscar por nombre o NIT…" />
+
+      <div className="rounded border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -61,7 +79,7 @@ export default async function ClientesPage() {
             {clientes.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground">
-                  Todavía no hay clientes.
+                  {q ? "Ningún cliente coincide con la búsqueda." : "Todavía no hay clientes."}
                 </TableCell>
               </TableRow>
             )}
@@ -85,6 +103,7 @@ export default async function ClientesPage() {
                     cliente={cliente}
                     trigger={
                       <Button variant="outline" size="sm">
+                        <PencilIcon className="h-4 w-4" />
                         Editar
                       </Button>
                     }

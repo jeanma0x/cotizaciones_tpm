@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CheckIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -142,6 +143,7 @@ export function ServicioFormDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
+              <CheckIcon className="h-4 w-4" />
               {esEdicion ? "Guardar cambios" : "Crear servicio"}
             </Button>
           </DialogFooter>

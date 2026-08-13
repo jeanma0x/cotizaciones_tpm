@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlusIcon } from "lucide-react";
+import { SendIcon, UserPlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -119,7 +119,7 @@ export function InvitarUsuarioDialog({
 
           <div className="flex flex-col gap-1.5">
             <Label>Empresas</Label>
-            <div className="flex flex-col gap-2 rounded border border-line p-2">
+            <div className="flex flex-col gap-2 rounded border border-border p-2">
               {empresas.map((empresa) => (
                 <label
                   key={empresa.id}
@@ -143,6 +143,7 @@ export function InvitarUsuarioDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
+              <SendIcon className="h-4 w-4" />
               Enviar invitación
             </Button>
           </DialogFooter>
