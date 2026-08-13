@@ -235,6 +235,7 @@ export default async function DashboardPage() {
     .filter((s) => s.cantidad > 0)
     .sort((a, b) => b.monto - a.monto)
     .slice(0, 5);
+  const maxCantidadServicio = Math.max(...rankingServicios.map((s) => s.cantidad), 1);
 
   const montoVigenteEntradas = Object.entries(montoVigentePorMoneda);
 
@@ -258,12 +259,22 @@ export default async function DashboardPage() {
           value={
             montoVigenteEntradas.length === 0 ? (
               <span className="text-accent-hover">0.00</span>
+            ) : montoVigenteEntradas.length === 1 ? (
+              <span className="text-accent-hover">
+                {montoVigenteEntradas[0][0]}{" "}
+                <AnimatedNumber value={montoVigenteEntradas[0][1]} decimals={2} />
+              </span>
             ) : (
-              montoVigenteEntradas.map(([moneda, monto]) => (
-                <span key={moneda} className="text-accent-hover">
-                  {moneda} <AnimatedNumber value={monto} decimals={2} />
-                </span>
-              ))
+              // Más de una moneda vigente a la vez (ej. GTQ y USD): cada
+              // monto en su propia línea, texto más chico — concatenados en
+              // una sola línea se leen pegados y no como dos cifras distintas.
+              <span className="flex flex-col gap-0.5 text-xl leading-tight">
+                {montoVigenteEntradas.map(([moneda, monto]) => (
+                  <span key={moneda} className="text-accent-hover">
+                    {moneda} <AnimatedNumber value={monto} decimals={2} />
+                  </span>
+                ))}
+              </span>
             )
           }
         />
@@ -374,19 +385,38 @@ export default async function DashboardPage() {
               Servicios más cotizados
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+          <CardContent className="flex flex-col gap-3.5">
             {rankingServicios.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 Todavía no hay suficiente actividad para armar un ranking.
               </p>
             )}
             {rankingServicios.map((s, i) => (
-              <div key={s.nombre} className="flex items-center justify-between gap-2 text-sm">
-                <span className="flex items-center gap-2 truncate">
-                  <span className="font-mono text-xs text-muted-foreground">#{i + 1}</span>
-                  <span className="truncate text-text-primary">{s.nombre}</span>
+              <div key={s.nombre} className="flex items-center gap-3">
+                <span
+                  className={
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold " +
+                    (i === 0
+                      ? "bg-accent text-on-accent"
+                      : "bg-muted text-muted-foreground")
+                  }
+                >
+                  {i + 1}
                 </span>
-                <span className="font-mono text-xs text-muted-foreground">{s.cantidad}x</span>
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="truncate text-text-primary">{s.nombre}</span>
+                    <span className="shrink-0 font-mono text-xs font-semibold text-muted-foreground">
+                      {s.cantidad}x
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={"h-full rounded-full " + (i === 0 ? "bg-accent" : "bg-brand")}
+                      style={{ width: `${(s.cantidad / maxCantidadServicio) * 100}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             ))}
           </CardContent>

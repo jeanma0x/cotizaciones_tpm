@@ -38,7 +38,7 @@ export function ServiciosTable({
       accessorKey: "precioFijo",
       header: "Precio fijo",
       cell: ({ row }) => (
-        <span className="font-mono text-lg font-semibold text-brand">
+        <span className="font-mono text-sm">
           {row.original.moneda} {row.original.precioFijo.toFixed(2)}
         </span>
       ),

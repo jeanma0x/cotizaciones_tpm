@@ -40,19 +40,41 @@ export function DistribucionEstadoChart({
   }
 
   const conDatos = data.filter((d) => d.cantidad > 0);
+  const total = conDatos.reduce((acc, d) => acc + d.cantidad, 0);
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <ChartContainer config={config} className="mx-auto aspect-square max-h-44">
-        <PieChart>
-          <ChartTooltip content={<ChartTooltipContent nameKey="estado" hideLabel />} />
-          <Pie data={data} dataKey="cantidad" nameKey="estado" innerRadius={45} strokeWidth={2}>
-            {data.map((d) => (
-              <Cell key={d.estado} fill={COLORES_ESTADO[d.estado] ?? "var(--color-text-secondary)"} />
-            ))}
-          </Pie>
-        </PieChart>
-      </ChartContainer>
+      {/* Tamaño fijo (h-44 w-44), no "aspect-square" con ancho auto: dentro de
+          un flex column con items-center el ancho se resuelve por contenido,
+          y como ResponsiveContainer necesita un tamaño definido para medir,
+          el círculo colapsaba a 0x0 y el donut nunca llegaba a pintarse
+          (solo se veía la leyenda de abajo). */}
+      <div className="relative h-44 w-44 shrink-0">
+        <ChartContainer config={config} className="mx-auto aspect-square h-44 w-44">
+          <PieChart>
+            <ChartTooltip content={<ChartTooltipContent nameKey="estado" hideLabel />} />
+            <Pie
+              data={conDatos}
+              dataKey="cantidad"
+              nameKey="estado"
+              innerRadius={45}
+              outerRadius={70}
+              strokeWidth={2}
+              paddingAngle={conDatos.length > 1 ? 2 : 0}
+            >
+              {conDatos.map((d) => (
+                <Cell key={d.estado} fill={COLORES_ESTADO[d.estado] ?? "var(--color-text-secondary)"} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="font-mono text-2xl font-bold text-text-primary">{total}</span>
+          <span className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+            {total === 1 ? "documento" : "documentos"}
+          </span>
+        </div>
+      </div>
       {/* Sin esto el donut es decorativo, no informativo. */}
       <div className="grid w-full grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
         {conDatos.map((d) => (
