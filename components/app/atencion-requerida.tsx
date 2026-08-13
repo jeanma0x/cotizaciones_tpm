@@ -1,5 +1,8 @@
-import { AlertTriangleIcon, CheckCircle2Icon } from "lucide-react";
+"use client";
+
+import { AlertTriangleIcon, ChevronDownIcon, CheckCircle2Icon } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export type ItemAtencion = {
@@ -19,7 +22,14 @@ const MOTIVO_LABEL: Record<ItemAtencion["motivo"], (dias: number) => string> = {
 // Zona 3 del panel (scope.md): nunca una tarjeta más — borde/fondo
 // distintivo si hay pendientes, estado positivo explícito si no hay nada
 // (ver design-system.md "Panel — layout y estilo de gráficos").
+//
+// Desplegable, no una lista volcada entera: con actividad real, "X
+// documentos requieren tu atención" puede ser una lista larga que empuja
+// todo lo demás del panel para abajo apenas se entra — colapsada por
+// defecto, el encabezado es el que abre/cierra.
 export function AtencionRequerida({ items }: { items: ItemAtencion[] }) {
+  const [abierto, setAbierto] = useState(false);
+
   if (items.length === 0) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success-bg p-5 shadow-sm">
@@ -38,36 +48,54 @@ export function AtencionRequerida({ items }: { items: ItemAtencion[] }) {
 
   return (
     <div className="rounded-xl border border-accent bg-danger-bg/40 p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-danger">
-        <AlertTriangleIcon className="h-4 w-4" />
-        {items.length} {items.length === 1 ? "documento requiere" : "documentos requieren"} tu
-        atención
-      </div>
-      <div className="flex flex-col gap-1">
-        {items.map((item) => (
-          <Link
-            key={item.id}
-            href={`/documentos/${item.id}`}
-            className={cn(
-              "flex items-center justify-between gap-3 rounded p-2 text-sm transition-colors duration-(--motion-fast)",
-              "bg-surface hover:bg-muted/50",
-            )}
-          >
-            <span className="flex items-center gap-2">
-              <span className="correlativo-tag">TPM-{item.correlativo}</span>
-              {item.clienteNombre}
-            </span>
-            <span
+      <button
+        type="button"
+        onClick={() => setAbierto((actual) => !actual)}
+        aria-expanded={abierto}
+        className={cn(
+          "flex w-full items-center justify-between gap-2 text-sm font-semibold text-danger",
+          abierto && "mb-3",
+        )}
+      >
+        <span className="flex items-center gap-2">
+          <AlertTriangleIcon className="h-4 w-4" />
+          {items.length} {items.length === 1 ? "documento requiere" : "documentos requieren"} tu
+          atención
+        </span>
+        <ChevronDownIcon
+          className={cn(
+            "h-4 w-4 shrink-0 transition-transform duration-(--motion-fast)",
+            abierto && "rotate-180",
+          )}
+        />
+      </button>
+      {abierto && (
+        <div className="flex flex-col gap-1">
+          {items.map((item) => (
+            <Link
+              key={item.id}
+              href={`/documentos/${item.id}`}
               className={cn(
-                "text-xs font-medium",
-                item.motivo === "por_vencer" ? "text-accent-hover" : "text-danger",
+                "flex items-center justify-between gap-3 rounded p-2 text-sm transition-colors duration-(--motion-fast)",
+                "bg-surface hover:bg-muted/50",
               )}
             >
-              {MOTIVO_LABEL[item.motivo](item.dias)}
-            </span>
-          </Link>
-        ))}
-      </div>
+              <span className="flex items-center gap-2">
+                <span className="correlativo-tag">TPM-{item.correlativo}</span>
+                {item.clienteNombre}
+              </span>
+              <span
+                className={cn(
+                  "text-xs font-medium",
+                  item.motivo === "por_vencer" ? "text-accent-hover" : "text-danger",
+                )}
+              >
+                {MOTIVO_LABEL[item.motivo](item.dias)}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
