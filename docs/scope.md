@@ -7,6 +7,7 @@ y qué queda fuera (Fase 3, futuro, no construir sin que se pida explícitamente
 ## Fase 2 — Incluido (esto es lo que se construye ahora)
 
 ### 1. Documentos
+
 - Generación de **cotizaciones**, **propuestas de servicios** y **facturas**, con
   formato profesional propio del cliente (ver `design-system.md` y
   `document-export.md`).
@@ -35,6 +36,7 @@ y qué queda fuera (Fase 3, futuro, no construir sin que se pida explícitamente
   plataformas permite adjuntar automáticamente desde un sistema externo).
 
 ### 2. Catálogos
+
 - **Catálogo de clientes**, segmentado por empresa: nombre, NIT, dirección, contacto,
   teléfono, correo. Autocompleta datos al elegir un cliente en un documento nuevo.
 - **Catálogo de servicios**, segmentado por empresa: nombre del servicio + precio fijo,
@@ -42,11 +44,13 @@ y qué queda fuera (Fase 3, futuro, no construir sin que se pida explícitamente
   y el precio ya cargado (ambos editables).
 
 ### 3. Empresas
+
 - Gestión de las **4 empresas** del cliente (SIAP, Estados Unidos, Panamá, Individual),
   cada una con sus propios clientes, catálogo de servicios, correlativo y documentos —
   sin mezclarse entre sí bajo ninguna circunstancia. Ver `security.md`.
 
 ### 4. Usuarios y accesos
+
 - Sistema de usuarios con dos roles:
   - **Superusuario** (Oldemar): acceso total a las 4 empresas, puede administrar
     usuarios.
@@ -56,12 +60,25 @@ y qué queda fuera (Fase 3, futuro, no construir sin que se pida explícitamente
   en el futuro no debe requerir cambios de esquema.
 
 ### 5. Panel / dashboard
+
 - Listado de todos los documentos con filtro por tipo, estado y empresa, y búsqueda por
   cliente o correlativo.
-- Métricas: total de documentos, monto vigente cotizado, tasa de conversión, documentos
-  sin respuesta hace más de 7 días.
+- Métricas generales: total de documentos, monto vigente cotizado, tasa de conversión,
+  documentos sin respuesta hace más de 7 días.
+- **Desglose por empresa**: monto cotizado/facturado y cantidad de documentos por cada
+  una de las 4 empresas (SIAP, Estados Unidos, Panamá, Individual) — con 4 empresas
+  activas, un total general ya no es suficiente, hace falta ver el aporte de cada una
+  por separado.
+- **Desglose por tipo de documento**: cantidad de cotizaciones, propuestas y facturas,
+  para diferenciar cuánto de la actividad es negociación (cotización/propuesta) vs.
+  facturación ya cerrada.
+- Un listado corto de los documentos más recientes directo en el panel (sin tener que
+  ir a la pantalla de Documentos para ver "qué pasó últimamente").
+- Una visualización simple (barra o dona) de la distribución de documentos por estado —
+  usando Recharts, ya disponible en el stack (ver `architecture.md`).
 
 ### 6. Acceso y diseño
+
 - Acceso privado mediante usuario y contraseña individual (vía Clerk — ver
   `architecture.md`).
 - **Diseño responsivo (adaptable)**: debe usarse bien desde computadora o navegador de
@@ -94,6 +111,7 @@ sin confirmar — cada uno de estos se cotiza y acuerda por separado:
 Aunque estos puntos de Fase 3 no se construyen ahora, el modelo de datos (ver
 `data-model.md`) debe evitar decisiones que hagan **imposible o muy costoso** agregarlos
 después. Ejemplos concretos:
+
 - La tabla de documentos debe poder soportar un futuro campo de "aceptado por el
   cliente el [fecha]" sin romper nada existente.
 - El modelo de usuarios/roles debe poder crecer a más roles o más granularidad sin

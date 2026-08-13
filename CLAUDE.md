@@ -1,4 +1,4 @@
-# Sistema de Cotizaciones, Propuestas y Facturas — Corporación SIAP S.A.
+# Sistema de Cotizaciones, Propuestas y Facturas — Corporación SIAP S.A
 
 Este es un sistema web privado de gestión de cotizaciones, propuestas y facturas para
 Oldemar Villagrán Zelaya, dueño de una empresa de transporte y logística (renta de
@@ -24,6 +24,9 @@ cuatro entidades distintas.
 8. `docs/plan-de-construccion.md` — el orden de trabajo día a día, con criterios de
    salida por fase. **No construir todo el sistema de una sola vez** — seguir este
    orden y confirmar cada criterio de salida antes de avanzar a la fase siguiente.
+9. `docs/design-review.md` — checklist de corrección abierto tras revisar capturas
+   reales de la Fase 6. Mientras tenga ítems sin marcar, el criterio de salida de esa
+   fase no está cumplido, sin importar qué tan avanzada esté la funcionalidad.
 
 ## Reglas no negociables
 

@@ -55,7 +55,11 @@ export default async function DocumentosPage({
     where.estado = params.estado as Prisma.DocumentoWhereInput["estado"];
   }
   if (params.q) {
-    const correlativo = Number(params.q);
+    // El correlativo se muestra como "TPM-1001" en la interfaz, pero se
+    // guarda solo el número — sacamos los dígitos para que buscar "TPM-1001",
+    // "1001" o "tpm 1001" encuentre el mismo documento.
+    const digitos = params.q.replace(/\D/g, "");
+    const correlativo = digitos ? Number(digitos) : NaN;
     where.OR = [
       { cliente: { nombre: { contains: params.q, mode: "insensitive" } } },
       ...(Number.isFinite(correlativo) ? [{ correlativo }] : []),
