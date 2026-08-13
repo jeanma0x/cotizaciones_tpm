@@ -85,7 +85,11 @@ export function ClientesTable({
               </Button>
             }
           />
-          <ToggleActivoCliente id={row.original.id} activo={row.original.activo} />
+          <ToggleActivoCliente
+            id={row.original.id}
+            nombre={row.original.nombre}
+            activo={row.original.activo}
+          />
         </div>
       ),
     },

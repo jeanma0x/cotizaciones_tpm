@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { CommandPalette } from "@/components/app/command-palette";
+import { MobileTopBar } from "@/components/app/mobile-topbar";
 import { PageTransition } from "@/components/app/page-transition";
 import { Sidebar } from "@/components/app/sidebar";
 import { getUsuarioActual } from "@/lib/current-usuario";
@@ -27,9 +28,12 @@ export default async function AppLayout({
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar esSuperusuario={usuario.rol === "SUPERUSUARIO"} />
-      <main className="flex-1 overflow-y-auto bg-surface-sunken p-8">
-        <PageTransition>{children}</PageTransition>
-      </main>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <MobileTopBar />
+        <main className="flex-1 overflow-y-auto bg-surface-sunken p-4 md:p-8">
+          <PageTransition>{children}</PageTransition>
+        </main>
+      </div>
       <CommandPalette />
     </div>
   );

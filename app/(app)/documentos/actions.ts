@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { assertAccesoEmpresa } from "@/lib/auth";
 import { asignarCorrelativo } from "@/lib/correlativo";
+import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
 import {
   type DocumentoInput,
@@ -76,6 +77,14 @@ export async function actualizarDocumento(id: string, input: unknown) {
 
   const { subtotal, total } = calcularTotales(datos.items, datos.descuento);
 
+  // Punto 4, ronda de cierre de huecos: con dos usuarios operando el mismo
+  // documento, editar cantidad/precio/descripción de un ítem ya guardado no
+  // dejaba ningún rastro — un hueco de confianza real, no solo un detalle.
+  // Entrada genérica (no diff campo por campo todavía): basta con que quede
+  // registrado que pasó, cuándo y quién. Reutiliza el estado actual porque
+  // esta acción no cambia el estado del documento, solo su contenido.
+  const usuarioActual = await getUsuarioActual();
+
   await db.$transaction(async (tx) => {
     await tx.itemDocumento.deleteMany({ where: { documentoId: id } });
     await tx.documento.update({
@@ -95,6 +104,13 @@ export async function actualizarDocumento(id: string, input: unknown) {
         items: {
           create: datos.items.map((item, i) => ({ ...item, orden: i })),
         },
+      },
+    });
+    await tx.historialEstado.create({
+      data: {
+        documentoId: id,
+        estado: existente.estado,
+        nota: `Documento editado por ${usuarioActual?.nombre ?? "un usuario"}`,
       },
     });
   });
@@ -176,5 +192,84 @@ export async function duplicarDocumento(id: string) {
   });
 
   revalidatePath("/documentos");
+  redirect(`/documentos/${nuevo.id}`);
+}
+
+// Punto 2, ronda de cierre de huecos: convertir una cotización/propuesta ya
+// aceptada en factura sin retipear nada. Mismo patrón que duplicarDocumento
+// (correlativo nuevo, mismos ítems/totales) pero además: cambia el tipo a
+// FACTURA, y deja un registro cruzado en el historial de AMBOS documentos —
+// no solo en el nuevo — para que quede trazable cuál factura salió de cuál
+// cotización y viceversa (ver docs/data-model.md, "nunca se pierde el
+// historial").
+export async function convertirAFactura(id: string) {
+  const original = await db.documento.findUnique({
+    where: { id },
+    include: { items: { orderBy: { orden: "asc" } } },
+  });
+  if (!original) throw new Error("Documento no encontrado");
+  await assertAccesoEmpresa(original.empresaId);
+
+  if (original.tipo === "FACTURA") {
+    throw new Error("Este documento ya es una factura");
+  }
+  if (original.estado !== "ACEPTADA") {
+    throw new Error("Solo se puede convertir a factura una cotización o propuesta aceptada");
+  }
+
+  const nuevo = await db.$transaction(async (tx) => {
+    const correlativo = await asignarCorrelativo(tx, original.empresaId);
+
+    const factura = await tx.documento.create({
+      data: {
+        empresaId: original.empresaId,
+        tipo: "FACTURA",
+        correlativo,
+        clienteId: original.clienteId,
+        fecha: new Date(),
+        vigenciaDias: original.vigenciaDias,
+        condicionesPago: original.condicionesPago,
+        descripcionGeneral: original.descripcionGeneral,
+        subtotal: original.subtotal,
+        descuento: original.descuento,
+        total: original.total,
+        notas: original.notas ?? [],
+        // anexos solo aplica a propuestas (ver schema.prisma) — una factura
+        // nunca los lleva, aunque el documento original fuera una propuesta.
+        duplicadoDeId: original.id,
+        items: {
+          create: original.items.map((item, i) => ({
+            cantidad: item.cantidad,
+            descripcion: item.descripcion,
+            precioUnitario: item.precioUnitario,
+            orden: i,
+          })),
+        },
+        historial: {
+          create: {
+            estado: "BORRADOR",
+            nota: `Generada a partir de la cotización TPM-${original.correlativo}`,
+          },
+        },
+      },
+    });
+
+    await tx.documento.update({
+      where: { id: original.id },
+      data: { estado: "FACTURADA" },
+    });
+    await tx.historialEstado.create({
+      data: {
+        documentoId: original.id,
+        estado: "FACTURADA",
+        nota: `Facturada como TPM-${factura.correlativo}`,
+      },
+    });
+
+    return factura;
+  });
+
+  revalidatePath("/documentos");
+  revalidatePath(`/documentos/${original.id}`);
   redirect(`/documentos/${nuevo.id}`);
 }

@@ -68,7 +68,11 @@ export function ServiciosTable({
               </Button>
             }
           />
-          <ToggleActivoServicio id={row.original.id} activo={row.original.activo} />
+          <ToggleActivoServicio
+            id={row.original.id}
+            nombre={row.original.nombre}
+            activo={row.original.activo}
+          />
         </div>
       ),
     },

@@ -1,6 +1,7 @@
 import { ArrowLeftIcon, PencilIcon, PrinterIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ConvertirAFacturaButton } from "@/components/app/convertir-a-factura-button";
 import { DocumentoEstadoForm } from "@/components/app/documento-estado-form";
 import { DocumentoResumen } from "@/components/app/documento-resumen";
 import { DuplicarDocumentoButton } from "@/components/app/duplicar-documento-button";
@@ -70,6 +71,12 @@ export default async function DocumentoDetallePage({
             documentoId={documento.id}
             correlativo={documento.correlativo}
           />
+          {documento.tipo !== "FACTURA" && documento.estado === "ACEPTADA" && (
+            <ConvertirAFacturaButton
+              documentoId={documento.id}
+              correlativo={documento.correlativo}
+            />
+          )}
         </div>
       </div>
 

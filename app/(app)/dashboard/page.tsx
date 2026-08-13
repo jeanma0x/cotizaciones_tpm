@@ -105,7 +105,7 @@ export default async function DashboardPage() {
     }),
     db.documento.findMany({
       where: { ...where, fecha: { gte: hace12Meses } },
-      select: { fecha: true, tipo: true, total: true },
+      select: { fecha: true, tipo: true, total: true, empresa: { select: { moneda: true } } },
     }),
     db.itemDocumento.findMany({
       where: { documento: { empresaId: { in: empresasPermitidas } } },
@@ -182,21 +182,47 @@ export default async function DashboardPage() {
   itemsAtencion.sort((a, b) => ORDEN_URGENCIA[a.motivo] - ORDEN_URGENCIA[b.motivo]);
 
   // ---- Zona 2: tendencia mensual (cotizado vs. facturado) ----
-  const mesesMap = new Map<string, { mes: string; cotizado: number; facturado: number }>();
-  for (let i = MESES_TENDENCIA - 1; i >= 0; i--) {
-    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
-    const clave = `${d.getFullYear()}-${d.getMonth()}`;
-    const label = d.toLocaleDateString("es-GT", { month: "short", year: "2-digit" });
-    mesesMap.set(clave, { mes: label, cotizado: 0, facturado: 0 });
+  // Una serie de meses POR MONEDA — nunca sumar GTQ y USD en el mismo número
+  // (Panamá y una parte de Estados Unidos facturan en USD, el resto en GTQ).
+  // Ver punto 1 de la ronda de cierre de huecos: el mismo criterio que ya
+  // se aplicaba en "Monto vigente cotizado" faltaba acá.
+  function mesesVacios() {
+    const mapa = new Map<string, { mes: string; cotizado: number; facturado: number }>();
+    for (let i = MESES_TENDENCIA - 1; i >= 0; i--) {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      const clave = `${d.getFullYear()}-${d.getMonth()}`;
+      const label = d.toLocaleDateString("es-GT", { month: "short", year: "2-digit" });
+      mapa.set(clave, { mes: label, cotizado: 0, facturado: 0 });
+    }
+    return mapa;
+  }
+
+  const mesesPorMoneda = new Map<string, Map<string, { mes: string; cotizado: number; facturado: number }>>();
+  // Se pre-siembra con TODAS las monedas de las empresas permitidas, no solo
+  // las que ya tienen documentos en los últimos 12 meses — si Panamá (USD)
+  // no tiene actividad todavía, tiene que verse como "necesitás más
+  // historial" en su propia sección, nunca desaparecer sin explicación.
+  for (const moneda of new Set(empresas.map((e) => e.moneda))) {
+    mesesPorMoneda.set(moneda, mesesVacios());
   }
   for (const doc of docsTendencia) {
+    const moneda = doc.empresa.moneda;
+    if (!mesesPorMoneda.has(moneda)) mesesPorMoneda.set(moneda, mesesVacios());
     const clave = `${doc.fecha.getFullYear()}-${doc.fecha.getMonth()}`;
-    const fila = mesesMap.get(clave);
+    const fila = mesesPorMoneda.get(moneda)!.get(clave);
     if (!fila) continue;
     if (doc.tipo === "FACTURA") fila.facturado += Number(doc.total);
     else fila.cotizado += Number(doc.total);
   }
-  const tendenciaData = Array.from(mesesMap.values());
+  // Monedas ordenadas por actividad total, para que la de más movimiento
+  // (normalmente GTQ) aparezca primero.
+  const tendenciaPorMoneda = Array.from(mesesPorMoneda.entries())
+    .map(([moneda, mapa]) => ({
+      moneda,
+      data: Array.from(mapa.values()),
+      actividad: Array.from(mapa.values()).reduce((acc, f) => acc + f.cotizado + f.facturado, 0),
+    }))
+    .sort((a, b) => b.actividad - a.actividad);
 
   // ---- Zona 4: desglose por empresa ----
   const desgloseEmpresa = empresas.map((empresa) => {
@@ -219,21 +245,25 @@ export default async function DashboardPage() {
   // nombre. Si el cliente edita la descripción del ítem, deja de contar acá.
   // Señalado como limitación real del modelo de datos, no una decisión de
   // diseño — ver conversación.
-  const porNombre = new Map<string, { cantidad: number; monto: number }>();
+  const porNombre = new Map<string, { cantidad: number }>();
   for (const item of itemsCatalogo) {
     const clave = item.descripcion.trim().toLowerCase();
-    const actual = porNombre.get(clave) ?? { cantidad: 0, monto: 0 };
+    const actual = porNombre.get(clave) ?? { cantidad: 0 };
     actual.cantidad += Number(item.cantidad);
-    actual.monto += Number(item.cantidad) * Number(item.precioUnitario);
     porNombre.set(clave, actual);
   }
   const rankingServicios = servicios
     .map((s) => ({
       nombre: s.nombre,
-      ...(porNombre.get(s.nombre.trim().toLowerCase()) ?? { cantidad: 0, monto: 0 }),
+      ...(porNombre.get(s.nombre.trim().toLowerCase()) ?? { cantidad: 0 }),
     }))
     .filter((s) => s.cantidad > 0)
-    .sort((a, b) => b.monto - a.monto)
+    // Por cantidad, no por monto: "monto" suma ítems de servicios que
+    // pueden pertenecer a empresas con monedas distintas (coincidencia de
+    // nombre entre catálogos), y además "monto" nunca se muestra en esta
+    // tarjeta — ordenar por lo mismo que se ve evita un orden que no
+    // coincide con lo que el usuario lee (ver punto 1, cierre de huecos).
+    .sort((a, b) => b.cantidad - a.cantidad)
     .slice(0, 5);
   const maxCantidadServicio = Math.max(...rankingServicios.map((s) => s.cantidad), 1);
 
@@ -305,17 +335,20 @@ export default async function DashboardPage() {
       {/* Zona 3 — atención requerida: lista accionable, nunca solo un número */}
       <AtencionRequerida items={itemsAtencion} />
 
-      {/* Zona 2 — tendencia mensual */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-            Tendencia — cotizado vs. facturado (últimos 12 meses)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TendenciaMensualChart data={tendenciaData} />
-        </CardContent>
-      </Card>
+      {/* Zona 2 — tendencia mensual, una tarjeta por moneda: nunca sumar GTQ
+          y USD en el mismo gráfico (ver punto 1, ronda de cierre de huecos). */}
+      {tendenciaPorMoneda.map(({ moneda, data }) => (
+        <Card key={moneda}>
+          <CardHeader>
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+              Tendencia — cotizado vs. facturado ({moneda}, últimos 12 meses)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TendenciaMensualChart data={data} />
+          </CardContent>
+        </Card>
+      ))}
 
       {/* Zonas 4-7 — grilla más pareja, container queries para reacomodarse */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

@@ -15,6 +15,7 @@ import {
   SunIcon,
   Truck,
   Users,
+  XIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useTheme } from "next-themes";
@@ -83,11 +84,43 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
 
   const [colapsado, setColapsado] = useState(false);
   const [montado, setMontado] = useState(false);
+  // Aparte de "colapsado" (angosto/ancho, solo aplica de md para arriba): en
+  // mobile el sidebar entero se oculta fuera de pantalla y se desliza como
+  // panel superpuesto — antes se quedaba fijo a su ancho completo (240px) en
+  // CUALQUIER tamaño de pantalla, aplastando el contenido en una franja
+  // angosta en un teléfono real. Ver punto 7, ronda de cierre de huecos.
+  const [mobileAbierto, setMobileAbierto] = useState(false);
+  // El colapso angosto (solo íconos) es una preferencia de escritorio — en
+  // mobile el panel siempre se abre a ancho completo, sin importar si quedó
+  // colapsado la última vez en una pantalla grande.
+  const [esMobile, setEsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setEsMobile(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setEsMobile(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
   useEffect(() => {
     const guardado = window.localStorage.getItem(LOCALSTORAGE_KEY);
     if (guardado === "true") setColapsado(true);
     setMontado(true);
   }, []);
+  useEffect(() => {
+    setMobileAbierto(false);
+  }, [pathname]);
+  // El botón que abre el panel vive en MobileTopBar, fuera de este
+  // componente (acá adentro no puede estar visible: el <aside> completo
+  // arranca oculto fuera de pantalla en mobile). Mismo patrón que ya usa el
+  // buscador con "abrir-command-palette".
+  useEffect(() => {
+    function onAbrir() {
+      setMobileAbierto(true);
+    }
+    window.addEventListener("abrir-sidebar-movil", onAbrir);
+    return () => window.removeEventListener("abrir-sidebar-movil", onAbrir);
+  }, []);
+  const colapsadoEfectivo = colapsado && !esMobile;
 
   function alternarColapso() {
     setColapsado((actual) => {
@@ -98,15 +131,27 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
   }
 
   return (
-    <motion.aside
-      animate={{ width: colapsado ? ANCHO_COLAPSADO : ANCHO_EXPANDIDO }}
-      initial={false}
-      transition={montado ? { duration: 0.2, ease: [0.2, 0, 0, 1] } : { duration: 0 }}
-      className="flex h-full shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar"
-    >
+    <>
+      {mobileAbierto && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          aria-hidden="true"
+          onClick={() => setMobileAbierto(false)}
+        />
+      )}
+
+      <motion.aside
+        animate={{ width: colapsadoEfectivo ? ANCHO_COLAPSADO : ANCHO_EXPANDIDO }}
+        initial={false}
+        transition={montado ? { duration: 0.2, ease: [0.2, 0, 0, 1] } : { duration: 0 }}
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar transition-transform duration-200 md:static md:z-auto md:translate-x-0",
+          mobileAbierto ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
       <div className="flex items-center gap-2 px-5 py-6">
         <Cog className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
-        {!colapsado && (
+        {!colapsadoEfectivo && (
           <div className="flex min-w-0 flex-col">
             <span className="truncate font-mono text-lg font-extrabold tracking-wide text-sidebar-foreground">
               TPM
@@ -116,10 +161,19 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
             </span>
           </div>
         )}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Cerrar menú"
+          onClick={() => setMobileAbierto(false)}
+          className="ml-auto shrink-0 text-sidebar-foreground/70 hover:bg-white/10 hover:text-sidebar-foreground md:hidden"
+        >
+          <XIcon className="h-5 w-5" />
+        </Button>
       </div>
 
       <div className="px-3">
-        {colapsado ? (
+        {colapsadoEfectivo ? (
           <Tooltip>
             <TooltipTrigger
               render={
@@ -164,21 +218,21 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
           const link = (
             <Link
               href={href}
-              aria-label={colapsado ? label : undefined}
+              aria-label={colapsadoEfectivo ? label : undefined}
               className={cn(
                 "flex items-center gap-3 rounded px-3 py-2 text-sm font-medium transition-colors duration-(--motion-fast)",
-                colapsado && "justify-center px-0",
+                colapsadoEfectivo && "justify-center px-0",
                 activo
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground/80 hover:bg-white/10 hover:text-sidebar-foreground",
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {!colapsado && <span className="truncate">{label}</span>}
+              {!colapsadoEfectivo && <span className="truncate">{label}</span>}
             </Link>
           );
 
-          if (!colapsado) return <div key={href}>{link}</div>;
+          if (!colapsadoEfectivo) return <div key={href}>{link}</div>;
 
           return (
             <Tooltip key={href}>
@@ -192,11 +246,11 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
       <div
         className={cn(
           "mt-auto flex items-center gap-2 border-t border-sidebar-border px-5 py-4",
-          colapsado && "flex-col justify-center px-0",
+          colapsadoEfectivo && "flex-col justify-center px-0",
         )}
       >
         <UserButton />
-        <SelectorTema colapsado={colapsado} />
+        <SelectorTema colapsado={colapsadoEfectivo} />
       </div>
 
       <Tooltip>
@@ -206,7 +260,7 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
               type="button"
               onClick={alternarColapso}
               aria-label={colapsado ? "Expandir menú" : "Colapsar menú"}
-              className="flex items-center justify-center gap-2 border-t border-sidebar-border py-3 text-sidebar-foreground/60 transition-colors duration-(--motion-fast) hover:bg-white/10 hover:text-sidebar-foreground"
+              className="hidden items-center justify-center gap-2 border-t border-sidebar-border py-3 text-sidebar-foreground/60 transition-colors duration-(--motion-fast) hover:bg-white/10 hover:text-sidebar-foreground md:flex"
             >
               {colapsado ? (
                 <ChevronsRightIcon className="h-4 w-4" />
@@ -220,6 +274,7 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
           {colapsado ? "Expandir menú" : "Colapsar menú"}
         </TooltipContent>
       </Tooltip>
-    </motion.aside>
+      </motion.aside>
+    </>
   );
 }

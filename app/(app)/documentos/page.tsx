@@ -2,6 +2,7 @@ import { ClipboardListIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { DocumentosFiltros } from "@/components/app/documentos-filtros";
 import { DocumentosTable, type FilaDocumento } from "@/components/app/documentos-table";
+import { ExportarDocumentosDialog } from "@/components/app/exportar-documentos-dialog";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
@@ -99,10 +100,13 @@ export default async function DocumentosPage({
         title="Documentos"
         icon={ClipboardListIcon}
         actions={
-          <Button nativeButton={false} render={<Link href="/documentos/nuevo" />}>
-            <PlusIcon className="h-4 w-4" />
-            Nuevo documento
-          </Button>
+          <>
+            <ExportarDocumentosDialog />
+            <Button nativeButton={false} render={<Link href="/documentos/nuevo" />}>
+              <PlusIcon className="h-4 w-4" />
+              Nuevo documento
+            </Button>
+          </>
         }
       />
 
