@@ -167,7 +167,7 @@ export default async function DashboardPage() {
             ) : (
               Object.entries(montoVigentePorMoneda).map(([moneda, monto]) => (
                 <p key={moneda} className="font-mono text-2xl font-bold text-brand">
-                  {moneda} <AnimatedNumber value={monto} formato={(n) => n.toFixed(2)} />
+                  {moneda} <AnimatedNumber value={monto} decimals={2} />
                 </p>
               ))
             )}
@@ -182,7 +182,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="font-mono text-2xl font-bold text-brand">
-              <AnimatedNumber value={tasaConversion} formato={(n) => `${n.toFixed(0)}%`} />
+              <AnimatedNumber value={tasaConversion} suffix="%" />
             </p>
           </CardContent>
         </Card>
