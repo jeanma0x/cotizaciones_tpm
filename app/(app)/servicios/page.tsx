@@ -1,5 +1,6 @@
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { BuscadorLista } from "@/components/app/buscador-lista";
+import { PageHeader } from "@/components/app/page-header";
 import { ServicioFormDialog } from "@/components/app/servicio-form-dialog";
 import { ToggleActivoServicio } from "@/components/app/toggle-activo-servicio";
 import { Badge } from "@/components/ui/badge";
@@ -40,18 +41,20 @@ export default async function ServiciosPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-text-primary">Servicios</h1>
-        <ServicioFormDialog
-          empresas={empresas}
-          trigger={
-            <Button>
-              <PlusIcon className="h-4 w-4" />
-              Nuevo servicio
-            </Button>
-          }
-        />
-      </div>
+      <PageHeader
+        title="Servicios"
+        actions={
+          <ServicioFormDialog
+            empresas={empresas}
+            trigger={
+              <Button>
+                <PlusIcon className="h-4 w-4" />
+                Nuevo servicio
+              </Button>
+            }
+          />
+        }
+      />
 
       <BuscadorLista basePath="/servicios" placeholder="Buscar por nombre…" />
 

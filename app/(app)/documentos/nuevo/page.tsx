@@ -1,6 +1,7 @@
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { DocumentoForm } from "@/components/app/documento-form";
+import { PageHeader } from "@/components/app/page-header";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -24,7 +25,7 @@ export default async function NuevoDocumentoPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <Link
           href="/documentos"
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -32,7 +33,7 @@ export default async function NuevoDocumentoPage() {
           <ArrowLeftIcon className="h-3.5 w-3.5" />
           Volver a documentos
         </Link>
-        <h1 className="text-xl font-semibold text-text-primary">Nuevo documento</h1>
+        <PageHeader title="Nuevo documento" />
       </div>
       <DocumentoForm
         empresas={empresas}

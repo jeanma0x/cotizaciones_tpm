@@ -3,6 +3,7 @@ import { AnimatedNumber } from "@/components/app/animated-number";
 import { AtencionRequerida, type ItemAtencion } from "@/components/app/atencion-requerida";
 import { DistribucionEstadoChart } from "@/components/app/distribucion-estado-chart";
 import { EstadoBadge } from "@/components/app/estado-badge";
+import { PageHeader } from "@/components/app/page-header";
 import { TendenciaMensualChart } from "@/components/app/tendencia-mensual-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmpresasPermitidas } from "@/lib/auth";
@@ -125,6 +126,7 @@ export default async function DashboardPage() {
     label: TIPO_LABELS[tipo],
     cantidad: porTipo.find((f) => f.tipo === tipo)?._count ?? 0,
   }));
+  const maxCantidadPorTipo = Math.max(...desgloseTipo.map((d) => d.cantidad), 1);
 
   const chartData = porEstado.map((f) => ({
     estado: f.estado,
@@ -201,6 +203,7 @@ export default async function DashboardPage() {
       .reduce((acc, f) => acc + Number(f._sum.total ?? 0), 0);
     return { empresa, totalDocs, facturado, cotizado };
   });
+  const maxDocsPorEmpresa = Math.max(...desgloseEmpresa.map((d) => d.totalDocs), 1);
 
   // ---- Zona 6: servicios más cotizados ----
   // Aproximación por nombre: ItemDocumento no guarda una referencia al
@@ -228,7 +231,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-xl font-semibold text-text-primary">Panel</h1>
+      <PageHeader title="Panel" />
 
       {/* Zona 1 — estado del negocio ahora mismo: ancho completo, cifras --text-3xl */}
       <div className="grid grid-cols-1 gap-6 rounded-lg border border-border bg-card p-6 sm:grid-cols-3">
@@ -285,20 +288,27 @@ export default async function DashboardPage() {
               Desglose por empresa
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
+          <CardContent className="flex flex-col gap-4">
             {desgloseEmpresa.map(({ empresa, totalDocs, facturado, cotizado }) => (
-              <div
-                key={empresa.id}
-                className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2 text-sm last:border-b-0 last:pb-0"
-              >
-                <span className="font-medium text-text-primary">{empresa.nombre}</span>
-                <span className="text-muted-foreground">{totalDocs} documentos</span>
-                <span className="font-mono text-brand">
-                  Facturado {empresa.moneda} {facturado.toFixed(2)}
-                </span>
-                <span className="font-mono text-status-enviada">
-                  Cotizado {empresa.moneda} {cotizado.toFixed(2)}
-                </span>
+              <div key={empresa.id} className="flex flex-col gap-1.5 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-text-primary">{empresa.nombre}</span>
+                  <span className="text-muted-foreground">{totalDocs} documentos</span>
+                  <span className="font-mono text-brand">
+                    Facturado {empresa.moneda} {facturado.toFixed(2)}
+                  </span>
+                  <span className="font-mono text-status-enviada">
+                    Cotizado {empresa.moneda} {cotizado.toFixed(2)}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-brand"
+                    style={{
+                      width: `${maxDocsPorEmpresa > 0 ? (totalDocs / maxDocsPorEmpresa) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
               </div>
             ))}
           </CardContent>
@@ -310,11 +320,21 @@ export default async function DashboardPage() {
               Desglose por tipo
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+          <CardContent className="flex flex-col gap-3">
             {desgloseTipo.map(({ tipo, label, cantidad }) => (
-              <div key={tipo} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="font-mono font-semibold text-text-primary">{cantidad}</span>
+              <div key={tipo} className="flex flex-col gap-1.5 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{label}</span>
+                  <span className="font-mono font-semibold text-text-primary">{cantidad}</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-accent"
+                    style={{
+                      width: `${maxCantidadPorTipo > 0 ? (cantidad / maxCantidadPorTipo) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
               </div>
             ))}
           </CardContent>

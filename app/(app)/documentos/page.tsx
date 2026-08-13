@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DocumentosFiltros } from "@/components/app/documentos-filtros";
 import { DocumentoVistaRapidaSheet } from "@/components/app/documento-vista-rapida-sheet";
 import { EstadoBadge } from "@/components/app/estado-badge";
+import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -94,13 +95,15 @@ export default async function DocumentosPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-text-primary">Documentos</h1>
-        <Button render={<Link href="/documentos/nuevo" />}>
-          <PlusIcon className="h-4 w-4" />
-          Nuevo documento
-        </Button>
-      </div>
+      <PageHeader
+        title="Documentos"
+        actions={
+          <Button render={<Link href="/documentos/nuevo" />}>
+            <PlusIcon className="h-4 w-4" />
+            Nuevo documento
+          </Button>
+        }
+      />
 
       <DocumentosFiltros empresas={empresas} />
 

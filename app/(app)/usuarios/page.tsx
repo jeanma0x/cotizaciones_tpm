@@ -3,6 +3,7 @@ import { AccesoUsuarioDialog } from "@/components/app/acceso-usuario-dialog";
 import { AvatarIniciales } from "@/components/app/avatar-iniciales";
 import { EliminarUsuarioButton } from "@/components/app/eliminar-usuario-button";
 import { InvitarUsuarioDialog } from "@/components/app/invitar-usuario-dialog";
+import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { assertSuperusuario } from "@/lib/auth";
@@ -21,10 +22,7 @@ export default async function UsuariosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-text-primary">Usuarios</h1>
-        <InvitarUsuarioDialog empresas={empresas} />
-      </div>
+      <PageHeader title="Usuarios" actions={<InvitarUsuarioDialog empresas={empresas} />} />
 
       {/* Tarjetas, no tabla — nunca van a ser más de un puñado de usuarios. */}
       <div className="flex flex-col gap-3">

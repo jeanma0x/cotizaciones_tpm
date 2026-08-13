@@ -25,9 +25,9 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar esSuperusuario={usuario.rol === "SUPERUSUARIO"} />
-      <main className="flex-1 bg-surface-sunken p-8">
+      <main className="flex-1 overflow-y-auto bg-surface-sunken p-8">
         <PageTransition>{children}</PageTransition>
       </main>
       <CommandPalette />

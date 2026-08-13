@@ -2,7 +2,17 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import autoAnimate from "@formkit/auto-animate";
-import { CheckIcon, PlusIcon, TrashIcon, XIcon } from "lucide-react";
+import {
+  Building2Icon,
+  CalendarIcon,
+  CheckIcon,
+  ListChecksIcon,
+  PaperclipIcon,
+  PlusIcon,
+  StickyNoteIcon,
+  TrashIcon,
+  XIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -187,6 +197,13 @@ export function DocumentoForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
       <div className="form-section">
+        <div className="mb-4 flex items-center gap-2">
+          <Building2Icon className="h-4 w-4 text-accent" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Cliente y empresa
+          </h2>
+        </div>
+
         <div className="mb-4 flex flex-col gap-1.5">
           <Label htmlFor="tipo">Tipo de documento</Label>
           <div className="pill-group" role="radiogroup" aria-label="Tipo de documento" id="tipo">
@@ -206,7 +223,7 @@ export function DocumentoForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="empresaId">Empresa</Label>
             <Select
@@ -242,7 +259,18 @@ export function DocumentoForm({
               <p className="text-xs text-destructive">{errors.clienteId.message}</p>
             )}
           </div>
+        </div>
+      </div>
 
+      <div className="form-section">
+        <div className="mb-4 flex items-center gap-2">
+          <CalendarIcon className="h-4 w-4 text-accent" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Detalles de la oferta
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="fecha">Fecha</Label>
             <Input id="fecha" type="date" {...register("fecha")} />
@@ -270,9 +298,12 @@ export function DocumentoForm({
 
       <div className="form-section">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Ítems
-          </h2>
+          <div className="flex items-center gap-2">
+            <ListChecksIcon className="h-4 w-4 text-accent" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Ítems
+            </h2>
+          </div>
           <div className="flex gap-2">
             {serviciosDeEmpresa.length > 0 && (
               <Select onValueChange={agregarDesdeServicio} value="">
@@ -390,9 +421,12 @@ export function DocumentoForm({
 
       <div className="form-section">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Notas
-          </h2>
+          <div className="flex items-center gap-2">
+            <StickyNoteIcon className="h-4 w-4 text-accent" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Notas
+            </h2>
+          </div>
           <Button
             type="button"
             variant="outline"
@@ -439,9 +473,12 @@ export function DocumentoForm({
       {tipo === "PROPUESTA" && (
         <div className="form-section">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Anexos
-            </h2>
+            <div className="flex items-center gap-2">
+              <PaperclipIcon className="h-4 w-4 text-accent" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Anexos
+              </h2>
+            </div>
             <Button
               type="button"
               variant="outline"

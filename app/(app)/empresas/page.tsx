@@ -1,5 +1,6 @@
 import { Building2Icon, PencilIcon } from "lucide-react";
 import { EmpresaFormDialog } from "@/components/app/empresa-form-dialog";
+import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { assertSuperusuario, getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -15,7 +16,7 @@ export default async function EmpresasPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold text-text-primary">Empresas</h1>
+      <PageHeader title="Empresas" />
 
       {/* Tarjetas, no tabla — siempre son pocas (4 hoy), una fila de tabla
           larga con montañas de espacio vacío se ve a medio construir. */}

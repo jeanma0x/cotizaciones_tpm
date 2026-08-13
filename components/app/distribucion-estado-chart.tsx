@@ -39,16 +39,33 @@ export function DistribucionEstadoChart({
     );
   }
 
+  const conDatos = data.filter((d) => d.cantidad > 0);
+
   return (
-    <ChartContainer config={config} className="mx-auto aspect-square max-h-52">
-      <PieChart>
-        <ChartTooltip content={<ChartTooltipContent nameKey="estado" hideLabel />} />
-        <Pie data={data} dataKey="cantidad" nameKey="estado" innerRadius={50} strokeWidth={2}>
-          {data.map((d) => (
-            <Cell key={d.estado} fill={COLORES_ESTADO[d.estado] ?? "var(--color-text-secondary)"} />
-          ))}
-        </Pie>
-      </PieChart>
-    </ChartContainer>
+    <div className="flex flex-col items-center gap-3">
+      <ChartContainer config={config} className="mx-auto aspect-square max-h-44">
+        <PieChart>
+          <ChartTooltip content={<ChartTooltipContent nameKey="estado" hideLabel />} />
+          <Pie data={data} dataKey="cantidad" nameKey="estado" innerRadius={45} strokeWidth={2}>
+            {data.map((d) => (
+              <Cell key={d.estado} fill={COLORES_ESTADO[d.estado] ?? "var(--color-text-secondary)"} />
+            ))}
+          </Pie>
+        </PieChart>
+      </ChartContainer>
+      {/* Sin esto el donut es decorativo, no informativo. */}
+      <div className="grid w-full grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+        {conDatos.map((d) => (
+          <div key={d.estado} className="flex items-center gap-1.5">
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: COLORES_ESTADO[d.estado] }}
+            />
+            <span className="truncate text-muted-foreground">{d.label}</span>
+            <span className="ml-auto font-mono font-medium text-text-primary">{d.cantidad}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

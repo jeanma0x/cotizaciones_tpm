@@ -2,6 +2,7 @@ import { PencilIcon, PlusIcon } from "lucide-react";
 import { AvatarIniciales } from "@/components/app/avatar-iniciales";
 import { BuscadorLista } from "@/components/app/buscador-lista";
 import { ClienteFormDialog } from "@/components/app/cliente-form-dialog";
+import { PageHeader } from "@/components/app/page-header";
 import { ToggleActivoCliente } from "@/components/app/toggle-activo-cliente";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,18 +49,20 @@ export default async function ClientesPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-text-primary">Clientes</h1>
-        <ClienteFormDialog
-          empresas={empresas}
-          trigger={
-            <Button>
-              <PlusIcon className="h-4 w-4" />
-              Nuevo cliente
-            </Button>
-          }
-        />
-      </div>
+      <PageHeader
+        title="Clientes"
+        actions={
+          <ClienteFormDialog
+            empresas={empresas}
+            trigger={
+              <Button>
+                <PlusIcon className="h-4 w-4" />
+                Nuevo cliente
+              </Button>
+            }
+          />
+        }
+      />
 
       <BuscadorLista basePath="/clientes" placeholder="Buscar por nombre o NIT…" />
 

@@ -17,22 +17,31 @@ const config = {
   facturado: { label: "Facturado", color: "var(--color-accent)" },
 } satisfies ChartConfig;
 
+function formatearEje(valor: number) {
+  if (valor === 0) return "0";
+  if (Math.abs(valor) >= 1000) return `${(valor / 1000).toFixed(valor % 1000 === 0 ? 0 : 1)}k`;
+  return String(valor);
+}
+
 export function TendenciaMensualChart({
   data,
 }: {
   data: { mes: string; cotizado: number; facturado: number }[];
 }) {
-  if (data.every((d) => d.cotizado === 0 && d.facturado === 0)) {
+  const mesesConDatos = data.filter((d) => d.cotizado > 0 || d.facturado > 0).length;
+
+  if (mesesConDatos < 3) {
     return (
-      <p className="flex h-56 items-center justify-center text-sm text-muted-foreground">
-        Todavía no hay suficiente historial para graficar una tendencia.
+      <p className="flex h-56 items-center justify-center text-center text-sm text-muted-foreground">
+        Necesitás más historial para ver una tendencia — todavía hay menos de 3
+        meses con actividad registrada.
       </p>
     );
   }
 
   return (
     <ChartContainer config={config} className="h-56 w-full">
-      <BarChart data={data}>
+      <BarChart data={data} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke="var(--color-border)" />
         <XAxis
           dataKey="mes"
@@ -44,7 +53,8 @@ export function TendenciaMensualChart({
           tickLine={false}
           axisLine={false}
           tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
-          width={40}
+          tickFormatter={formatearEje}
+          width={48}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
         <Bar dataKey="cotizado" fill="var(--navy-500)" radius={2} isAnimationActive animationDuration={400} />
