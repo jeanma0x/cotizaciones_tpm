@@ -1,4 +1,5 @@
 import { PencilIcon, PlusIcon } from "lucide-react";
+import { AvatarIniciales } from "@/components/app/avatar-iniciales";
 import { BuscadorLista } from "@/components/app/buscador-lista";
 import { ClienteFormDialog } from "@/components/app/cliente-form-dialog";
 import { ToggleActivoCliente } from "@/components/app/toggle-activo-cliente";
@@ -85,7 +86,12 @@ export default async function ClientesPage({
             )}
             {clientes.map((cliente) => (
               <TableRow key={cliente.id}>
-                <TableCell className="font-medium">{cliente.nombre}</TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-3">
+                    <AvatarIniciales nombre={cliente.nombre} />
+                    {cliente.nombre}
+                  </div>
+                </TableCell>
                 <TableCell>{cliente.empresa.nombre}</TableCell>
                 <TableCell className="font-mono text-xs">
                   {cliente.nit ?? "—"}

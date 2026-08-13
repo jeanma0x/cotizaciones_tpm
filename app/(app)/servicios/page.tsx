@@ -78,7 +78,7 @@ export default async function ServiciosPage({
               <TableRow key={servicio.id}>
                 <TableCell className="font-medium">{servicio.nombre}</TableCell>
                 <TableCell>{servicio.empresa.nombre}</TableCell>
-                <TableCell className="font-mono text-sm">
+                <TableCell className="font-mono text-lg font-semibold text-brand">
                   {servicio.empresa.moneda} {Number(servicio.precioFijo).toFixed(2)}
                 </TableCell>
                 <TableCell>
@@ -89,7 +89,7 @@ export default async function ServiciosPage({
                 <TableCell className="flex justify-end gap-2">
                   <ServicioFormDialog
                     empresas={empresas}
-                    servicio={servicio}
+                    servicio={{ ...servicio, precioFijo: Number(servicio.precioFijo) }}
                     trigger={
                       <Button variant="outline" size="sm">
                         <PencilIcon className="h-4 w-4" />

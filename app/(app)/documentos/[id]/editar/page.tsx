@@ -15,7 +15,24 @@ export default async function EditarDocumentoPage({
 
   const documento = await db.documento.findUnique({
     where: { id },
-    include: { items: { orderBy: { orden: "asc" } } },
+    select: {
+      id: true,
+      empresaId: true,
+      correlativo: true,
+      tipo: true,
+      clienteId: true,
+      fecha: true,
+      vigenciaDias: true,
+      condicionesPago: true,
+      descripcionGeneral: true,
+      descuento: true,
+      notas: true,
+      anexos: true,
+      items: {
+        orderBy: { orden: "asc" },
+        select: { cantidad: true, descripcion: true, precioUnitario: true },
+      },
+    },
   });
   if (!documento || !empresasPermitidas.includes(documento.empresaId)) {
     notFound();
@@ -52,8 +69,16 @@ export default async function EditarDocumentoPage({
       <DocumentoForm
         empresas={empresas}
         clientes={clientes}
-        servicios={servicios}
-        documento={documento}
+        servicios={servicios.map((s) => ({ ...s, precioFijo: Number(s.precioFijo) }))}
+        documento={{
+          ...documento,
+          descuento: Number(documento.descuento),
+          items: documento.items.map((item) => ({
+            ...item,
+            cantidad: Number(item.cantidad),
+            precioUnitario: Number(item.precioUnitario),
+          })),
+        }}
       />
     </div>
   );

@@ -1,14 +1,6 @@
-import { PencilIcon } from "lucide-react";
+import { Building2Icon, PencilIcon } from "lucide-react";
 import { EmpresaFormDialog } from "@/components/app/empresa-form-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { assertSuperusuario, getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -25,43 +17,49 @@ export default async function EmpresasPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold text-text-primary">Empresas</h1>
 
-      <div className="rounded border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>NIT</TableHead>
-              <TableHead>Moneda</TableHead>
-              <TableHead>Correlativo actual</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {empresas.map((empresa) => (
-              <TableRow key={empresa.id}>
-                <TableCell className="font-medium">{empresa.nombre}</TableCell>
-                <TableCell className="font-mono text-xs">
-                  {empresa.nit ?? "—"}
-                </TableCell>
-                <TableCell>{empresa.moneda}</TableCell>
-                <TableCell className="font-mono text-xs">
+      {/* Tarjetas, no tabla — siempre son pocas (4 hoy), una fila de tabla
+          larga con montañas de espacio vacío se ve a medio construir. */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {empresas.map((empresa) => (
+          <div key={empresa.id} className="form-section flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand">
+                  <Building2Icon className="h-5 w-5 text-accent" />
+                </span>
+                <div>
+                  <p className="font-semibold text-text-primary">{empresa.nombre}</p>
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {empresa.nit ?? "Sin NIT"}
+                  </p>
+                </div>
+              </div>
+              <EmpresaFormDialog
+                empresa={empresa}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    <PencilIcon className="h-4 w-4" />
+                    Editar
+                  </Button>
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Moneda</p>
+                <p className="font-mono font-medium text-text-primary">{empresa.moneda}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Correlativo actual
+                </p>
+                <p className="font-mono font-medium text-text-primary">
                   {empresa.correlativoActual}
-                </TableCell>
-                <TableCell className="text-right">
-                  <EmpresaFormDialog
-                    empresa={empresa}
-                    trigger={
-                      <Button variant="outline" size="sm">
-                        <PencilIcon className="h-4 w-4" />
-                        Editar
-                      </Button>
-                    }
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

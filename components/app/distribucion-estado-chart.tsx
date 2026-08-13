@@ -8,14 +8,18 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
+// Gráfico restringido a variaciones de navy + un solo acento ámbar para lo
+// que requiere atención — nunca la paleta de colores semánticos completa
+// (success/danger/status-*), que se reserva para badges de estado en texto,
+// no para series de un gráfico. Ver design-system.md "Panel — gráficos".
 const COLORES_ESTADO: Record<string, string> = {
-  BORRADOR: "var(--color-text-secondary)",
-  ENVIADA: "var(--color-status-enviada)",
-  EN_NEGOCIACION: "var(--color-accent-hover)",
-  ACEPTADA: "var(--color-success)",
-  RECHAZADA: "var(--color-danger)",
-  VENCIDA: "var(--color-status-vencida)",
-  FACTURADA: "var(--color-brand)",
+  BORRADOR: "var(--navy-100)",
+  ENVIADA: "var(--navy-300)",
+  EN_NEGOCIACION: "var(--navy-500)",
+  ACEPTADA: "var(--navy-700)",
+  FACTURADA: "var(--navy-900)",
+  RECHAZADA: "var(--color-accent-hover)",
+  VENCIDA: "var(--color-accent)",
 };
 
 export function DistribucionEstadoChart({

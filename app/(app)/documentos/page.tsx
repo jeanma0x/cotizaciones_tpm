@@ -1,4 +1,4 @@
-import { PlusIcon } from "lucide-react";
+import { AlertTriangleIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { DocumentosFiltros } from "@/components/app/documentos-filtros";
 import { DocumentoVistaRapidaSheet } from "@/components/app/documento-vista-rapida-sheet";
@@ -70,7 +70,11 @@ export default async function DocumentosPage({
   const [documentos, empresas] = await Promise.all([
     db.documento.findMany({
       where,
-      include: { empresa: true, cliente: true },
+      include: {
+        empresa: true,
+        cliente: true,
+        historial: { orderBy: { fecha: "desc" }, take: 1 },
+      },
       orderBy: { createdAt: "desc" },
     }),
     db.empresa.findMany({
@@ -78,6 +82,15 @@ export default async function DocumentosPage({
       orderBy: { nombre: "asc" },
     }),
   ]);
+
+  const hoy = Date.now();
+  const UN_DIA_MS = 24 * 60 * 60 * 1000;
+  function diasSinRespuesta(doc: (typeof documentos)[number]) {
+    if (doc.estado !== "ENVIADA" && doc.estado !== "EN_NEGOCIACION") return null;
+    const ultimoCambio = doc.historial[0]?.fecha ?? doc.createdAt;
+    const dias = Math.floor((hoy - ultimoCambio.getTime()) / UN_DIA_MS);
+    return dias > 7 ? dias : null;
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -126,7 +139,15 @@ export default async function DocumentosPage({
                   {doc.empresa.moneda} {Number(doc.total).toFixed(2)}
                 </TableCell>
                 <TableCell>
-                  <EstadoBadge estado={doc.estado} />
+                  <div className="flex items-center gap-2">
+                    <EstadoBadge estado={doc.estado} />
+                    {diasSinRespuesta(doc) !== null && (
+                      <span className="flex items-center gap-1 text-xs font-medium text-danger">
+                        <AlertTriangleIcon className="h-3 w-3" />
+                        {diasSinRespuesta(doc)}d
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <DocumentoVistaRapidaSheet

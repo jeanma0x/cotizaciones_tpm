@@ -302,6 +302,41 @@ Elegir íconos con relación directa al negocio, evitando el paquete genérico d
 | Duplicar | `Copy` |
 | Exportar/Imprimir | `Printer` o `Download` |
 
+## Panel / dashboard — layout y estilo de gráficos
+
+El panel tiene 7 zonas (ver `scope.md`) — el error más fácil de cometer es tratarlas
+como bloques del mismo peso visual en una grilla uniforme. No lo son: la Zona 1
+(estado ahora) y la Zona 3 (atención requerida) son las que Oldemar necesita ver en
+menos de 3 segundos; el resto es exploración cuando él quiera profundizar.
+
+- **Zona 1** ocupa el ancho completo arriba, con las 3 cifras notablemente más grandes
+  que cualquier otro texto del panel (`--text-3xl`) — no del mismo tamaño que las
+  cifras de las zonas de desglose más abajo.
+- **Zona 3 (atención requerida)** nunca es una tarjeta más — dale un borde de
+  `--color-accent` o un fondo `--color-danger-bg` sutil si hay ítems pendientes, para
+  que se distinga del resto incluso sin leer el contenido. Si no hay nada pendiente,
+  mostrar un estado positivo explícito ("Todo al día — nada requiere tu atención"),
+  no ocultar la zona.
+- El resto de zonas (4-7) sí puede vivir en una grilla más pareja, con container
+  queries (ya especificado arriba) para que se reacomoden según el ancho disponible.
+
+**Gráficos (Recharts) — nunca los colores default de la librería:**
+
+- Usar exclusivamente los tokens semánticos de este documento para series de datos —
+  nunca la paleta arcoíris default de Recharts. Para el desglose por empresa (4
+  series), en vez de 4 colores arbitrarios, usar variaciones de `--color-brand` en
+  distintos tonos (navy-300, navy-500, navy-700, navy-900) + `--color-accent` para
+  destacar una sola serie a la vez si hace falta resaltar algo — mantiene la disciplina
+  de paleta incluso en los gráficos, que es justo donde más se nota cuando un sistema
+  "se sale" de su propia identidad.
+- Tooltips de Recharts reestilizados para que coincidan con las tarjetas del sistema
+  (`--color-surface`, borde `--color-border`, `--shadow-sm`) — el tooltip default de
+  Recharts es blanco genérico con sombra dura, se nota inmediatamente si se deja así.
+- Ejes y grillas de fondo en `--color-border` muy sutil, nunca negro puro — un gráfico
+  con líneas de grilla marcadas se lee "genérico de librería" al instante.
+- `isAnimationActive` y `animationDuration` explícitos (ver sección de Librerías) —
+  confirmar que no queden desactivados por accidente.
+
 ## Qué evitar explícitamente
 
 - Gradientes decorativos, glassmorphism, o sombras pesadas — no es la identidad de este

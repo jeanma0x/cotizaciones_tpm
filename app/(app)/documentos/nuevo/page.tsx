@@ -34,7 +34,11 @@ export default async function NuevoDocumentoPage() {
         </Link>
         <h1 className="text-xl font-semibold text-text-primary">Nuevo documento</h1>
       </div>
-      <DocumentoForm empresas={empresas} clientes={clientes} servicios={servicios} />
+      <DocumentoForm
+        empresas={empresas}
+        clientes={clientes}
+        servicios={servicios.map((s) => ({ ...s, precioFijo: Number(s.precioFijo) }))}
+      />
     </div>
   );
 }

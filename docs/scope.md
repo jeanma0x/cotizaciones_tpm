@@ -61,21 +61,58 @@ y qué queda fuera (Fase 3, futuro, no construir sin que se pida explícitamente
 
 ### 5. Panel / dashboard
 
-- Listado de todos los documentos con filtro por tipo, estado y empresa, y búsqueda por
-  cliente o correlativo.
-- Métricas generales: total de documentos, monto vigente cotizado, tasa de conversión,
-  documentos sin respuesta hace más de 7 días.
-- **Desglose por empresa**: monto cotizado/facturado y cantidad de documentos por cada
-  una de las 4 empresas (SIAP, Estados Unidos, Panamá, Individual) — con 4 empresas
-  activas, un total general ya no es suficiente, hace falta ver el aporte de cada una
-  por separado.
-- **Desglose por tipo de documento**: cantidad de cotizaciones, propuestas y facturas,
-  para diferenciar cuánto de la actividad es negociación (cotización/propuesta) vs.
-  facturación ya cerrada.
-- Un listado corto de los documentos más recientes directo en el panel (sin tener que
-  ir a la pantalla de Documentos para ver "qué pasó últimamente").
-- Una visualización simple (barra o dona) de la distribución de documentos por estado —
-  usando Recharts, ya disponible en el stack (ver `architecture.md`).
+El panel se organiza en zonas, en orden de importancia para Oldemar como dueño del
+negocio — no una fila de tarjetas genéricas seguida de gráficos sueltos. Cada zona
+responde una pregunta real que él se haría, no una métrica que "suena bien tener".
+
+**Zona 1 — Estado del negocio ahora mismo (lo primero que se ve)**
+
+- Monto vigente cotizado (pipeline: suma de Enviada + En negociación).
+- Tasa de conversión (Aceptada+Facturada / total enviado).
+- **Documentos que necesitan atención hoy** — un solo número que combina vencidos +
+  sin respuesta hace más de 7 días + próximos a vencer en menos de 3 días. Este
+  reemplaza al antiguo "sin respuesta hace 7+ días" aislado — es más útil como una
+  sola señal de "esto requiere que actúes" que como tres números sueltos.
+
+**Zona 2 — Tendencia (¿el negocio está creciendo?)**
+
+- Gráfico de monto cotizado vs. monto facturado por mes, últimos 6-12 meses. Es la
+  pregunta que un dueño de negocio se hace más — no aparecía en ninguna versión
+  anterior del dashboard.
+
+**Zona 3 — Atención requerida (lista accionable, no solo un número)**
+
+- Reemplaza la tarjeta aislada de alertas por una lista real: cada documento vencido,
+  sin respuesta, o próximo a vencer, con su cliente, correlativo y días — clickeable,
+  lleva directo al documento. Un número solo no le dice a Oldemar qué hacer; una lista
+  sí.
+
+**Zona 4 — Desglose por empresa**
+
+- Monto cotizado/facturado y cantidad de documentos por cada una de las 4 empresas
+  (SIAP, Estados Unidos, Panamá, Individual) — con 4 empresas activas, un total
+  general ya no alcanza, hace falta ver el aporte de cada una por separado.
+
+**Zona 5 — Desglose por tipo de documento y por estado**
+
+- Cantidad de cotizaciones, propuestas y facturas (cuánto de la actividad es
+  negociación vs. facturación ya cerrada).
+- Distribución de documentos por estado (Recharts, ya disponible en el stack).
+
+**Zona 6 — Servicios más cotizados**
+
+- Ranking simple de los servicios del catálogo más usados (por frecuencia o por monto
+  acumulado) — le dice a Oldemar en qué está poniendo más su negocio, información que
+  hoy no tiene de ningún lado.
+
+**Zona 7 — Documentos recientes**
+
+- Listado corto de la actividad más reciente, directo en el panel, sin tener que ir a
+  la pantalla de Documentos.
+
+Búsqueda y filtro por tipo/estado/empresa siguen viviendo en la pantalla de Documentos,
+no en el panel — el panel es para entender el negocio de un vistazo, la pantalla de
+Documentos es para trabajar documento por documento.
 
 ### 6. Acceso y diseño
 
