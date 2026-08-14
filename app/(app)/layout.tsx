@@ -26,7 +26,11 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    // "app-shell": ver @media print en globals.css — al imprimir desde el
+    // modal de "Ver / Imprimir" (documento-imprimir-dialog.tsx), todo esto
+    // se oculta y solo queda visible el documento (que el Dialog porta fuera
+    // de este div).
+    <div className="app-shell flex h-screen overflow-hidden">
       <Sidebar esSuperusuario={usuario.rol === "SUPERUSUARIO"} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <MobileTopBar />

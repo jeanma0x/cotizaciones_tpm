@@ -15,6 +15,7 @@ import {
   SunIcon,
   Truck,
   Users,
+  WalletIcon,
   XIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -38,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/documentos", label: "Documentos", icon: ClipboardList },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/servicios", label: "Servicios", icon: Truck },
+  { href: "/costos", label: "Costos", icon: WalletIcon },
 ];
 
 const NAV_ITEMS_SUPERUSUARIO: NavItem[] = [

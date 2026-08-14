@@ -8,6 +8,7 @@ import { type ClienteInput, clienteSchema } from "@/lib/validations/cliente";
 function normalizar(datos: ClienteInput) {
   return {
     empresaId: datos.empresaId,
+    tipo: datos.tipo,
     nombre: datos.nombre,
     nit: datos.nit || null,
     direccion: datos.direccion || null,
@@ -18,11 +19,24 @@ function normalizar(datos: ClienteInput) {
   };
 }
 
+// Los contactos solo aplican a tipo EMPRESA — si el formulario se guarda
+// como INDIVIDUAL, cualquier contacto que hubiera quedado cargado se
+// descarta (evita contactos huérfanos de un cambio de tipo).
+function contactosParaGuardar(datos: ClienteInput) {
+  if (datos.tipo !== "EMPRESA") return [];
+  return datos.contactos;
+}
+
 export async function crearCliente(input: unknown) {
   const datos = clienteSchema.parse(input);
   await assertAccesoEmpresa(datos.empresaId);
 
-  await db.cliente.create({ data: normalizar(datos) });
+  await db.cliente.create({
+    data: {
+      ...normalizar(datos),
+      contactos: { create: contactosParaGuardar(datos) },
+    },
+  });
   revalidatePath("/clientes");
 }
 
@@ -37,7 +51,16 @@ export async function actualizarCliente(id: string, input: unknown) {
   await assertAccesoEmpresa(existente.empresaId);
   await assertAccesoEmpresa(datos.empresaId);
 
-  await db.cliente.update({ where: { id }, data: normalizar(datos) });
+  await db.$transaction([
+    db.contactoCliente.deleteMany({ where: { clienteId: id } }),
+    db.cliente.update({
+      where: { id },
+      data: {
+        ...normalizar(datos),
+        contactos: { create: contactosParaGuardar(datos) },
+      },
+    }),
+  ]);
   revalidatePath("/clientes");
 }
 

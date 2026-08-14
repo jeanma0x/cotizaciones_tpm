@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 export type FilaCliente = {
   id: string;
   empresaId: string;
+  tipo: "INDIVIDUAL" | "EMPRESA";
   nombre: string;
   empresaNombre: string;
   nit: string | null;
@@ -20,6 +21,7 @@ export type FilaCliente = {
   telefono: string | null;
   email: string | null;
   activo: boolean;
+  contactos: { id: string; nombre: string; email: string }[];
 };
 
 export function ClientesTable({
@@ -43,6 +45,15 @@ export function ClientesTable({
       ),
     },
     { accessorKey: "empresaNombre", header: "Empresa" },
+    {
+      accessorKey: "tipo",
+      header: "Tipo",
+      cell: ({ row }) => (
+        <Badge variant="outline">
+          {row.original.tipo === "EMPRESA" ? "Empresa" : "Individual"}
+        </Badge>
+      ),
+    },
     {
       accessorKey: "nit",
       header: "NIT",

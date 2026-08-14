@@ -351,12 +351,11 @@
   container-type: inline-size;
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-@container (max-width: 640px) {
-  .stat-cards-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  /* auto-fit en vez de un número fijo de columnas: la cantidad de tarjetas
+     creció de 4 a 5 con "Utilidad neta (mes)" (costos operativos, reunión
+     14/08) y puede volver a cambiar — así ninguna queda sola/estirada en su
+     propia fila sin tener que tocar este archivo cada vez. */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 @container (max-width: 360px) {
   .stat-cards-grid {
@@ -392,6 +391,16 @@
    páginas sin problema. */
 @media print {
   .no-imprimir {
+    display: none !important;
+  }
+
+  /* Modal de "Ver / Imprimir" (documento-imprimir-dialog.tsx): al imprimir
+     con el modal abierto, ocultar el resto de la app (sidebar, contenido de
+     fondo) y el backdrop del propio modal — que quede solo el documento. La
+     X de cierre del Dialog se oculta puntualmente en ese componente
+     (print:hidden), no acá, porque es la única instancia que la necesita. */
+  .app-shell,
+  [data-slot="dialog-overlay"] {
     display: none !important;
   }
 

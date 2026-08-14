@@ -1,6 +1,6 @@
 import { PlusIcon, UsersIcon } from "lucide-react";
-import { BuscadorLista } from "@/components/app/buscador-lista";
 import { ClienteFormDialog } from "@/components/app/cliente-form-dialog";
+import { ClientesFiltros } from "@/components/app/clientes-filtros";
 import { ClientesTable, type FilaCliente } from "@/components/app/clientes-table";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
@@ -10,15 +10,18 @@ import { db } from "@/lib/db";
 export default async function ClientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; empresaId?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, empresaId } = await searchParams;
   const empresasPermitidas = await getEmpresasPermitidas();
 
   const [clientes, empresas] = await Promise.all([
     db.cliente.findMany({
       where: {
-        empresaId: { in: empresasPermitidas },
+        empresaId:
+          empresaId && empresasPermitidas.includes(empresaId)
+            ? empresaId
+            : { in: empresasPermitidas },
         ...(q
           ? {
               OR: [
@@ -28,7 +31,7 @@ export default async function ClientesPage({
             }
           : {}),
       },
-      include: { empresa: true },
+      include: { empresa: true, contactos: true },
       orderBy: { createdAt: "desc" },
     }),
     db.empresa.findMany({
@@ -40,6 +43,7 @@ export default async function ClientesPage({
   const filas: FilaCliente[] = clientes.map((c) => ({
     id: c.id,
     empresaId: c.empresaId,
+    tipo: c.tipo,
     nombre: c.nombre,
     empresaNombre: c.empresa.nombre,
     nit: c.nit,
@@ -48,6 +52,7 @@ export default async function ClientesPage({
     telefono: c.telefono,
     email: c.email,
     activo: c.activo,
+    contactos: c.contactos,
   }));
 
   return (
@@ -68,7 +73,7 @@ export default async function ClientesPage({
         }
       />
 
-      <BuscadorLista basePath="/clientes" placeholder="Buscar por nombre o NIT…" />
+      <ClientesFiltros empresas={empresas} placeholder="Buscar por nombre o NIT…" />
 
       <ClientesTable
         data={filas}

@@ -1,8 +1,10 @@
-import { PencilIcon, PrinterIcon } from "lucide-react";
+import { PencilIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConvertirAFacturaButton } from "@/components/app/convertir-a-factura-button";
 import { DocumentoEstadoForm } from "@/components/app/documento-estado-form";
+import { DocumentoImprimirDialog } from "@/components/app/documento-imprimir-dialog";
+import { serializarDocumento } from "@/components/app/documento-imprimible";
 import { DocumentoResumen } from "@/components/app/documento-resumen";
 import { DuplicarDocumentoButton } from "@/components/app/duplicar-documento-button";
 import { VolverLink } from "@/components/app/volver-link";
@@ -28,7 +30,7 @@ export default async function DocumentoDetallePage({
     where: { id },
     include: {
       empresa: true,
-      cliente: true,
+      cliente: { include: { contactos: true } },
       items: { orderBy: { orden: "asc" } },
       historial: { orderBy: { fecha: "desc" } },
     },
@@ -54,14 +56,7 @@ export default async function DocumentoDetallePage({
             <PencilIcon className="h-4 w-4" />
             Editar
           </Button>
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={<Link href={`/documentos/${id}/imprimir`} />}
-          >
-            <PrinterIcon className="h-4 w-4" />
-            Ver / Imprimir
-          </Button>
+          <DocumentoImprimirDialog documento={serializarDocumento(documento)} />
           <DuplicarDocumentoButton
             documentoId={documento.id}
             correlativo={documento.correlativo}

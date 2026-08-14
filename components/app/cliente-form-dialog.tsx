@@ -1,10 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { actualizarCliente, crearCliente } from "@/app/(app)/clientes/actions";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ type Empresa = { id: string; nombre: string };
 type Cliente = {
   id: string;
   empresaId: string;
+  tipo: "INDIVIDUAL" | "EMPRESA";
   nombre: string;
   nit: string | null;
   direccion: string | null;
@@ -43,7 +44,10 @@ type Cliente = {
   telefono: string | null;
   email: string | null;
   activo: boolean;
+  contactos: { id: string; nombre: string; email: string }[];
 };
+
+const TIPO_LABELS = { INDIVIDUAL: "Individual", EMPRESA: "Empresa" } as const;
 
 export function ClienteFormDialog({
   empresas,
@@ -63,12 +67,14 @@ export function ClienteFormDialog({
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<ClienteFormValues, unknown, ClienteInput>({
     resolver: zodResolver(clienteSchema),
     defaultValues: {
       empresaId: cliente?.empresaId ?? empresas[0]?.id ?? "",
+      tipo: cliente?.tipo ?? "INDIVIDUAL",
       nombre: cliente?.nombre ?? "",
       nit: cliente?.nit ?? "",
       direccion: cliente?.direccion ?? "",
@@ -76,8 +82,12 @@ export function ClienteFormDialog({
       telefono: cliente?.telefono ?? "",
       email: cliente?.email ?? "",
       activo: cliente?.activo ?? true,
+      contactos: cliente?.contactos ?? [],
     },
   });
+
+  const tipo = watch("tipo");
+  const contactosArray = useFieldArray({ control, name: "contactos" });
 
   async function onSubmit(datos: ClienteInput) {
     try {
@@ -129,6 +139,30 @@ export function ClienteFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor="tipo">Tipo de cliente</Label>
+            {/* Individual: un solo correo/contacto (el flujo de siempre).
+                Empresa: clientes corporativos como CMI, donde cada mes la
+                cotización va a un destinatario distinto bajo el mismo NIT —
+                ver sección de contactos más abajo. Pedido de Oldemar,
+                reunión 14/08. */}
+            <div className="pill-group" role="radiogroup" aria-label="Tipo de cliente" id="tipo">
+              {Object.entries(TIPO_LABELS).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={tipo === value}
+                  data-active={tipo === value}
+                  className="pill"
+                  onClick={() => setValue("tipo", value as ClienteFormValues["tipo"])}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="nombre">Nombre</Label>
             <Input id="nombre" {...register("nombre")} />
             {errors.nombre && (
@@ -163,6 +197,59 @@ export function ClienteFormDialog({
               <p className="text-xs text-destructive">{errors.email.message}</p>
             )}
           </div>
+
+          {tipo === "EMPRESA" && (
+            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Contactos (destinatarios)
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  onClick={() => contactosArray.append({ nombre: "", email: "" })}
+                >
+                  <PlusIcon className="h-3.5 w-3.5" />
+                  Agregar
+                </Button>
+              </div>
+              {contactosArray.fields.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Sin contactos todavía — se usará el correo genérico de arriba.
+                </p>
+              )}
+              {contactosArray.fields.map((field, index) => (
+                <div key={field.id} className="flex items-start gap-2">
+                  <Input
+                    placeholder="Nombre"
+                    className="flex-1"
+                    {...register(`contactos.${index}.nombre` as const)}
+                  />
+                  <Input
+                    placeholder="Correo"
+                    type="email"
+                    className="flex-1"
+                    {...register(`contactos.${index}.email` as const)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Quitar contacto"
+                    onClick={() => contactosArray.remove(index)}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              {errors.contactos && (
+                <p className="text-xs text-destructive">
+                  Revisá el nombre y correo de cada contacto.
+                </p>
+              )}
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>

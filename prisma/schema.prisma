@@ -31,6 +31,16 @@ enum EstadoDocumento {
   FACTURADA
 }
 
+// INDIVIDUAL: el flujo de siempre (un solo contacto/correo/teléfono en el
+// propio Cliente). EMPRESA: clientes corporativos como CMI, donde cada mes
+// la cotización se manda a un destinatario distinto bajo el mismo NIT — ahí
+// se usan los ContactoCliente en vez del correo suelto del cliente.
+// Pedido explícito de Oldemar, reunión 14/08.
+enum TipoCliente {
+  INDIVIDUAL
+  EMPRESA
+}
+
 model Empresa {
   id                String   @id @default(cuid())
   nombre            String
@@ -48,10 +58,11 @@ model Empresa {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  usuarios   UsuarioEmpresa[]
-  clientes   Cliente[]
-  servicios  Servicio[]
-  documentos Documento[]
+  usuarios        UsuarioEmpresa[]
+  clientes        Cliente[]
+  servicios       Servicio[]
+  documentos      Documento[]
+  costosOperativos CostoOperativo[]
 
   @@map("empresas")
 }
@@ -84,22 +95,76 @@ model UsuarioEmpresa {
 }
 
 model Cliente {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   empresaId String
-  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa   Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipo      TipoCliente @default(INDIVIDUAL)
   nombre    String
   nit       String?
   direccion String?
   contacto  String?
   telefono  String?
   email     String?
-  activo    Boolean  @default(true) // permite ocultar clientes viejos sin borrarlos
-  createdAt DateTime @default(now())
+  activo    Boolean     @default(true) // permite ocultar clientes viejos sin borrarlos
+  createdAt DateTime    @default(now())
 
   documentos Documento[]
+  // Solo se usan cuando tipo = EMPRESA — ver TipoCliente. Un cliente
+  // INDIVIDUAL sigue usando el campo `email` de acá arriba, sin tocar nada.
+  contactos  ContactoCliente[]
 
   @@index([empresaId])
   @@map("clientes")
+}
+
+// Destinatarios distintos bajo el mismo NIT corporativo (ej. CMI: 4 personas
+// distintas reciben la cotización cada mes, según el servicio). Se elige uno
+// al generar/enviar el documento — ver documento-imprimir-toolbar.tsx.
+model ContactoCliente {
+  id        String   @id @default(cuid())
+  clienteId String
+  cliente   Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  nombre    String
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([clienteId])
+  @@map("contactos_cliente")
+}
+
+// Categorías fijas pedidas por Oldemar en la reunión del 14/08 (combustible,
+// planilla, etc.) — "Otro" cubre lo que no encaje, sin forzar categorías
+// nuevas antes de tener más ejemplos reales de gasto.
+enum CategoriaCosto {
+  COMBUSTIBLE
+  PLANILLA
+  PROVEEDORES
+  PREDIO
+  LUZ
+  CONSUMIBLES
+  OTRO
+}
+
+// Gasto operativo real (no una venta) — por eso no puede vivir en Documento,
+// que está diseñado para cotizaciones/propuestas/facturas con su propio
+// flujo de estados y correlativo. Sirve para calcular "Utilidad neta" en el
+// panel: Facturado del mes − Costos del mes. El cálculo automático de
+// ISR/IVA queda pendiente de la fórmula exacta que Oldemar va a mandar — no
+// se inventa acá.
+model CostoOperativo {
+  id          String         @id @default(cuid())
+  empresaId   String
+  empresa     Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  categoria   CategoriaCosto
+  descripcion String
+  monto       Decimal        @db.Decimal(12, 2)
+  // Independiente de createdAt: un reporte de julio puede llegar y
+  // registrarse recién el 5 de agosto, pero debe contar para julio.
+  fechaGasto  DateTime
+  createdAt   DateTime       @default(now())
+
+  @@index([empresaId, fechaGasto])
+  @@map("costos_operativos")
 }
 
 model Servicio {

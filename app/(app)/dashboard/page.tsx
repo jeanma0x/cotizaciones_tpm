@@ -1,9 +1,19 @@
-import { AlertTriangleIcon, LayoutGridIcon, TrendingUpIcon, WalletIcon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  LayoutGridIcon,
+  PiggyBankIcon,
+  ReceiptIcon,
+  TrendingUpIcon,
+  WalletIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { AnimatedNumber } from "@/components/app/animated-number";
 import { AtencionRequerida, type ItemAtencion } from "@/components/app/atencion-requerida";
+import { DesgloseEmpresaChart } from "@/components/app/desglose-empresa-chart";
+import { DesgloseTipoChart } from "@/components/app/desglose-tipo-chart";
 import { DistribucionEstadoChart } from "@/components/app/distribucion-estado-chart";
 import { EstadoBadge } from "@/components/app/estado-badge";
+import { ServiciosRankingChart } from "@/components/app/servicios-ranking-chart";
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { TendenciaMensualChart } from "@/components/app/tendencia-mensual-chart";
@@ -31,6 +41,36 @@ const ESTADO_LABELS: Record<string, string> = {
 const UN_DIA_MS = 24 * 60 * 60 * 1000;
 const MESES_TENDENCIA = 12;
 
+// Compartido entre "Monto vigente cotizado" y "Facturado (histórico)": ambos
+// pueden tener más de una moneda a la vez (GTQ y USD), y concatenadas en una
+// sola línea se leen pegadas — cada una va en su propia línea cuando hay más
+// de una.
+function MontoPorMoneda({
+  entradas,
+  claseColor = "text-accent-hover",
+}: {
+  entradas: [string, number][];
+  claseColor?: string;
+}) {
+  if (entradas.length === 0) return <span className={claseColor}>0.00</span>;
+  if (entradas.length === 1) {
+    return (
+      <span className={claseColor}>
+        {entradas[0][0]} <AnimatedNumber value={entradas[0][1]} decimals={2} />
+      </span>
+    );
+  }
+  return (
+    <span className="flex flex-col gap-0.5 text-xl leading-tight">
+      {entradas.map(([moneda, monto]) => (
+        <span key={moneda} className={claseColor}>
+          {moneda} <AnimatedNumber value={monto} decimals={2} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
 // Definiciones de métrica (no especificadas al detalle byte a byte en
 // scope.md, decisión tomada acá — avisar si el cliente las quiere distintas):
 // - "Monto vigente cotizado": suma de documentos ENVIADA o EN_NEGOCIACION.
@@ -47,6 +87,7 @@ export default async function DashboardPage() {
   const where = { empresaId: { in: empresasPermitidas } };
   const hoy = new Date();
   const hace12Meses = new Date(hoy.getTime() - MESES_TENDENCIA * 31 * UN_DIA_MS);
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
 
   const [
     vigentes,
@@ -60,14 +101,20 @@ export default async function DashboardPage() {
     docsTendencia,
     itemsCatalogo,
     servicios,
+    facturadoDelMes,
+    costosDelMes,
   ] = await Promise.all([
     db.documento.findMany({
       where: { ...where, estado: { in: ["ENVIADA", "EN_NEGOCIACION"] } },
       select: { id: true, total: true, empresa: { select: { moneda: true } } },
     }),
+    // notIn RECHAZADA, no solo "not BORRADOR": una rechazada no debería
+    // seguir inflando el denominador de la tasa de conversión — es
+    // justamente el número que Oldemar pidió que dejara de reflejar
+    // negocios que no van a cerrar (ronda de reunión con cliente, 14/08).
     db.documento.groupBy({
       by: ["estado"],
-      where: { ...where, estado: { not: "BORRADOR" } },
+      where: { ...where, estado: { notIn: ["BORRADOR", "RECHAZADA"] } },
       _count: true,
     }),
     db.documento.findMany({
@@ -77,15 +124,18 @@ export default async function DashboardPage() {
         historial: { orderBy: { fecha: "desc" }, take: 1 },
       },
     }),
+    // Sin esto, "Desglose por empresa → N documentos" contaba también las
+    // rechazadas en el total.
     db.documento.groupBy({
       by: ["empresaId", "estado"],
-      where,
+      where: { ...where, estado: { not: "RECHAZADA" } },
       _count: true,
       _sum: { total: true },
     }),
+    // Sin esto, "Desglose por tipo" contaba rechazadas en cada categoría.
     db.documento.groupBy({
       by: ["tipo"],
-      where,
+      where: { ...where, estado: { not: "RECHAZADA" } },
       _count: true,
     }),
     db.documento.groupBy({
@@ -103,15 +153,31 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
+    // Sin esto, el monto de una rechazada seguía sumándose al gráfico de
+    // tendencia (como "cotizado" o "facturado" según su tipo).
     db.documento.findMany({
-      where: { ...where, fecha: { gte: hace12Meses } },
+      where: { ...where, fecha: { gte: hace12Meses }, estado: { not: "RECHAZADA" } },
       select: { fecha: true, tipo: true, total: true, empresa: { select: { moneda: true } } },
     }),
+    // Sin esto, los ítems de una rechazada seguían inflando el ranking de
+    // "Servicios más cotizados".
     db.itemDocumento.findMany({
-      where: { documento: { empresaId: { in: empresasPermitidas } } },
+      where: {
+        documento: { empresaId: { in: empresasPermitidas }, estado: { not: "RECHAZADA" } },
+      },
       select: { descripcion: true, cantidad: true, precioUnitario: true },
     }),
     db.servicio.findMany({ where: { empresaId: { in: empresasPermitidas } } }),
+    // "Facturado del mes" para Utilidad neta: por fecha del documento, no por
+    // cuándo se marcó FACTURADA (no existe ese timestamp en el modelo).
+    db.documento.findMany({
+      where: { ...where, estado: "FACTURADA", fecha: { gte: inicioMes } },
+      select: { total: true, empresa: { select: { moneda: true } } },
+    }),
+    db.costoOperativo.findMany({
+      where: { ...where, fechaGasto: { gte: inicioMes } },
+      select: { monto: true, empresa: { select: { moneda: true } } },
+    }),
   ]);
 
   // ---- Zona 1 + 5: métricas generales y desglose por tipo/estado ----
@@ -133,7 +199,6 @@ export default async function DashboardPage() {
     label: TIPO_LABELS[tipo],
     cantidad: porTipo.find((f) => f.tipo === tipo)?._count ?? 0,
   }));
-  const maxCantidadPorTipo = Math.max(...desgloseTipo.map((d) => d.cantidad), 1);
 
   const chartData = porEstado.map((f) => ({
     estado: f.estado,
@@ -236,7 +301,18 @@ export default async function DashboardPage() {
       .reduce((acc, f) => acc + Number(f._sum.total ?? 0), 0);
     return { empresa, totalDocs, facturado, cotizado };
   });
-  const maxDocsPorEmpresa = Math.max(...desgloseEmpresa.map((d) => d.totalDocs), 1);
+
+  // Acumulado histórico de todo lo facturado (no solo del mes) — es lo que
+  // Oldemar pidió como "histórico de ingresos ya cerrados" en la reunión del
+  // 14/08, sin darse cuenta de que el dato ya existía por empresa acá abajo,
+  // solo que sin una tarjeta principal que lo destaque junto al vigente.
+  const montoFacturadoPorMoneda = desgloseEmpresa.reduce<Record<string, number>>(
+    (acc, d) => {
+      acc[d.empresa.moneda] = (acc[d.empresa.moneda] ?? 0) + d.facturado;
+      return acc;
+    },
+    {},
+  );
 
   // ---- Zona 6: servicios más cotizados ----
   // Aproximación por nombre: ItemDocumento no guarda una referencia al
@@ -265,9 +341,24 @@ export default async function DashboardPage() {
     // coincide con lo que el usuario lee (ver punto 1, cierre de huecos).
     .sort((a, b) => b.cantidad - a.cantidad)
     .slice(0, 5);
-  const maxCantidadServicio = Math.max(...rankingServicios.map((s) => s.cantidad), 1);
 
   const montoVigenteEntradas = Object.entries(montoVigentePorMoneda);
+  const montoFacturadoEntradas = Object.entries(montoFacturadoPorMoneda);
+
+  // ---- Utilidad neta (mes): Facturado del mes − Costos del mes, por moneda.
+  // Sin ISR/IVA todavía — Oldemar va a mandar la fórmula exacta (reunión
+  // 14/08), no se inventa el orden de cálculo sin eso.
+  const utilidadNetaPorMoneda: Record<string, number> = {};
+  for (const doc of facturadoDelMes) {
+    const moneda = doc.empresa.moneda;
+    utilidadNetaPorMoneda[moneda] = (utilidadNetaPorMoneda[moneda] ?? 0) + Number(doc.total);
+  }
+  for (const costo of costosDelMes) {
+    const moneda = costo.empresa.moneda;
+    utilidadNetaPorMoneda[moneda] = (utilidadNetaPorMoneda[moneda] ?? 0) - Number(costo.monto);
+  }
+  const utilidadNetaEntradas = Object.entries(utilidadNetaPorMoneda);
+  const utilidadNetaNegativa = utilidadNetaEntradas.some(([, monto]) => monto < 0);
 
   return (
     <div className="flex flex-col gap-8">
@@ -280,33 +371,20 @@ export default async function DashboardPage() {
       {/* Zona 1 — estado del negocio ahora mismo: cifras hero, --text-3xl,
           --color-accent en vez de --color-brand para que se lean también
           en modo oscuro (navy-500 sobre fondo oscuro casi no se distingue). */}
-      <div className="stat-cards-grid !grid-cols-1 sm:!grid-cols-3">
+      <div className="stat-cards-grid">
         <StatCard
           label="Monto vigente cotizado"
           icon={<WalletIcon className="h-4.5 w-4.5" />}
           tono="accent"
           size="hero"
-          value={
-            montoVigenteEntradas.length === 0 ? (
-              <span className="text-accent-hover">0.00</span>
-            ) : montoVigenteEntradas.length === 1 ? (
-              <span className="text-accent-hover">
-                {montoVigenteEntradas[0][0]}{" "}
-                <AnimatedNumber value={montoVigenteEntradas[0][1]} decimals={2} />
-              </span>
-            ) : (
-              // Más de una moneda vigente a la vez (ej. GTQ y USD): cada
-              // monto en su propia línea, texto más chico — concatenados en
-              // una sola línea se leen pegados y no como dos cifras distintas.
-              <span className="flex flex-col gap-0.5 text-xl leading-tight">
-                {montoVigenteEntradas.map(([moneda, monto]) => (
-                  <span key={moneda} className="text-accent-hover">
-                    {moneda} <AnimatedNumber value={monto} decimals={2} />
-                  </span>
-                ))}
-              </span>
-            )
-          }
+          value={<MontoPorMoneda entradas={montoVigenteEntradas} />}
+        />
+        <StatCard
+          label="Facturado (histórico)"
+          icon={<ReceiptIcon className="h-4.5 w-4.5" />}
+          tono="accent"
+          size="hero"
+          value={<MontoPorMoneda entradas={montoFacturadoEntradas} />}
         />
         <StatCard
           label="Tasa de conversión"
@@ -328,6 +406,18 @@ export default async function DashboardPage() {
             <span className={itemsAtencion.length > 0 ? "text-danger" : "text-success"}>
               <AnimatedNumber value={itemsAtencion.length} />
             </span>
+          }
+        />
+        <StatCard
+          label="Utilidad neta (mes)"
+          icon={<PiggyBankIcon className="h-4.5 w-4.5" />}
+          tono={utilidadNetaNegativa ? "danger" : "success"}
+          size="hero"
+          value={
+            <MontoPorMoneda
+              entradas={utilidadNetaEntradas}
+              claseColor={utilidadNetaNegativa ? "text-danger" : "text-success"}
+            />
           }
         />
       </div>
@@ -359,11 +449,19 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            {desgloseEmpresa.map(({ empresa, totalDocs, facturado, cotizado }) => (
-              <div key={empresa.id} className="flex flex-col gap-1.5 text-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2">
+            <DesgloseEmpresaChart
+              data={desgloseEmpresa.map(({ empresa, totalDocs }) => ({
+                nombre: empresa.nombre,
+                totalDocs,
+              }))}
+            />
+            <div className="flex flex-col gap-2 text-sm">
+              {desgloseEmpresa.map(({ empresa, facturado, cotizado }) => (
+                <div
+                  key={empresa.id}
+                  className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2 first:border-t-0 first:pt-0"
+                >
                   <span className="font-medium text-text-primary">{empresa.nombre}</span>
-                  <span className="text-muted-foreground">{totalDocs} documentos</span>
                   <span className="font-mono text-brand">
                     Facturado {empresa.moneda} {facturado.toFixed(2)}
                   </span>
@@ -371,16 +469,8 @@ export default async function DashboardPage() {
                     Cotizado {empresa.moneda} {cotizado.toFixed(2)}
                   </span>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-brand"
-                    style={{
-                      width: `${maxDocsPorEmpresa > 0 ? (totalDocs / maxDocsPorEmpresa) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -390,23 +480,8 @@ export default async function DashboardPage() {
               Desglose por tipo
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {desgloseTipo.map(({ tipo, label, cantidad }) => (
-              <div key={tipo} className="flex flex-col gap-1.5 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{label}</span>
-                  <span className="font-mono font-semibold text-text-primary">{cantidad}</span>
-                </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-accent"
-                    style={{
-                      width: `${maxCantidadPorTipo > 0 ? (cantidad / maxCantidadPorTipo) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+          <CardContent>
+            <DesgloseTipoChart data={desgloseTipo} />
           </CardContent>
         </Card>
       </div>
@@ -418,40 +493,8 @@ export default async function DashboardPage() {
               Servicios más cotizados
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3.5">
-            {rankingServicios.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Todavía no hay suficiente actividad para armar un ranking.
-              </p>
-            )}
-            {rankingServicios.map((s, i) => (
-              <div key={s.nombre} className="flex items-center gap-3">
-                <span
-                  className={
-                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold " +
-                    (i === 0
-                      ? "bg-accent text-on-accent"
-                      : "bg-muted text-muted-foreground")
-                  }
-                >
-                  {i + 1}
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate text-text-primary">{s.nombre}</span>
-                    <span className="shrink-0 font-mono text-xs font-semibold text-muted-foreground">
-                      {s.cantidad}x
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className={"h-full rounded-full " + (i === 0 ? "bg-accent" : "bg-brand")}
-                      style={{ width: `${(s.cantidad / maxCantidadServicio) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+          <CardContent>
+            <ServiciosRankingChart data={rankingServicios} />
           </CardContent>
         </Card>
 
