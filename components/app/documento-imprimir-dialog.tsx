@@ -42,15 +42,24 @@ export function DocumentoImprimirDialog({
           </Button>
         }
       />
-      {/* Ancho generoso + scroll propio: un documento real crece a varias
-          páginas (docs/document-export.md), el modal tiene que poder
-          desplazarse internamente en vez de recortar contenido. */}
+      {/* Ancho generoso (5xl, no 4xl) + scroll propio: el documento en sí es
+          max-w-3xl (ver documento-imprimible.tsx) — el modal necesita margen
+          real alrededor para no sentirse apretado contra sus propios bordes,
+          igual "aire" que tenía la página completa.
+          print: — SIN esto, al imprimir desde el modal el documento hereda
+          el ancho fijo del modal (angosto) en vez de ocupar la página
+          impresa completa como la ruta /imprimir de siempre: hay que anular
+          el posicionamiento/tamaño fijo del Dialog específicamente al
+          imprimir, no solo ocultar lo que rodea al modal (.app-shell). */}
       <DialogContent
-        className="max-h-[92vh] w-full max-w-4xl overflow-hidden p-0
+        className="max-h-[92vh] w-full max-w-5xl overflow-hidden p-0
+          print:static print:block print:h-auto print:max-h-none print:w-auto
+          print:max-w-none print:translate-x-0 print:translate-y-0
+          print:overflow-visible print:rounded-none print:shadow-none print:ring-0
           [&>[data-slot=dialog-close]]:z-20 [&>[data-slot=dialog-close]]:bg-surface
           [&>[data-slot=dialog-close]]:print:hidden"
       >
-        <div className="max-h-[92vh] overflow-y-auto rounded-xl">
+        <div className="max-h-[92vh] overflow-y-auto rounded-xl print:max-h-none print:overflow-visible print:rounded-none">
           {/* data-theme="light" fijo, igual que la página completa
               (/documentos/[id]/imprimir): el documento siempre se ve igual
               sin importar el modo claro/oscuro activo. */}

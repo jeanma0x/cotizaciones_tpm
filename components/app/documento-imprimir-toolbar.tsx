@@ -1,7 +1,8 @@
 "use client";
 
-import { DownloadIcon, MailIcon, MessageCircleIcon } from "lucide-react";
+import { CopyIcon, DownloadIcon, MailIcon, MessageCircleIcon } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -52,15 +53,38 @@ export function DocumentoImprimirToolbar({
     contactos[0]?.email ?? clienteEmail ?? "",
   );
 
-  const asunto = encodeURIComponent(`${tipoLabel} TPM-${correlativo} (${empresaNombre})`);
-  const cuerpo = encodeURIComponent(
-    `Hola ${clienteNombre},\n\nAdjunto la ${tipoLabel.toLowerCase()} TPM-${correlativo}.\n\nSaludos,\n${empresaNombre}`,
-  );
+  const asuntoTexto = `${tipoLabel} TPM-${correlativo} (${empresaNombre})`;
+  const cuerpoTexto = `Hola ${clienteNombre},\n\nAdjunto la ${tipoLabel.toLowerCase()} TPM-${correlativo}.\n\nSaludos,\n${empresaNombre}`;
   const paramsCorreo = new URLSearchParams();
-  paramsCorreo.set("subject", decodeURIComponent(asunto));
-  paramsCorreo.set("body", decodeURIComponent(cuerpo));
+  paramsCorreo.set("subject", asuntoTexto);
+  paramsCorreo.set("body", cuerpoTexto);
   if (empresaEmail) paramsCorreo.set("cc", empresaEmail);
   const mailtoHref = `mailto:${destinatario.trim()}?${paramsCorreo.toString()}`;
+
+  // mailto: solo funciona si el sistema operativo tiene un cliente de correo
+  // configurado (Mail, Outlook) — sin eso, el navegador no tiene con qué
+  // abrirlo y queda en about:blank. Gmail web compose es el respaldo real
+  // para quien no lo tiene configurado (el correo de la empresa ya es
+  // @gmail.com) — funciona con solo tener sesión iniciada en el navegador.
+  const paramsGmail = new URLSearchParams({
+    view: "cm",
+    fs: "1",
+    to: destinatario.trim(),
+    su: asuntoTexto,
+    body: cuerpoTexto,
+  });
+  if (empresaEmail) paramsGmail.set("cc", empresaEmail);
+  const gmailHref = `https://mail.google.com/mail/?${paramsGmail.toString()}`;
+
+  async function copiarDatosCorreo() {
+    const texto = `Para: ${destinatario.trim()}\nAsunto: ${asuntoTexto}\n\n${cuerpoTexto}`;
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast.success("Datos del correo copiados");
+    } catch {
+      toast.error("No se pudo copiar — copiá manualmente");
+    }
+  }
 
   const telefono = soloDigitos(clienteTelefono);
   const textoWhatsapp = encodeURIComponent(
@@ -127,6 +151,19 @@ export function DocumentoImprimirToolbar({
         >
           <MailIcon className="h-4 w-4" />
           Correo
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          nativeButton={false}
+          render={<a href={gmailHref} target="_blank" rel="noopener noreferrer" />}
+        >
+          <MailIcon className="h-4 w-4" />
+          Gmail
+        </Button>
+        <Button variant="outline" size="sm" onClick={copiarDatosCorreo}>
+          <CopyIcon className="h-4 w-4" />
+          Copiar
         </Button>
         <Button
           variant="outline"
