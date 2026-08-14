@@ -20,6 +20,7 @@ export async function actualizarEmpresa(id: string, input: unknown) {
       contacto: datos.contacto || null,
       telefono: datos.telefono || null,
       email: datos.email || null,
+      codigoPais: datos.codigoPais,
       moneda: datos.moneda,
     },
   });

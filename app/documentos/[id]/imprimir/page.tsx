@@ -54,6 +54,8 @@ export default async function ImprimirDocumentoPage({
         vigenciaDias={documento.vigenciaDias}
         condicionesPago={documento.condicionesPago}
         fecha={documento.fecha}
+        empresaCodigoPais={documento.empresa.codigoPais}
+        clienteCodigoPais={documento.cliente?.codigoPais ?? null}
       />
       <DocumentoImprimible documento={serializarDocumento(documento)} />
     </div>

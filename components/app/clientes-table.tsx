@@ -20,6 +20,7 @@ export type FilaCliente = {
   contacto: string | null;
   telefono: string | null;
   email: string | null;
+  codigoPais: string | null;
   activo: boolean;
   contactos: { id: string; nombre: string; email: string }[];
 };

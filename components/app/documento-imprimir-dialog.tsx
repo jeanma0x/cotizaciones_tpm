@@ -80,6 +80,8 @@ export function DocumentoImprimirDialog({
               vigenciaDias={documento.vigenciaDias}
               condicionesPago={documento.condicionesPago}
               fecha={documento.fecha}
+              empresaCodigoPais={documento.empresa.codigoPais}
+              clienteCodigoPais={documento.cliente?.codigoPais ?? null}
               dentroDeModal
             />
             <DocumentoImprimible documento={documento} />

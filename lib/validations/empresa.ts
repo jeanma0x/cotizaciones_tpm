@@ -12,7 +12,14 @@ export const empresaSchema = z.object({
     .email("Correo inválido")
     .optional()
     .or(z.literal("")),
+  codigoPais: z
+    .string()
+    .trim()
+    .regex(/^\d{1,3}$/, "Solo dígitos, sin '+' (ej. 502)")
+    .default("502"),
   moneda: z.enum(["GTQ", "USD"]),
 });
 
 export type EmpresaInput = z.infer<typeof empresaSchema>;
+// Tipo de entrada del formulario (antes de que z.default aplique codigoPais).
+export type EmpresaFormValues = z.input<typeof empresaSchema>;

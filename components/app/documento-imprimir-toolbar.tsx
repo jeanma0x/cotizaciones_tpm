@@ -40,6 +40,8 @@ export function DocumentoImprimirToolbar({
   vigenciaDias,
   condicionesPago,
   fecha,
+  empresaCodigoPais,
+  clienteCodigoPais,
   dentroDeModal = false,
 }: {
   documentoId: string;
@@ -57,6 +59,11 @@ export function DocumentoImprimirToolbar({
   vigenciaDias: number | null;
   condicionesPago: string | null;
   fecha: Date;
+  // wa.me exige el número completo con código de país — Cliente.telefono
+  // nunca lo incluye. El del cliente (si lo tiene) gana sobre el de su
+  // empresa — ver comentario en schema.prisma.
+  empresaCodigoPais: string;
+  clienteCodigoPais: string | null;
   // El modal ya tiene su propia X de cierre (Dialog) — "Volver al documento"
   // y el párrafo de ayuda no aplican ahí, solo en la página completa.
   dentroDeModal?: boolean;
@@ -134,14 +141,16 @@ export function DocumentoImprimirToolbar({
     }
   }
 
+  const codigoPais = (clienteCodigoPais || empresaCodigoPais).replace(/\D/g, "");
   const telefono = soloDigitos(clienteTelefono);
+  const telefonoConCodigo = telefono ? `${codigoPais}${telefono}` : "";
   const textoWhatsapp = [
     `Hola ${clienteNombre}, te comparto la ${tipoLabel.toLowerCase()} TPM-${correlativo} de ${empresaNombre}.`,
     `Total: ${moneda} ${total.toFixed(2)}${vigenciaDias ? ` · válida ${vigenciaDias} días` : ""}.`,
     "Adjunto el PDF a continuación.",
   ].join("\n");
-  const whatsappHref = telefono
-    ? `https://wa.me/${telefono}?text=${encodeURIComponent(textoWhatsapp)}`
+  const whatsappHref = telefonoConCodigo
+    ? `https://wa.me/${telefonoConCodigo}?text=${encodeURIComponent(textoWhatsapp)}`
     : `https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`;
 
   const contactosDisponibles = contactos.filter(

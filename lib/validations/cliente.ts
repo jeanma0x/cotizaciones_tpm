@@ -23,6 +23,14 @@ export const clienteSchema = z.object({
     .email("Correo inválido")
     .optional()
     .or(z.literal("")),
+  // Solo se llena si el WhatsApp real de este cliente es de un país
+  // distinto al de su empresa — vacío usa el código de la empresa.
+  codigoPais: z
+    .string()
+    .trim()
+    .regex(/^\d{1,3}$/, "Solo dígitos, sin '+' (ej. 502)")
+    .optional()
+    .or(z.literal("")),
   activo: z.boolean().default(true),
   // Solo se usa/guarda cuando tipo === "EMPRESA".
   contactos: z.array(contactoClienteSchema).default([]),

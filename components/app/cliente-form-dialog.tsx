@@ -43,6 +43,7 @@ type Cliente = {
   contacto: string | null;
   telefono: string | null;
   email: string | null;
+  codigoPais: string | null;
   activo: boolean;
   contactos: { id: string; nombre: string; email: string }[];
 };
@@ -81,6 +82,7 @@ export function ClienteFormDialog({
       contacto: cliente?.contacto ?? "",
       telefono: cliente?.telefono ?? "",
       email: cliente?.email ?? "",
+      codigoPais: cliente?.codigoPais ?? "",
       activo: cliente?.activo ?? true,
       contactos: cliente?.contactos ?? [],
     },
@@ -185,10 +187,23 @@ export function ClienteFormDialog({
             <Input id="contacto" {...register("contacto")} />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="telefono">Teléfono</Label>
-            <Input id="telefono" {...register("telefono")} />
+          <div className="flex gap-3">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="telefono">Teléfono</Label>
+              <Input id="telefono" {...register("telefono")} />
+            </div>
+            <div className="flex w-36 flex-col gap-1.5">
+              <Label htmlFor="codigoPais">Cód. país</Label>
+              <Input id="codigoPais" placeholder="usa el de la empresa" {...register("codigoPais")} />
+              {errors.codigoPais && (
+                <p className="text-xs text-destructive">{errors.codigoPais.message}</p>
+              )}
+            </div>
           </div>
+          <p className="-mt-1.5 text-xs text-muted-foreground">
+            Dejalo vacío para usar el código de país de la empresa — solo llenalo si el
+            WhatsApp real de este cliente es de otro país (sin &quot;+&quot;, ej. 502).
+          </p>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Correo</Label>

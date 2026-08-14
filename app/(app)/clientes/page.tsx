@@ -51,6 +51,7 @@ export default async function ClientesPage({
     contacto: c.contacto,
     telefono: c.telefono,
     email: c.email,
+    codigoPais: c.codigoPais,
     activo: c.activo,
     contactos: c.contactos,
   }));

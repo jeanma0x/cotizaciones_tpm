@@ -25,7 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type EmpresaInput, empresaSchema } from "@/lib/validations/empresa";
+import {
+  type EmpresaFormValues,
+  type EmpresaInput,
+  empresaSchema,
+} from "@/lib/validations/empresa";
 
 type Empresa = {
   id: string;
@@ -35,6 +39,7 @@ type Empresa = {
   contacto: string | null;
   telefono: string | null;
   email: string | null;
+  codigoPais: string;
   moneda: string;
 };
 
@@ -54,7 +59,7 @@ export function EmpresaFormDialog({
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<EmpresaInput>({
+  } = useForm<EmpresaFormValues, unknown, EmpresaInput>({
     resolver: zodResolver(empresaSchema),
     defaultValues: {
       nombre: empresa.nombre,
@@ -63,6 +68,7 @@ export function EmpresaFormDialog({
       contacto: empresa.contacto ?? "",
       telefono: empresa.telefono ?? "",
       email: empresa.email ?? "",
+      codigoPais: empresa.codigoPais,
       moneda: empresa.moneda === "USD" ? "USD" : "GTQ",
     },
   });
@@ -113,10 +119,24 @@ export function EmpresaFormDialog({
             </p>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="telefono">Teléfono</Label>
-            <Input id="telefono" {...register("telefono")} />
+          <div className="flex gap-3">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="telefono">Teléfono</Label>
+              <Input id="telefono" {...register("telefono")} />
+            </div>
+            <div className="flex w-32 flex-col gap-1.5">
+              <Label htmlFor="codigoPais">Cód. país</Label>
+              <Input id="codigoPais" placeholder="502" {...register("codigoPais")} />
+              {errors.codigoPais && (
+                <p className="text-xs text-destructive">{errors.codigoPais.message}</p>
+              )}
+            </div>
           </div>
+          <p className="-mt-1.5 text-xs text-muted-foreground">
+            Sin el &quot;+&quot; (ej. 502 Guatemala, 507 Panamá, 1 Estados Unidos) — se usa para
+            armar el link de WhatsApp de sus clientes, salvo que un cliente puntual tenga
+            el suyo propio.
+          </p>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Correo</Label>

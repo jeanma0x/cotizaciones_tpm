@@ -15,6 +15,7 @@ function normalizar(datos: ClienteInput) {
     contacto: datos.contacto || null,
     telefono: datos.telefono || null,
     email: datos.email || null,
+    codigoPais: datos.codigoPais || null,
     activo: datos.activo,
   };
 }

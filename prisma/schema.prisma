@@ -53,6 +53,13 @@ model Empresa {
   contacto          String?
   telefono          String?
   email             String?
+  // Código de país para armar el link de WhatsApp del botón "Ver / Imprimir"
+  // (ej. "502" Guatemala, "507" Panamá, "1" Estados Unidos) — wa.me exige el
+  // número completo con código de país, y Cliente.telefono nunca lo incluye.
+  // Sirve de default para todos los clientes de esta empresa; un cliente
+  // puntual puede sobreescribirlo con su propio Cliente.codigoPais si su
+  // WhatsApp real es de un país distinto al de la empresa que lo atiende.
+  codigoPais        String   @default("502")
   moneda            String   @default("GTQ")
   correlativoActual Int      @default(1000) // el próximo asignado será +1 (ver lib/correlativo.ts)
   createdAt         DateTime @default(now())
@@ -105,6 +112,10 @@ model Cliente {
   contacto  String?
   telefono  String?
   email     String?
+  // Solo se llena cuando el WhatsApp real de ESTE cliente es de un país
+  // distinto al de la empresa que lo atiende — si es null, se usa
+  // Empresa.codigoPais. Ver ese campo para el porqué.
+  codigoPais String?
   activo    Boolean     @default(true) // permite ocultar clientes viejos sin borrarlos
   createdAt DateTime    @default(now())
 
