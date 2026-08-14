@@ -70,10 +70,16 @@ export function DocumentoImprimirDialog({
               tipoLabel={TIPO_LABELS[documento.tipo]}
               empresaNombre={documento.empresa.nombre}
               empresaEmail={documento.empresa.email}
+              empresaTelefono={documento.empresa.telefono}
               clienteNombre={documento.cliente?.nombre ?? "cliente"}
               clienteTelefono={documento.cliente?.telefono ?? null}
               clienteEmail={documento.cliente?.email ?? null}
               contactos={documento.cliente?.contactos ?? []}
+              moneda={documento.empresa.moneda === "USD" ? "USD" : "GTQ"}
+              total={documento.total}
+              vigenciaDias={documento.vigenciaDias}
+              condicionesPago={documento.condicionesPago}
+              fecha={documento.fecha}
               dentroDeModal
             />
             <DocumentoImprimible documento={documento} />

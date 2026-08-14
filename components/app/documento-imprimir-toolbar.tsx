@@ -1,6 +1,6 @@
 "use client";
 
-import { CopyIcon, DownloadIcon, MailIcon, MessageCircleIcon } from "lucide-react";
+import { CopyIcon, DownloadIcon, MailIcon, MessageCircleIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,10 @@ function soloDigitos(valor: string | null | undefined) {
   return (valor ?? "").replace(/\D/g, "");
 }
 
+function formatearFecha(fecha: Date) {
+  return fecha.toLocaleDateString("es-GT", { year: "numeric", month: "long", day: "numeric" });
+}
+
 type Contacto = { id: string; nombre: string; email: string };
 
 export function DocumentoImprimirToolbar({
@@ -26,10 +30,16 @@ export function DocumentoImprimirToolbar({
   tipoLabel,
   empresaNombre,
   empresaEmail,
+  empresaTelefono,
   clienteNombre,
   clienteTelefono,
   clienteEmail,
   contactos,
+  moneda,
+  total,
+  vigenciaDias,
+  condicionesPago,
+  fecha,
   dentroDeModal = false,
 }: {
   documentoId: string;
@@ -37,24 +47,62 @@ export function DocumentoImprimirToolbar({
   tipoLabel: string;
   empresaNombre: string;
   empresaEmail: string | null;
+  empresaTelefono: string | null;
   clienteNombre: string;
   clienteTelefono: string | null;
   clienteEmail: string | null;
   contactos: Contacto[];
+  moneda: string;
+  total: number;
+  vigenciaDias: number | null;
+  condicionesPago: string | null;
+  fecha: Date;
   // El modal ya tiene su propia X de cierre (Dialog) — "Volver al documento"
   // y el párrafo de ayuda no aplican ahí, solo en la página completa.
   dentroDeModal?: boolean;
 }) {
-  // Si es cliente EMPRESA con contactos cargados, se elige uno (ej. CMI: 4
-  // destinatarios distintos según el mes/servicio). Si no, se usa el correo
-  // suelto del cliente. En ambos casos queda editable — Oldemar pidió poder
-  // corregirlo a mano antes de enviar (ej. un correo genérico de relleno).
+  // Empieza con un solo destinatario (el primer contacto, o el correo suelto
+  // del cliente) — Oldemar/Jean pidieron NO precargar todos los contactos de
+  // una, sino poder ir agregando desde acá los que hagan falta ese mes (caso
+  // CMI: no siempre se manda a los 4 destinatarios a la vez).
   const [destinatario, setDestinatario] = useState(
     contactos[0]?.email ?? clienteEmail ?? "",
   );
 
+  function agregarContacto(email: string | null) {
+    // El Select dispara onValueChange(null) en un paso intermedio al elegir
+    // una opción cuando su `value` controlado no coincide con ningún item
+    // (acá siempre vale "" a propósito, para que quede vacío después de
+    // agregar) — ignorar esos null, no son una elección real del usuario.
+    if (!email) return;
+    const yaIncluido = destinatario
+      .split(",")
+      .map((d) => d.trim().toLowerCase())
+      .includes(email.toLowerCase());
+    if (yaIncluido) return;
+    setDestinatario((actual) => (actual.trim() ? `${actual.trim()}, ${email}` : email));
+  }
+
   const asuntoTexto = `${tipoLabel} TPM-${correlativo} (${empresaNombre})`;
-  const cuerpoTexto = `Hola ${clienteNombre},\n\nAdjunto la ${tipoLabel.toLowerCase()} TPM-${correlativo}.\n\nSaludos,\n${empresaNombre}`;
+  const cuerpoTexto = [
+    `Hola ${clienteNombre},`,
+    "",
+    `Le compartimos la ${tipoLabel.toLowerCase()} TPM-${correlativo} de ${empresaNombre}, adjunta en este correo.`,
+    "",
+    "Resumen:",
+    `- Total: ${moneda} ${total.toFixed(2)}`,
+    vigenciaDias ? `- Oferta válida por ${vigenciaDias} días a partir del ${formatearFecha(fecha)}.` : null,
+    condicionesPago ? `- Condiciones de pago: ${condicionesPago}` : null,
+    "",
+    "Cualquier consulta, quedamos atentos.",
+    "",
+    "Saludos,",
+    empresaNombre,
+    [empresaTelefono, empresaEmail].filter(Boolean).join(" · "),
+  ]
+    .filter((linea) => linea !== null)
+    .join("\n");
+
   const paramsCorreo = new URLSearchParams();
   paramsCorreo.set("subject", asuntoTexto);
   paramsCorreo.set("body", cuerpoTexto);
@@ -87,12 +135,18 @@ export function DocumentoImprimirToolbar({
   }
 
   const telefono = soloDigitos(clienteTelefono);
-  const textoWhatsapp = encodeURIComponent(
-    `Hola ${clienteNombre}, te comparto la ${tipoLabel.toLowerCase()} TPM-${correlativo}.`,
-  );
+  const textoWhatsapp = [
+    `Hola ${clienteNombre}, te comparto la ${tipoLabel.toLowerCase()} TPM-${correlativo} de ${empresaNombre}.`,
+    `Total: ${moneda} ${total.toFixed(2)}${vigenciaDias ? ` · válida ${vigenciaDias} días` : ""}.`,
+    "Adjunto el PDF a continuación.",
+  ].join("\n");
   const whatsappHref = telefono
-    ? `https://wa.me/${telefono}?text=${textoWhatsapp}`
-    : `https://wa.me/?text=${textoWhatsapp}`;
+    ? `https://wa.me/${telefono}?text=${encodeURIComponent(textoWhatsapp)}`
+    : `https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`;
+
+  const contactosDisponibles = contactos.filter(
+    (c) => !destinatario.split(",").map((d) => d.trim().toLowerCase()).includes(c.email.toLowerCase()),
+  );
 
   return (
     <div className="no-imprimir sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface/95 px-6 py-3 backdrop-blur">
@@ -111,17 +165,25 @@ export function DocumentoImprimirToolbar({
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        {contactos.length > 1 && (
+        <Input
+          type="text"
+          value={destinatario}
+          onChange={(e) => setDestinatario(e.target.value)}
+          placeholder="correo@destinatario.com"
+          className="w-64"
+        />
+        {contactosDisponibles.length > 0 && (
           <Select
-            items={Object.fromEntries(contactos.map((c) => [c.email, `${c.nombre} <${c.email}>`]))}
-            value={contactos.some((c) => c.email === destinatario) ? destinatario : ""}
-            onValueChange={(v) => setDestinatario(v as string)}
+            items={Object.fromEntries(contactosDisponibles.map((c) => [c.email, `${c.nombre} <${c.email}>`]))}
+            value=""
+            onValueChange={(v) => agregarContacto(v as string | null)}
           >
-            <SelectTrigger className="w-56">
-              <SelectValue placeholder="Elegir destinatario" />
+            <SelectTrigger className="w-44">
+              <PlusIcon className="h-3.5 w-3.5" />
+              <SelectValue placeholder="Agregar" />
             </SelectTrigger>
             <SelectContent>
-              {contactos.map((c) => (
+              {contactosDisponibles.map((c) => (
                 <SelectItem key={c.id} value={c.email}>
                   {c.nombre} &lt;{c.email}&gt;
                 </SelectItem>
@@ -129,13 +191,6 @@ export function DocumentoImprimirToolbar({
             </SelectContent>
           </Select>
         )}
-        <Input
-          type="email"
-          value={destinatario}
-          onChange={(e) => setDestinatario(e.target.value)}
-          placeholder="correo@destinatario.com"
-          className="w-56"
-        />
         {/* target="_blank", igual que WhatsApp abajo: sin esto, en Chrome el
             mailto: intenta navegar la MISMA pestaña mientras el sistema
             operativo decide qué hacer, y si no hay un cliente de correo
