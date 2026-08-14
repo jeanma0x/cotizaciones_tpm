@@ -52,7 +52,7 @@ export function DocumentoImprimirDialog({
           el posicionamiento/tamaño fijo del Dialog específicamente al
           imprimir, no solo ocultar lo que rodea al modal (.app-shell). */}
       <DialogContent
-        className="max-h-[92vh] w-full max-w-5xl overflow-hidden p-0
+        className="max-h-[92vh] w-full max-w-5xl sm:max-w-5xl overflow-hidden p-0
           print:static print:block print:h-auto print:max-h-none print:w-auto
           print:max-w-none print:translate-x-0 print:translate-y-0
           print:overflow-visible print:rounded-none print:shadow-none print:ring-0
