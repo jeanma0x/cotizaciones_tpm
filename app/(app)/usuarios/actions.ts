@@ -8,6 +8,9 @@ import { db } from "@/lib/db";
 import {
   type AccesoUsuarioInput,
   accesoUsuarioSchema,
+  FIRMA_MAX_BYTES,
+  type FirmaUsuarioInput,
+  firmaUsuarioSchema,
   type InvitacionInput,
   invitacionSchema,
 } from "@/lib/validations/usuario";
@@ -73,6 +76,28 @@ export async function eliminarUsuario(usuarioId: string) {
   }
 
   await db.usuario.delete({ where: { id: usuarioId } });
+  revalidatePath("/usuarios");
+}
+
+export async function actualizarFirmaUsuario(usuarioId: string, input: unknown) {
+  const datos: FirmaUsuarioInput = firmaUsuarioSchema.parse(input);
+  await assertSuperusuario();
+
+  if (datos.firma) {
+    // El regex del schema ya garantiza el prefijo data:image/...;base64, —
+    // acá solo queda medir el tamaño real decodificado (nunca confiar en el
+    // tamaño que reporta el cliente). base64 pesa ~4/3 del binario original,
+    // así que se decodifica para comparar contra el límite real en bytes.
+    const base64 = datos.firma.split(",")[1] ?? "";
+    const bytes = Math.floor((base64.length * 3) / 4);
+    if (bytes > FIRMA_MAX_BYTES) {
+      throw new Error(
+        `La imagen pesa demasiado (máximo ${Math.round(FIRMA_MAX_BYTES / 1024)}KB) — subí una versión más liviana.`,
+      );
+    }
+  }
+
+  await db.usuario.update({ where: { id: usuarioId }, data: { firma: datos.firma } });
   revalidatePath("/usuarios");
 }
 

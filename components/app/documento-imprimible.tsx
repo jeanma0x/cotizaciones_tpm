@@ -8,11 +8,21 @@ const TIPO_LABELS: Record<string, string> = {
   FACTURA: "Factura",
 };
 
+// timeZone: "UTC" (no la zona horaria de Guatemala) — estos campos (fecha
+// del documento, fecha de aceptación) son fechas de calendario puras: vienen
+// de un <input type="date"> como "2026-08-18", y Date las interpreta como
+// medianoche UTC. Para mostrar ese mismo día sin importar dónde corra el
+// proceso, hay que leerlas en la MISMA zona en la que se guardaron (UTC) —
+// pinearlas a America/Guatemala (UTC-6) las corre un día hacia atrás, que es
+// justo el bug que esto corrige (detectado en desarrollo local, donde el
+// proceso corre en America/Guatemala; en producción/Vercel, que corre en
+// UTC, coincidía por casualidad).
 function formatearFecha(fecha: Date) {
   return fecha.toLocaleDateString("es-GT", {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   });
 }
 
@@ -21,6 +31,7 @@ type DocumentoConDecimal = Prisma.DocumentoGetPayload<{
     empresa: true;
     cliente: true;
     items: true;
+    firmante: true;
   };
 }>;
 
@@ -360,11 +371,34 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
 
           <div className="grid grid-cols-2 gap-10 text-center">
             <div>
+              {/* Si no hay firmante elegido para este documento, este bloque
+                  no renderiza nada — queda el mismo espacio en blanco de
+                  siempre para firmar a mano, sin cambio visual. */}
+              {documento.firmante?.firma && (
+                // eslint-disable-next-line @next/next/no-img-element -- data URI cargado por el usuario, no un asset estático
+                <img
+                  src={documento.firmante.firma}
+                  alt={`Firma de ${documento.firmante.nombre}`}
+                  className="mx-auto h-14 object-contain"
+                />
+              )}
               <div className="mb-1 border-t border-dashed border-brand pt-2 text-xs uppercase tracking-wide text-muted-foreground">
                 Firma
               </div>
             </div>
             <div>
+              {(documento.nombreResponsable || documento.fechaAceptacion) && (
+                <div className="text-sm">
+                  {documento.nombreResponsable && (
+                    <p className="font-medium">{documento.nombreResponsable}</p>
+                  )}
+                  {documento.fechaAceptacion && (
+                    <p className="text-xs text-muted-foreground">
+                      {formatearFecha(documento.fechaAceptacion)}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="mb-1 border-t border-dashed border-brand pt-2 text-xs uppercase tracking-wide text-muted-foreground">
                 Nombre de responsable y fecha de aceptación
               </div>

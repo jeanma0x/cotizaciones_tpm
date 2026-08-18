@@ -33,6 +33,7 @@ export default async function DocumentoDetallePage({
       cliente: { include: { contactos: true } },
       items: { orderBy: { orden: "asc" } },
       historial: { orderBy: { fecha: "desc" } },
+      firmante: true,
     },
   });
   if (!documento || !empresasPermitidas.includes(documento.empresaId)) {

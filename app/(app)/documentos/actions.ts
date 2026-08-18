@@ -26,10 +26,31 @@ async function assertClienteDeEmpresa(clienteId: string, empresaId: string) {
   }
 }
 
+// "" (sin firmante elegido) es válido y no se valida acá — nunca confiar
+// solo en que el <select> del formulario ya lo filtró por empresa.
+async function assertFirmanteDeEmpresa(firmanteUsuarioId: string, empresaId: string) {
+  if (!firmanteUsuarioId) return;
+  const acceso = await db.usuarioEmpresa.findFirst({
+    where: { usuarioId: firmanteUsuarioId, empresaId },
+  });
+  if (!acceso) {
+    throw new Error("El firmante elegido no tiene acceso a esta empresa");
+  }
+}
+
+function datosFirma(datos: DocumentoInput) {
+  return {
+    firmanteUsuarioId: datos.firmanteUsuarioId || null,
+    nombreResponsable: datos.nombreResponsable || null,
+    fechaAceptacion: datos.fechaAceptacion ? new Date(datos.fechaAceptacion) : null,
+  };
+}
+
 export async function crearDocumento(input: unknown) {
   const datos = documentoSchema.parse(input);
   await assertAccesoEmpresa(datos.empresaId);
   await assertClienteDeEmpresa(datos.clienteId, datos.empresaId);
+  await assertFirmanteDeEmpresa(datos.firmanteUsuarioId ?? "", datos.empresaId);
 
   const { subtotal, total } = calcularTotales(datos.items, datos.descuento);
 
@@ -51,6 +72,7 @@ export async function crearDocumento(input: unknown) {
         total,
         notas: datos.notas,
         anexos: datos.tipo === "PROPUESTA" ? datos.anexos : undefined,
+        ...datosFirma(datos),
         items: {
           create: datos.items.map((item, i) => ({ ...item, orden: i })),
         },
@@ -74,6 +96,7 @@ export async function actualizarDocumento(id: string, input: unknown) {
   // La empresa de un documento no cambia después de creado: el correlativo
   // ya quedó asignado dentro de esa empresa.
   await assertClienteDeEmpresa(datos.clienteId, existente.empresaId);
+  await assertFirmanteDeEmpresa(datos.firmanteUsuarioId ?? "", existente.empresaId);
 
   const { subtotal, total } = calcularTotales(datos.items, datos.descuento);
 
@@ -101,6 +124,7 @@ export async function actualizarDocumento(id: string, input: unknown) {
         total,
         notas: datos.notas,
         anexos: datos.tipo === "PROPUESTA" ? datos.anexos : undefined,
+        ...datosFirma(datos),
         items: {
           create: datos.items.map((item, i) => ({ ...item, orden: i })),
         },

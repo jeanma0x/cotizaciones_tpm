@@ -27,6 +27,9 @@ export default async function EditarDocumentoPage({
       descuento: true,
       notas: true,
       anexos: true,
+      firmanteUsuarioId: true,
+      nombreResponsable: true,
+      fechaAceptacion: true,
       items: {
         orderBy: { orden: "asc" },
         select: { cantidad: true, descripcion: true, precioUnitario: true },
@@ -37,7 +40,7 @@ export default async function EditarDocumentoPage({
     notFound();
   }
 
-  const [empresas, clientes, servicios] = await Promise.all([
+  const [empresas, clientes, servicios, usuariosConFirma] = await Promise.all([
     db.empresa.findMany({
       where: { id: documento.empresaId },
     }),
@@ -48,6 +51,10 @@ export default async function EditarDocumentoPage({
     db.servicio.findMany({
       where: { empresaId: documento.empresaId, activo: true },
       orderBy: { nombre: "asc" },
+    }),
+    db.usuario.findMany({
+      where: { firma: { not: null }, empresas: { some: { empresaId: documento.empresaId } } },
+      select: { id: true, nombre: true, empresas: { select: { empresaId: true } } },
     }),
   ]);
 
@@ -63,6 +70,11 @@ export default async function EditarDocumentoPage({
         empresas={empresas}
         clientes={clientes}
         servicios={servicios.map((s) => ({ ...s, precioFijo: Number(s.precioFijo) }))}
+        usuarios={usuariosConFirma.map((u) => ({
+          id: u.id,
+          nombre: u.nombre,
+          empresaIds: u.empresas.map((e) => e.empresaId),
+        }))}
         documento={{
           ...documento,
           descuento: Number(documento.descuento),

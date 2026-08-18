@@ -1,7 +1,8 @@
-import { PencilIcon, ShieldCheckIcon } from "lucide-react";
+import { PencilIcon, PenLineIcon, ShieldCheckIcon } from "lucide-react";
 import { AccesoUsuarioDialog } from "@/components/app/acceso-usuario-dialog";
 import { AvatarIniciales } from "@/components/app/avatar-iniciales";
 import { EliminarUsuarioButton } from "@/components/app/eliminar-usuario-button";
+import { FirmaUsuarioDialog } from "@/components/app/firma-usuario-dialog";
 import { InvitarUsuarioDialog } from "@/components/app/invitar-usuario-dialog";
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,17 @@ export default async function UsuariosPage() {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              <FirmaUsuarioDialog
+                usuarioId={usuario.id}
+                nombre={usuario.nombre}
+                firmaActual={usuario.firma}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    <PenLineIcon className="h-4 w-4" />
+                    Firma
+                  </Button>
+                }
+              />
               <AccesoUsuarioDialog
                 usuario={usuario}
                 empresas={empresas}

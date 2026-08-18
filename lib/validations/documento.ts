@@ -26,6 +26,11 @@ export const documentoSchema = z.object({
   items: z.array(itemDocumentoSchema).min(1, "Agregá al menos un ítem"),
   notas: z.array(notaSchema).default([]),
   anexos: z.array(z.string().trim().min(1)).default([]),
+  // "" = sin firma automática (imprimir y firmar a mano) — igual criterio
+  // que clienteId/empresaId de más arriba, un string vacío es "sin elegir".
+  firmanteUsuarioId: z.string().optional().or(z.literal("")),
+  nombreResponsable: z.string().trim().optional().or(z.literal("")),
+  fechaAceptacion: z.string().optional().or(z.literal("")),
 });
 
 export type DocumentoInput = z.infer<typeof documentoSchema>;

@@ -65,10 +65,10 @@ model Empresa {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  usuarios        UsuarioEmpresa[]
-  clientes        Cliente[]
-  servicios       Servicio[]
-  documentos      Documento[]
+  usuarios         UsuarioEmpresa[]
+  clientes         Cliente[]
+  servicios        Servicio[]
+  documentos       Documento[]
   costosOperativos CostoOperativo[]
 
   @@map("empresas")
@@ -80,9 +80,16 @@ model Usuario {
   nombre    String
   email     String     @unique
   rol       RolUsuario @default(MIEMBRO)
+  // Imagen de la firma real (foto/escaneo), guardada como data URI base64
+  // ("data:image/png;base64,..."). Nullable: la mayoría de usuarios no la
+  // tienen cargada — el documento se sigue imprimiendo con espacio en blanco
+  // para firmar a mano, igual que hoy. Sin servicio de archivos nuevo:
+  // límite de tamaño validado en el server action (ver actualizarFirmaUsuario).
+  firma     String?    @db.Text
   createdAt DateTime   @default(now())
 
-  empresas UsuarioEmpresa[]
+  empresas           UsuarioEmpresa[]
+  documentosFirmados Documento[]      @relation("DocumentoFirmante")
 
   @@map("usuarios")
 }
@@ -102,22 +109,22 @@ model UsuarioEmpresa {
 }
 
 model Cliente {
-  id        String      @id @default(cuid())
-  empresaId String
-  empresa   Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  tipo      TipoCliente @default(INDIVIDUAL)
-  nombre    String
-  nit       String?
-  direccion String?
-  contacto  String?
-  telefono  String?
-  email     String?
+  id         String      @id @default(cuid())
+  empresaId  String
+  empresa    Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipo       TipoCliente @default(INDIVIDUAL)
+  nombre     String
+  nit        String?
+  direccion  String?
+  contacto   String?
+  telefono   String?
+  email      String?
   // Solo se llena cuando el WhatsApp real de ESTE cliente es de un país
   // distinto al de la empresa que lo atiende — si es null, se usa
   // Empresa.codigoPais. Ver ese campo para el porqué.
   codigoPais String?
-  activo    Boolean     @default(true) // permite ocultar clientes viejos sin borrarlos
-  createdAt DateTime    @default(now())
+  activo     Boolean     @default(true) // permite ocultar clientes viejos sin borrarlos
+  createdAt  DateTime    @default(now())
 
   documentos Documento[]
   // Solo se usan cuando tipo = EMPRESA — ver TipoCliente. Un cliente
@@ -211,6 +218,14 @@ model Documento {
   anexos             Json? // string[] — solo aplica a propuestas
   estado             EstadoDocumento @default(BORRADOR)
   duplicadoDeId      String? // referencia al documento original si se creó con "Duplicar"
+  // Firma: opcional en los 3 campos — un documento sin firmante se imprime
+  // exactamente igual que antes de este campo (espacio en blanco para firmar
+  // a mano). onDelete: SetNull porque si se borra el Usuario firmante, el
+  // documento no debe romperse, solo vuelve a quedar sin firma automática.
+  firmanteUsuarioId  String?
+  firmante           Usuario?        @relation("DocumentoFirmante", fields: [firmanteUsuarioId], references: [id], onDelete: SetNull)
+  nombreResponsable  String?
+  fechaAceptacion    DateTime?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 

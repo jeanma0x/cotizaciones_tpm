@@ -8,6 +8,7 @@ import {
   CheckIcon,
   ListChecksIcon,
   PaperclipIcon,
+  PenLineIcon,
   PlusIcon,
   StickyNoteIcon,
   TrashIcon,
@@ -59,6 +60,10 @@ type Servicio = {
   nombre: string;
   precioFijo: unknown;
 };
+// Solo usuarios que ya tienen una firma cargada llegan a esta lista (ver
+// fetch en app/(app)/documentos/nuevo/page.tsx y .../[id]/editar/page.tsx) —
+// nada que filtrar acá por "tiene firma o no".
+type UsuarioFirmante = { id: string; nombre: string; empresaIds: string[] };
 
 type DocumentoExistente = {
   id: string;
@@ -73,6 +78,9 @@ type DocumentoExistente = {
   notas: unknown;
   anexos: unknown;
   items: { cantidad: unknown; descripcion: string; precioUnitario: unknown }[];
+  firmanteUsuarioId: string | null;
+  nombreResponsable: string | null;
+  fechaAceptacion: Date | null;
 };
 
 function aFechaInput(fecha: Date) {
@@ -83,11 +91,13 @@ export function DocumentoForm({
   empresas,
   clientes,
   servicios,
+  usuarios,
   documento,
 }: {
   empresas: Empresa[];
   clientes: Cliente[];
   servicios: Servicio[];
+  usuarios: UsuarioFirmante[];
   documento?: DocumentoExistente;
 }) {
   const esEdicion = Boolean(documento);
@@ -127,6 +137,11 @@ export function DocumentoForm({
         : [{ cantidad: 1, descripcion: "", precioUnitario: 0 }],
       notas: notasIniciales,
       anexos: anexosIniciales,
+      firmanteUsuarioId: documento?.firmanteUsuarioId ?? "",
+      nombreResponsable: documento?.nombreResponsable ?? "",
+      fechaAceptacion: documento?.fechaAceptacion
+        ? aFechaInput(documento.fechaAceptacion)
+        : "",
     },
   });
 
@@ -134,6 +149,7 @@ export function DocumentoForm({
   const tipo = watch("tipo");
   const items = watch("items");
   const descuento = watch("descuento") ?? 0;
+  const firmanteUsuarioId = watch("firmanteUsuarioId");
 
   const itemsArray = useFieldArray({ control, name: "items" });
   const notasArray = useFieldArray({ control, name: "notas" });
@@ -161,7 +177,19 @@ export function DocumentoForm({
     () => servicios.filter((s) => s.empresaId === empresaId),
     [servicios, empresaId],
   );
+  const usuariosDeEmpresa = useMemo(
+    () => usuarios.filter((u) => u.empresaIds.includes(empresaId)),
+    [usuarios, empresaId],
+  );
   const empresaActual = empresas.find((e) => e.id === empresaId);
+
+  function elegirFirmante(usuarioId: string | null) {
+    setValue("firmanteUsuarioId", usuarioId ?? "");
+    // Precarga el nombre, pero queda libremente editable después — el
+    // responsable no tiene por qué coincidir 1:1 con quién firma.
+    const usuario = usuariosDeEmpresa.find((u) => u.id === usuarioId);
+    if (usuario) setValue("nombreResponsable", usuario.nombre);
+  }
 
   const subtotal = (items ?? []).reduce(
     (acc, item) => acc + (Number(item?.cantidad) || 0) * (Number(item?.precioUnitario) || 0),
@@ -491,6 +519,55 @@ export function DocumentoForm({
           </div>
         </FormSection>
       )}
+
+      <FormSection title="Firma" icon={PenLineIcon}>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Elegí quién firma este documento para que el PDF ya salga con esa
+          firma insertada, o dejalo en blanco para imprimir y firmar a mano
+          como siempre.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="firmanteUsuarioId">Quién firma</Label>
+            <Select
+              items={{
+                ninguno: "Sin firma (firmar a mano)",
+                ...Object.fromEntries(usuariosDeEmpresa.map((u) => [u.id, u.nombre])),
+              }}
+              value={firmanteUsuarioId || "ninguno"}
+              onValueChange={(v) => elegirFirmante(v === "ninguno" ? null : (v as string))}
+            >
+              <SelectTrigger id="firmanteUsuarioId" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ninguno">Sin firma (firmar a mano)</SelectItem>
+                {usuariosDeEmpresa.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {usuariosDeEmpresa.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Nadie con acceso a esta empresa tiene una firma cargada
+                todavía — se puede subir desde Usuarios.
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="nombreResponsable">Nombre de responsable</Label>
+            <Input id="nombreResponsable" {...register("nombreResponsable")} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="fechaAceptacion">Fecha de aceptación</Label>
+            <Input id="fechaAceptacion" type="date" {...register("fechaAceptacion")} />
+          </div>
+        </div>
+      </FormSection>
 
       <div className="flex justify-end gap-2">
         <Button

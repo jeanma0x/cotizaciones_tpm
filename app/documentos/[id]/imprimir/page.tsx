@@ -27,6 +27,7 @@ export default async function ImprimirDocumentoPage({
       empresa: true,
       cliente: { include: { contactos: true } },
       items: { orderBy: { orden: "asc" } },
+      firmante: true,
     },
   });
   if (!documento || !empresasPermitidas.includes(documento.empresaId)) {

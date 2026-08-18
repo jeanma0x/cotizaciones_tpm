@@ -18,8 +18,17 @@ function soloDigitos(valor: string | null | undefined) {
   return (valor ?? "").replace(/\D/g, "");
 }
 
+// timeZone: "UTC" — ver el mismo comentario en documento-imprimible.tsx.
+// "fecha" es una fecha de calendario pura guardada como medianoche UTC;
+// leerla de vuelta en UTC es lo que reproduce el mismo día que se escribió,
+// sin importar en qué zona horaria corra el proceso.
 function formatearFecha(fecha: Date) {
-  return fecha.toLocaleDateString("es-GT", { year: "numeric", month: "long", day: "numeric" });
+  return fecha.toLocaleDateString("es-GT", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 type Contacto = { id: string; nombre: string; email: string };
