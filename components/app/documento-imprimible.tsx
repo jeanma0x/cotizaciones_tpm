@@ -390,20 +390,31 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
               </div>
             </div>
             <div>
-              {(documento.nombreResponsable || documento.fechaAceptacion) && (
-                <div className="text-sm">
-                  {documento.nombreResponsable && (
-                    <p className="font-medium">{documento.nombreResponsable}</p>
-                  )}
-                  {documento.fechaAceptacion && (
-                    <p className="text-xs text-muted-foreground">
-                      {formatearFecha(documento.fechaAceptacion)}
-                    </p>
-                  )}
-                </div>
-              )}
-              <div className="mb-1 border-t border-dashed border-brand pt-2 text-xs uppercase tracking-wide text-muted-foreground">
-                Nombre de responsable y fecha de aceptación
+              {/* A diferencia de la columna de Firma, acá NUNCA va nada
+                  arriba de la línea — ese espacio es para que el cliente
+                  firme a mano o digitalmente de su lado, y tiene que quedar
+                  libre sin importar si ya se precargó su nombre/fecha. El
+                  nombre/fecha (cuando existen) reemplazan la etiqueta
+                  genérica de abajo, no el espacio de firma. */}
+              <div className="mb-1 border-t border-dashed border-brand pt-2 text-xs">
+                {documento.nombreResponsable || documento.fechaAceptacion ? (
+                  <div className="normal-case">
+                    {documento.nombreResponsable && (
+                      <p className="font-medium text-text-primary">
+                        {documento.nombreResponsable}
+                      </p>
+                    )}
+                    {documento.fechaAceptacion && (
+                      <p className="text-muted-foreground">
+                        {formatearFecha(documento.fechaAceptacion)}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <span className="uppercase tracking-wide text-muted-foreground">
+                    Nombre de responsable y fecha de aceptación
+                  </span>
+                )}
               </div>
             </div>
           </div>
