@@ -172,7 +172,11 @@ export default async function DashboardPage() {
     // cuándo se marcó FACTURADA (no existe ese timestamp en el modelo).
     db.documento.findMany({
       where: { ...where, estado: "FACTURADA", fecha: { gte: inicioMes } },
-      select: { total: true, empresa: { select: { moneda: true } } },
+      select: {
+        total: true,
+        empresaId: true,
+        empresa: { select: { moneda: true, codigoPais: true } },
+      },
     }),
     db.costoOperativo.findMany({
       where: { ...where, fechaGasto: { gte: inicioMes } },
@@ -345,13 +349,65 @@ export default async function DashboardPage() {
   const montoVigenteEntradas = Object.entries(montoVigentePorMoneda);
   const montoFacturadoEntradas = Object.entries(montoFacturadoPorMoneda);
 
-  // ---- Utilidad neta (mes): Facturado del mes − Costos del mes, por moneda.
-  // Sin ISR/IVA todavía — Oldemar va a mandar la fórmula exacta (reunión
-  // 14/08), no se inventa el orden de cálculo sin eso.
-  const utilidadNetaPorMoneda: Record<string, number> = {};
+  // ---- Utilidad neta (mes): Facturado del mes − Costos del mes − ISR, por moneda.
+  //
+  // ISR: Régimen Opcional Simplificado sobre Ingresos de Actividades
+  // Lucrativas (Decreto 10-2012, Libro I, art. 44 y siguientes) — 5% sobre
+  // los primeros Q30,000 de ingresos MENSUALES por contribuyente, 7% sobre
+  // el excedente. Es el régimen más común para una PYME de servicios (bajo
+  // costo fijo, alta relación margen/ingreso) y el que se eligió acá a falta
+  // de que Oldemar confirme cuál tiene inscrito cada empresa en su RTU — si
+  // alguna empresa está en Régimen sobre las Utilidades (25% sobre la
+  // ganancia neta, no sobre el ingreso), este cálculo quedaría distinto y
+  // hay que ajustarlo.
+  //
+  // Solo aplica a empresas de Guatemala (codigoPais "502" — Corporación SIAP
+  // y Servicios Generales TPM): Panamá y Estados Unidos tributan bajo sus
+  // propias leyes, no la guatemalteca, y no se les aplica este descuento.
+  //
+  // IVA NO se descuenta acá a propósito: es un impuesto de traslado (se
+  // cobra al cliente y se acredita contra el IVA pagado en compras), no un
+  // costo del negocio — reducir "Facturado" por el 12% de IVA solo sería
+  // correcto si supiéramos cuánto IVA se pagó en compras (crédito fiscal),
+  // que este sistema no registra. Restarlo sin eso sobreestimaría el
+  // impuesto real y subestimaría la utilidad.
+  const ISR_LIMITE_TRAMO_1 = 30000; // Q30,000 mensuales
+  const ISR_TASA_TRAMO_1 = 0.05;
+  const ISR_TASA_TRAMO_2 = 0.07;
+  const GUATEMALA_CODIGO_PAIS = "502";
+
+  function calcularIsrSimplificado(ingresoMensual: number) {
+    if (ingresoMensual <= 0) return 0;
+    if (ingresoMensual <= ISR_LIMITE_TRAMO_1) return ingresoMensual * ISR_TASA_TRAMO_1;
+    return (
+      ISR_LIMITE_TRAMO_1 * ISR_TASA_TRAMO_1 +
+      (ingresoMensual - ISR_LIMITE_TRAMO_1) * ISR_TASA_TRAMO_2
+    );
+  }
+
+  const facturadoPorEmpresaDelMes = new Map<
+    string,
+    { moneda: string; esGuatemala: boolean; total: number }
+  >();
   for (const doc of facturadoDelMes) {
-    const moneda = doc.empresa.moneda;
-    utilidadNetaPorMoneda[moneda] = (utilidadNetaPorMoneda[moneda] ?? 0) + Number(doc.total);
+    const actual = facturadoPorEmpresaDelMes.get(doc.empresaId) ?? {
+      moneda: doc.empresa.moneda,
+      esGuatemala: doc.empresa.codigoPais === GUATEMALA_CODIGO_PAIS,
+      total: 0,
+    };
+    actual.total += Number(doc.total);
+    facturadoPorEmpresaDelMes.set(doc.empresaId, actual);
+  }
+
+  const utilidadNetaPorMoneda: Record<string, number> = {};
+  const isrPorMoneda: Record<string, number> = {};
+  for (const { moneda, esGuatemala, total } of facturadoPorEmpresaDelMes.values()) {
+    utilidadNetaPorMoneda[moneda] = (utilidadNetaPorMoneda[moneda] ?? 0) + total;
+    if (esGuatemala) {
+      const isr = calcularIsrSimplificado(total);
+      isrPorMoneda[moneda] = (isrPorMoneda[moneda] ?? 0) + isr;
+      utilidadNetaPorMoneda[moneda] -= isr;
+    }
   }
   for (const costo of costosDelMes) {
     const moneda = costo.empresa.moneda;
@@ -359,6 +415,7 @@ export default async function DashboardPage() {
   }
   const utilidadNetaEntradas = Object.entries(utilidadNetaPorMoneda);
   const utilidadNetaNegativa = utilidadNetaEntradas.some(([, monto]) => monto < 0);
+  const isrEntradas = Object.entries(isrPorMoneda).filter(([, monto]) => monto > 0);
 
   return (
     <div className="flex flex-col gap-8">
@@ -421,6 +478,19 @@ export default async function DashboardPage() {
           }
         />
       </div>
+
+      {/* Transparencia del descuento de ISR en "Utilidad neta" — nunca un
+          cálculo invisible. Solo aparece cuando hay algo que mostrar (mes
+          sin facturación de empresas de Guatemala = sin línea). */}
+      {isrEntradas.length > 0 && (
+        <p className="-mt-4 text-xs text-muted-foreground">
+          Incluye ISR estimado (régimen opcional simplificado, 5%/7% sobre
+          ingresos, solo empresas de Guatemala):{" "}
+          <span className="font-mono">
+            {isrEntradas.map(([moneda, monto]) => `${moneda} ${monto.toFixed(2)}`).join(" · ")}
+          </span>
+        </p>
+      )}
 
       {/* Zona 3 — atención requerida: lista accionable, nunca solo un número */}
       <AtencionRequerida items={itemsAtencion} />
