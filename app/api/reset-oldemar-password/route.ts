@@ -33,9 +33,10 @@ export async function POST(request: Request) {
   const client = await clerkClient();
   const clerkUser = await client.users.getUser(usuario.clerkId);
 
-  // Clerk exige mezcla de mayúscula/minúscula/número/símbolo por defecto —
-  // el alfabeto "claro" anterior (sin l/I/1/0/O) no incluía símbolos.
-  const passwordNueva = generarPasswordClara(12) + "#7";
+  // Clerk exige 15+ caracteres (confirmado con el 422 anterior:
+  // form_password_length_too_short) además de mezcla de mayúscula/minúscula/
+  // número/símbolo — el alfabeto "claro" (sin l/I/1/0/O) no incluía símbolos.
+  const passwordNueva = generarPasswordClara(14) + "#7";
 
   try {
     await client.users.updateUser(usuario.clerkId, { password: passwordNueva });
