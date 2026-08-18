@@ -462,7 +462,7 @@ export default async function DashboardPage() {
                   className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2 first:border-t-0 first:pt-0"
                 >
                   <span className="font-medium text-text-primary">{empresa.nombre}</span>
-                  <span className="font-mono text-brand">
+                  <span className="font-mono text-brand dark:text-brand-hover">
                     Facturado {empresa.moneda} {facturado.toFixed(2)}
                   </span>
                   <span className="font-mono text-status-enviada">

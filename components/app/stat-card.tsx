@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 type Tono = "brand" | "accent" | "success" | "danger";
 
 const TONOS: Record<Tono, { bg: string; fg: string; linea: string }> = {
-  brand: { bg: "bg-brand/10", fg: "text-brand", linea: "var(--color-brand)" },
+  brand: { bg: "bg-brand/10", fg: "text-brand dark:text-brand-hover", linea: "var(--color-brand)" },
   accent: { bg: "bg-accent/15", fg: "text-accent-hover", linea: "var(--color-accent)" },
   success: { bg: "bg-success-bg", fg: "text-success", linea: "var(--color-success)" },
   danger: { bg: "bg-danger-bg", fg: "text-danger", linea: "var(--color-danger)" },

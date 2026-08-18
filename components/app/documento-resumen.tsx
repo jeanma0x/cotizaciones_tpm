@@ -63,7 +63,7 @@ export function DocumentoResumen({ data }: { data: DocumentoResumenData }) {
         )}
         <div className="doc-resumen-span-full">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Total</p>
-          <p className="font-mono text-lg font-semibold text-brand">
+          <p className="font-mono text-lg font-semibold text-brand dark:text-brand-hover">
             {data.moneda} {data.total.toFixed(2)}
           </p>
         </div>

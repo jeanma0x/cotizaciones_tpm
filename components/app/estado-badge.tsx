@@ -48,7 +48,9 @@ const ESTILOS_ESTADO: Record<
     icon: Clock,
   },
   FACTURADA: {
-    className: "text-brand bg-brand/10",
+    // dark:text-brand-hover — --color-brand (navy-500 en oscuro) como texto
+    // sobre este fondo falla contraste AA (~2.3:1 medido); navy-300 sí pasa.
+    className: "text-brand bg-brand/10 dark:text-brand-hover",
     label: "Facturada",
     icon: Receipt,
   },

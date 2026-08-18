@@ -194,7 +194,14 @@
   --popover: var(--color-surface);
   --popover-foreground: var(--color-text-primary);
   --primary: var(--color-brand);
-  --primary-foreground: var(--color-surface);
+  /* Fijo blanco en ambos temas, no --color-surface: un relleno sólido de
+     --color-brand siempre necesita texto claro encima, sin importar el
+     tema — igual criterio que --sidebar-foreground (ver design-system.md
+     "Modo claro y oscuro"). En claro coincide con --color-surface (blanco),
+     pero en oscuro --color-surface es casi negro y el texto quedaba
+     ilegible sobre el navy medio de --color-brand (contraste real 1.9:1,
+     medido con Playwright). */
+  --primary-foreground: var(--sidebar-foreground);
   --secondary: var(--color-accent);
   --secondary-foreground: var(--color-text-primary);
   --muted: var(--paper-50);
@@ -251,7 +258,7 @@
   --popover: var(--color-surface);
   --popover-foreground: var(--color-text-primary);
   --primary: var(--color-brand);
-  --primary-foreground: var(--color-surface);
+  --primary-foreground: var(--sidebar-foreground);
   --secondary: var(--color-accent);
   --secondary-foreground: var(--color-text-primary);
   --muted: var(--paper-900);
@@ -308,6 +315,17 @@
   background: color-mix(in oklch, var(--color-accent) 14%, var(--color-surface));
 }
 
+/* --color-brand como TEXTO/borde (no como relleno sólido) sobre el fondo
+   propio de este tag falla contraste en oscuro: navy-500 sobre un fondo casi
+   negro mide ~2.3:1 (Playwright), muy por debajo del mínimo AA de 4.5:1. En
+   claro no aplica (navy-900 sobre un fondo casi blanco ya tiene contraste de
+   sobra) — --color-brand-hover (navy-300 en oscuro) es la variante más clara
+   que ya existe en la capa semántica para este caso. */
+[data-theme="dark"] .correlativo-tag {
+  border-color: var(--color-brand-hover);
+  color: var(--color-brand-hover);
+}
+
 /* Grupo de "pills" — selector de tipo de documento. Ver design-system.md
    "Selector de tipo de documento — botones tipo pill, nunca un <select>". */
 .pill-group {
@@ -330,7 +348,10 @@
 }
 .pill[data-active="true"] {
   background: var(--color-brand);
-  color: var(--color-surface);
+  /* Fijo, no --color-surface — ver comentario en --primary-foreground de
+     arriba: mismo relleno sólido de --color-brand, mismo requisito de texto
+     claro fijo. */
+  color: var(--sidebar-foreground);
   border-color: var(--color-brand);
 }
 

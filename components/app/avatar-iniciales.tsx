@@ -14,7 +14,7 @@ function iniciales(nombre: string) {
 // Directorio, no grilla de datos — ver diagnóstico de pantalla Clientes.
 export function AvatarIniciales({ nombre }: { nombre: string }) {
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-surface">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-sidebar-foreground">
       {iniciales(nombre)}
     </span>
   );
