@@ -371,31 +371,35 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
 
           <div className="grid grid-cols-2 gap-10 text-center">
             <div>
-              {/* Si no hay firmante elegido para este documento, este bloque
-                  no renderiza nada — queda el mismo espacio en blanco de
-                  siempre para firmar a mano, sin cambio visual. */}
-              {documento.firmante?.firma && (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- data URI cargado por el usuario, no un asset estático */}
+              {/* h-14 fijo en AMBAS columnas (con o sin imagen/firmante) —
+                  así las dos líneas punteadas quedan a la misma altura sin
+                  importar si esta columna tiene imagen o no. Solo la imagen
+                  va arriba de la línea; el nombre del firmante se movió
+                  abajo, junto con la etiqueta, igual que el responsable. */}
+              <div className="flex h-14 items-end justify-center">
+                {documento.firmante?.firma && (
+                  // eslint-disable-next-line @next/next/no-img-element -- data URI cargado por el usuario, no un asset estático
                   <img
                     src={documento.firmante.firma}
                     alt={`Firma de ${documento.firmante.nombre}`}
-                    className="mx-auto h-14 object-contain"
+                    className="h-14 object-contain"
                   />
-                  <p className="text-sm font-medium">{documento.firmante.nombre}</p>
-                </>
-              )}
-              <div className="mb-1 border-t border-dashed border-brand pt-2 text-xs uppercase tracking-wide text-muted-foreground">
-                Firma
+                )}
+              </div>
+              <div className="mb-1 border-t border-dashed border-brand pt-2 text-xs">
+                {documento.firmante?.firma ? (
+                  <p className="font-medium text-text-primary">{documento.firmante.nombre}</p>
+                ) : (
+                  <span className="uppercase tracking-wide text-muted-foreground">Firma</span>
+                )}
               </div>
             </div>
             <div>
-              {/* A diferencia de la columna de Firma, acá NUNCA va nada
-                  arriba de la línea — ese espacio es para que el cliente
-                  firme a mano o digitalmente de su lado, y tiene que quedar
-                  libre sin importar si ya se precargó su nombre/fecha. El
-                  nombre/fecha (cuando existen) reemplazan la etiqueta
-                  genérica de abajo, no el espacio de firma. */}
+              {/* Mismo h-14 que la columna de Firma, siempre vacío — es el
+                  espacio para que el cliente firme a mano o digitalmente de
+                  su lado. El nombre/fecha (cuando existen) reemplazan la
+                  etiqueta genérica de abajo, nunca ocupan este espacio. */}
+              <div className="h-14" />
               <div className="mb-1 border-t border-dashed border-brand pt-2 text-xs">
                 {documento.nombreResponsable || documento.fechaAceptacion ? (
                   <div className="normal-case">
