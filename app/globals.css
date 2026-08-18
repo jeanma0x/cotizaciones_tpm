@@ -4,8 +4,15 @@
 @import "@clerk/ui/themes/shadcn.css";
 
 /* data-theme, no .dark: ver docs/design-system.md "Modo claro y oscuro" —
-   el atributo persiste en localStorage vía next-themes (attribute="data-theme"). */
-@custom-variant dark (&:is([data-theme="dark"] *));
+   el atributo persiste en localStorage vía next-themes (attribute="data-theme").
+   El ":not([data-theme='light'] *)" es necesario porque la vista de
+   impresión anida un <div data-theme="light"> forzado DENTRO del <html>
+   (que puede estar en oscuro) — sin esto, "dark:*" es un selector
+   estructural puro ("¿hay un ancestro oscuro en algún punto?") y sigue
+   aplicando a los botones/inputs de esa vista aunque estén, en los hechos,
+   dentro de un bloque forzado a claro (medido con Playwright: el botón
+   "Correo" quedaba con dark:bg-input/30 encima de un fondo claro). */
+@custom-variant dark (&:is([data-theme="dark"] *):not([data-theme="light"] *));
 
 @theme inline {
   --color-background: var(--background);

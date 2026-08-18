@@ -1,5 +1,6 @@
 "use client";
 
+import { TrendingUpIcon } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -7,6 +8,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
 
 // Zona 2 del panel (scope.md): monto cotizado vs. facturado por mes, últimos
 // 12 meses — nunca los colores default de Recharts, solo variaciones de
@@ -32,10 +34,11 @@ export function TendenciaMensualChart({
 
   if (mesesConDatos < 3) {
     return (
-      <p className="flex h-56 items-center justify-center text-center text-sm text-muted-foreground">
-        Necesitás más historial para ver una tendencia — todavía hay menos de 3
-        meses con actividad registrada.
-      </p>
+      <EstadoVacioGrafico
+        className="h-56"
+        icon={<TrendingUpIcon className="h-5 w-5" />}
+        mensaje="Necesitás más historial para ver una tendencia — todavía hay menos de 3 meses con actividad registrada."
+      />
     );
   }
 

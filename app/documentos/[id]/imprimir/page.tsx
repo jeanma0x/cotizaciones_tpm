@@ -37,7 +37,12 @@ export default async function ImprimirDocumentoPage({
     // data-theme="light" fijo: un documento exportado (cotización/propuesta/
     // factura) tiene que verse siempre igual sin importar el modo claro/oscuro
     // que tenga activo quien lo esté viendo en la app — incluye la toolbar.
-    <div data-theme="light" className="fondo-imprimible min-h-screen bg-[#EAE6DC]">
+    // text-foreground: ver comentario equivalente en documento-imprimir-dialog.tsx
+    // (sin esto, la toolbar hereda el "color" ya resuelto por <body> en oscuro).
+    <div
+      data-theme="light"
+      className="fondo-imprimible min-h-screen bg-[#EAE6DC] text-foreground"
+    >
       <DocumentoImprimirToolbar
         documentoId={documento.id}
         correlativo={documento.correlativo}

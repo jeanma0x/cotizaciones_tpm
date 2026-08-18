@@ -1,5 +1,6 @@
 "use client";
 
+import { Building2Icon } from "lucide-react";
 import { Bar, BarChart, Cell, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -7,6 +8,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
 
 // Barra horizontal por empresa (cantidad de documentos — currency-agnóstico,
 // nunca mezclar montos de distintas monedas en el mismo eje). Igual criterio
@@ -22,9 +24,11 @@ export function DesgloseEmpresaChart({
 }) {
   if (data.every((d) => d.totalDocs === 0)) {
     return (
-      <p className="flex h-24 items-center justify-center text-center text-sm text-muted-foreground">
-        Todavía no hay documentos para graficar.
-      </p>
+      <EstadoVacioGrafico
+        className="h-24"
+        icon={<Building2Icon className="h-5 w-5" />}
+        mensaje="Todavía no hay documentos para graficar."
+      />
     );
   }
 

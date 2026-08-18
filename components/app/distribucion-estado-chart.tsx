@@ -1,5 +1,6 @@
 "use client";
 
+import { PieChartIcon } from "lucide-react";
 import { Cell, Pie, PieChart } from "recharts";
 import {
   ChartContainer,
@@ -7,6 +8,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
 
 // Gráfico restringido a variaciones de navy + un solo acento ámbar para lo
 // que requiere atención — nunca la paleta de colores semánticos completa
@@ -33,9 +35,11 @@ export function DistribucionEstadoChart({
 
   if (data.every((d) => d.cantidad === 0)) {
     return (
-      <p className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        Todavía no hay documentos para graficar.
-      </p>
+      <EstadoVacioGrafico
+        className="h-48"
+        icon={<PieChartIcon className="h-5 w-5" />}
+        mensaje="Todavía no hay documentos para graficar."
+      />
     );
   }
 

@@ -62,8 +62,17 @@ export function DocumentoImprimirDialog({
         <div className="max-h-[92vh] overflow-y-auto rounded-xl print:max-h-none print:overflow-visible print:rounded-none">
           {/* data-theme="light" fijo, igual que la página completa
               (/documentos/[id]/imprimir): el documento siempre se ve igual
-              sin importar el modo claro/oscuro activo. */}
-          <div data-theme="light" className="fondo-imprimible bg-[#EAE6DC]">
+              sin importar el modo claro/oscuro activo. text-foreground es
+              necesario, no cosmético: "color" es una propiedad heredada, y
+              si nada la vuelve a declarar acá, los botones/inputs de la
+              toolbar heredan el "color" YA RESUELTO por <body> (que puede
+              estar en oscuro) en vez de recalcularlo con el --foreground
+              claro que este div acaba de fijar — variables CSS nuevas no
+              "reviven" un valor heredado que ya se resolvió más arriba. */}
+          <div
+            data-theme="light"
+            className="fondo-imprimible bg-[#EAE6DC] text-foreground"
+          >
             <DocumentoImprimirToolbar
               documentoId={documento.id}
               correlativo={documento.correlativo}

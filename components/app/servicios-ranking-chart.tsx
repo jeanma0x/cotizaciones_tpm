@@ -1,5 +1,6 @@
 "use client";
 
+import { TruckIcon } from "lucide-react";
 import { Bar, BarChart, Cell, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -7,6 +8,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
 
 const config = { cantidad: { label: "Veces cotizado" } } satisfies ChartConfig;
 
@@ -17,9 +19,11 @@ export function ServiciosRankingChart({
 }) {
   if (data.length === 0) {
     return (
-      <p className="flex h-24 items-center justify-center text-center text-sm text-muted-foreground">
-        Todavía no hay suficiente actividad para armar un ranking.
-      </p>
+      <EstadoVacioGrafico
+        className="h-24"
+        icon={<TruckIcon className="h-5 w-5" />}
+        mensaje="Todavía no hay suficiente actividad para armar un ranking."
+      />
     );
   }
 

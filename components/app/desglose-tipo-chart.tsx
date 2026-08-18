@@ -1,5 +1,6 @@
 "use client";
 
+import { ClipboardListIcon } from "lucide-react";
 import { Bar, BarChart, Cell, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -7,6 +8,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
 
 const config = { cantidad: { label: "Documentos" } } satisfies ChartConfig;
 const TONOS = ["var(--navy-300)", "var(--navy-500)", "var(--navy-700)"];
@@ -18,9 +20,11 @@ export function DesgloseTipoChart({
 }) {
   if (data.every((d) => d.cantidad === 0)) {
     return (
-      <p className="flex h-24 items-center justify-center text-center text-sm text-muted-foreground">
-        Todavía no hay documentos para graficar.
-      </p>
+      <EstadoVacioGrafico
+        className="h-24"
+        icon={<ClipboardListIcon className="h-5 w-5" />}
+        mensaje="Todavía no hay documentos para graficar."
+      />
     );
   }
 

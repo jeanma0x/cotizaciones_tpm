@@ -162,10 +162,10 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
           </p>
         </header>
 
-        <table className="encabezado-firma mb-6 w-full border-collapse text-sm">
+        <table className="encabezado-firma mb-4 w-full border-collapse text-sm">
           <tbody>
             <tr>
-              <td className="w-1/2 border border-border bg-muted/40 p-3 align-top">
+              <td className="w-1/2 border border-border bg-muted/40 p-2.5 align-top">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Contacto de servicio
                 </p>
@@ -176,18 +176,18 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
                     .join(" · ")}
                 </p>
               </td>
-              <td className="w-1/2 border border-border bg-muted/40 p-3 align-top">
+              <td className="w-1/2 border border-border bg-muted/40 p-2.5 align-top">
                 <span className="correlativo-tag">TPM-{documento.correlativo}</span>
               </td>
             </tr>
             <tr>
-              <td className="border border-border p-3 align-top">
+              <td className="border border-border p-2.5 align-top">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Cliente
                 </p>
                 <p className="font-medium">{documento.cliente?.nombre ?? "—"}</p>
               </td>
-              <td className="border border-border p-3 align-top">
+              <td className="border border-border p-2.5 align-top">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   NIT
                 </p>
@@ -195,31 +195,33 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
               </td>
             </tr>
             <tr>
-              <td className="border border-border p-3 align-top">
+              <td className="border border-border p-2.5 align-top">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Fecha
                 </p>
                 <p className="font-mono">{formatearFecha(documento.fecha)}</p>
               </td>
-              <td className="border border-border p-3 align-top">
+              <td className="border border-border p-2.5 align-top">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Dirección
                 </p>
                 <p>{documento.cliente?.direccion ?? "—"}</p>
               </td>
             </tr>
-            {documento.condicionesPago && (
-              <tr>
-                <td colSpan={2} className="border border-border p-3 align-top">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Condiciones de pago
-                  </p>
-                  <p>{documento.condicionesPago}</p>
-                </td>
-              </tr>
-            )}
+            {/* Una sola fila con las dos columnas cuando hay condiciones de
+                pago (mismo patrón que Cliente/NIT y Fecha/Dirección arriba)
+                en vez de dos filas colSpan=2 separadas — ahorra una fila
+                completa de la tabla en documentos cortos, sin quitar nada:
+                Oldemar pidió que el PDF ocupe menos hojas cuando el
+                contenido lo permite. */}
             <tr>
-              <td colSpan={2} className="border border-border p-3 align-top">
+              <td className="border border-border p-2.5 align-top">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Condiciones de pago
+                </p>
+                <p>{documento.condicionesPago || "—"}</p>
+              </td>
+              <td className="border border-border p-2.5 align-top">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Oferta válida hasta
                 </p>
@@ -229,12 +231,12 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
               </td>
             </tr>
             <tr>
-              <td className="border border-border bg-muted/40 p-3 align-top">
+              <td className="border border-border bg-muted/40 p-2.5 align-top">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Descripción general
                 </p>
               </td>
-              <td className="border border-border p-3 align-top whitespace-pre-wrap">
+              <td className="border border-border p-2.5 align-top whitespace-pre-wrap">
                 {documento.descripcionGeneral || "—"}
               </td>
             </tr>
@@ -245,7 +247,7 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
           Detalle de servicios
         </div>
 
-        <table className="mb-6 w-full border-collapse text-sm">
+        <table className="mb-4 w-full border-collapse text-sm">
           <thead>
             <tr>
               <th className="border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
@@ -285,7 +287,7 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
           </tbody>
         </table>
 
-        <div className="mb-6 flex justify-end">
+        <div className="mb-4 flex justify-end">
           <div className="flex w-72 flex-col gap-1">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
@@ -312,7 +314,7 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
         </div>
 
         {notas.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-4">
             <h2 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand">
               <span className="h-px w-4 bg-accent" />
               Notas
@@ -329,7 +331,7 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
         )}
 
         {documento.tipo === "PROPUESTA" && anexos.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-4">
             <h2 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand">
               <span className="h-px w-4 bg-accent" />
               Anexos
@@ -342,7 +344,13 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
           </div>
         )}
 
-        <footer className="encabezado-firma mt-16 flex flex-col gap-16 text-sm">
+        {/* mt-8: separación antes del pie, solo un respiro visual, no
+            necesita ser tan generosa como el espacio de firma en sí.
+            gap-12: el espacio real donde se firma a mano encima de la línea
+            punteada de abajo — se deja más generoso a propósito, no se toca
+            tanto como mt-8 (ver docs/design-system.md: nada de contenido
+            cortado ni de firma sin espacio real para escribir). */}
+        <footer className="encabezado-firma mt-8 flex flex-col gap-12 text-sm">
           <div className="border-t border-border pt-3 text-center font-mono text-xs text-muted-foreground">
             {documento.empresa.nombre} ·{" "}
             {[documento.empresa.direccion, documento.empresa.telefono, documento.empresa.email]
