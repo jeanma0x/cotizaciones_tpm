@@ -1,6 +1,6 @@
 "use client";
 
-import { Cog, MenuIcon } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Solo visible en mobile (md:hidden) — el sidebar completo arranca fuera de
@@ -20,7 +20,13 @@ export function MobileTopBar() {
       >
         <MenuIcon className="h-5 w-5" />
       </Button>
-      <Cog className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+      {/* eslint-disable-next-line @next/next/no-img-element -- SVG estático de marca, no necesita optimización de next/image */}
+      <img
+        src="/marca/svg/icono-fondo-oscuro.svg"
+        alt=""
+        aria-hidden="true"
+        className="h-5 w-5 shrink-0"
+      />
       <span className="truncate font-mono text-base font-extrabold tracking-wide text-sidebar-foreground">
         TPM
       </span>

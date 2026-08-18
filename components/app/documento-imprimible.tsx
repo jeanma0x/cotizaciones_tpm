@@ -1,4 +1,3 @@
-import { Cog } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import { totalEnLetras } from "@/lib/numero-a-letras";
 import { PORTADA_INSTITUCIONAL } from "@/lib/portada-institucional";
@@ -114,17 +113,15 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
         {documento.tipo === "PROPUESTA" && (
           <section className="page-break-after mb-12 flex flex-col gap-7">
             <div className="flex flex-col items-center gap-3 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand">
-                <Cog className="h-7 w-7 text-accent" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Servicios Generales TPM
-                </p>
-                <h1 className="font-mono text-2xl font-extrabold text-brand">
-                  {documento.empresa.nombre}
-                </h1>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element -- SVG estático de marca, no necesita optimización de next/image */}
+              <img
+                src="/marca/svg/logo-color.svg"
+                alt="Servicios Generales TPM"
+                className="h-20 w-auto"
+              />
+              <h1 className="font-mono text-2xl font-extrabold text-brand">
+                {documento.empresa.nombre}
+              </h1>
               <p className="text-sm font-medium uppercase tracking-widest text-accent-hover">
                 {tipoLabel}
               </p>
@@ -151,12 +148,12 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
         )}
 
         <header className="encabezado-firma mb-6 flex flex-col items-center gap-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand">
-            <Cog className="h-6 w-6 text-accent" />
-          </div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Servicios Generales TPM
-          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element -- SVG estático de marca, no necesita optimización de next/image */}
+          <img
+            src="/marca/svg/logo-color.svg"
+            alt="Servicios Generales TPM"
+            className="h-14 w-auto"
+          />
           <h1 className="font-mono text-xl font-extrabold text-brand">
             {documento.empresa.nombre}
           </h1>

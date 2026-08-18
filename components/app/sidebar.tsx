@@ -6,7 +6,6 @@ import {
   ChevronsLeftIcon,
   ChevronsRightIcon,
   ClipboardList,
-  Cog,
   FilePlus,
   LayoutGrid,
   MoonIcon,
@@ -152,7 +151,13 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
         )}
       >
       <div className="flex items-center gap-2 px-5 py-6">
-        <Cog className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+        {/* eslint-disable-next-line @next/next/no-img-element -- SVG estático de marca, no necesita optimización de next/image */}
+        <img
+          src="/marca/svg/icono-fondo-oscuro.svg"
+          alt=""
+          aria-hidden="true"
+          className="h-5 w-5 shrink-0"
+        />
         {!colapsadoEfectivo && (
           <div className="flex min-w-0 flex-col">
             <span className="truncate font-mono text-lg font-extrabold tracking-wide text-sidebar-foreground">

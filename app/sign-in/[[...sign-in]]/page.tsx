@@ -1,17 +1,14 @@
 import { SignIn } from "@clerk/nextjs";
-import { Cog } from "lucide-react";
 
 export default function SignInPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-surface-sunken px-4">
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand">
-          <Cog className="h-7 w-7 text-accent" />
-        </div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Servicios Generales TPM
-        </p>
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element -- SVG estático de marca, no necesita optimización de next/image */}
+      <img
+        src="/marca/svg/logo-color.svg"
+        alt="Servicios Generales TPM"
+        className="h-16 w-auto"
+      />
       <SignIn
         appearance={{
           variables: {
