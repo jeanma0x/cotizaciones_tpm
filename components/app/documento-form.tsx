@@ -53,7 +53,13 @@ const TIPO_LABELS: Record<string, string> = {
 };
 
 type Empresa = { id: string; nombre: string; moneda: string };
-type Cliente = { id: string; empresaId: string; nombre: string };
+type Cliente = {
+  id: string;
+  empresaId: string;
+  nombre: string;
+  contacto: string | null;
+  contactos: { id: string; nombre: string }[];
+};
 type Servicio = {
   id: string;
   empresaId: string;
@@ -150,6 +156,7 @@ export function DocumentoForm({
   const items = watch("items");
   const descuento = watch("descuento") ?? 0;
   const firmanteUsuarioId = watch("firmanteUsuarioId");
+  const clienteId = watch("clienteId");
 
   const itemsArray = useFieldArray({ control, name: "items" });
   const notasArray = useFieldArray({ control, name: "notas" });
@@ -182,13 +189,25 @@ export function DocumentoForm({
     [usuarios, empresaId],
   );
   const empresaActual = empresas.find((e) => e.id === empresaId);
+  const clienteActual = clientesDeEmpresa.find((c) => c.id === clienteId);
+  // Nombres ya conocidos de ESTE cliente, para elegir rápido quién acepta el
+  // documento — el contacto suelto (clientes tipo Individual) y/o la lista
+  // de contactos (tipo Empresa, ver ContactoCliente). "Nombre de
+  // responsable" nunca tiene por qué coincidir con quién firma del lado de
+  // TPM: son personas distintas (quien firma = nuestro lado, responsable =
+  // quien acepta del lado del cliente), por eso esta lista es independiente
+  // de usuariosDeEmpresa/elegirFirmante.
+  const contactosDelCliente = useMemo(() => {
+    if (!clienteActual) return [];
+    const nombres = [
+      clienteActual.contacto,
+      ...clienteActual.contactos.map((c) => c.nombre),
+    ].filter((n): n is string => Boolean(n?.trim()));
+    return Array.from(new Set(nombres));
+  }, [clienteActual]);
 
   function elegirFirmante(usuarioId: string | null) {
     setValue("firmanteUsuarioId", usuarioId ?? "");
-    // Precarga el nombre, pero queda libremente editable después — el
-    // responsable no tiene por qué coincidir 1:1 con quién firma.
-    const usuario = usuariosDeEmpresa.find((u) => u.id === usuarioId);
-    if (usuario) setValue("nombreResponsable", usuario.nombre);
   }
 
   const subtotal = (items ?? []).reduce(
@@ -559,7 +578,32 @@ export function DocumentoForm({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nombreResponsable">Nombre de responsable</Label>
-            <Input id="nombreResponsable" {...register("nombreResponsable")} />
+            <div className="flex gap-2">
+              <Input
+                id="nombreResponsable"
+                className="flex-1"
+                {...register("nombreResponsable")}
+              />
+              {contactosDelCliente.length > 0 && (
+                <Select
+                  items={Object.fromEntries(contactosDelCliente.map((n) => [n, n]))}
+                  value=""
+                  onValueChange={(v) => v && setValue("nombreResponsable", v as string)}
+                >
+                  <SelectTrigger className="w-44 shrink-0">
+                    <PlusIcon className="h-3.5 w-3.5" />
+                    <SelectValue placeholder="Contacto del cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contactosDelCliente.map((n) => (
+                      <SelectItem key={n} value={n}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">

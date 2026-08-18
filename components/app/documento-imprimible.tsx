@@ -375,12 +375,15 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
                   no renderiza nada — queda el mismo espacio en blanco de
                   siempre para firmar a mano, sin cambio visual. */}
               {documento.firmante?.firma && (
-                // eslint-disable-next-line @next/next/no-img-element -- data URI cargado por el usuario, no un asset estático
-                <img
-                  src={documento.firmante.firma}
-                  alt={`Firma de ${documento.firmante.nombre}`}
-                  className="mx-auto h-14 object-contain"
-                />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- data URI cargado por el usuario, no un asset estático */}
+                  <img
+                    src={documento.firmante.firma}
+                    alt={`Firma de ${documento.firmante.nombre}`}
+                    className="mx-auto h-14 object-contain"
+                  />
+                  <p className="text-sm font-medium">{documento.firmante.nombre}</p>
+                </>
               )}
               <div className="mb-1 border-t border-dashed border-brand pt-2 text-xs uppercase tracking-wide text-muted-foreground">
                 Firma

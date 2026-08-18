@@ -47,6 +47,7 @@ export default async function EditarDocumentoPage({
     db.cliente.findMany({
       where: { empresaId: documento.empresaId },
       orderBy: { nombre: "asc" },
+      include: { contactos: true },
     }),
     db.servicio.findMany({
       where: { empresaId: documento.empresaId, activo: true },

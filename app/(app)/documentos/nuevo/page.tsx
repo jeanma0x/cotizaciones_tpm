@@ -16,6 +16,7 @@ export default async function NuevoDocumentoPage() {
     db.cliente.findMany({
       where: { empresaId: { in: empresasPermitidas }, activo: true },
       orderBy: { nombre: "asc" },
+      include: { contactos: true },
     }),
     db.servicio.findMany({
       where: { empresaId: { in: empresasPermitidas }, activo: true },
