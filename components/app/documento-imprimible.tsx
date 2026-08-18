@@ -177,10 +177,12 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
           <tbody>
             <tr>
               <td className="w-1/2 border border-border bg-muted/40 p-2.5 align-top">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Contacto de servicio
+                <p className="flex flex-wrap items-baseline gap-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Contacto de servicio:
+                  </span>
+                  <span className="font-medium">{documento.empresa.contacto ?? "—"}</span>
                 </p>
-                <p className="font-medium">{documento.empresa.contacto ?? "—"}</p>
                 <p className="font-mono text-xs text-muted-foreground">
                   {[documento.empresa.telefono, documento.empresa.email]
                     .filter(Boolean)
@@ -193,30 +195,38 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
             </tr>
             <tr>
               <td className="border border-border p-2.5 align-top">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Cliente
+                <p className="flex flex-wrap items-baseline gap-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Cliente:
+                  </span>
+                  <span className="font-medium">{documento.cliente?.nombre ?? "—"}</span>
                 </p>
-                <p className="font-medium">{documento.cliente?.nombre ?? "—"}</p>
               </td>
               <td className="border border-border p-2.5 align-top">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  NIT
+                <p className="flex flex-wrap items-baseline gap-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    NIT:
+                  </span>
+                  <span className="font-mono">{documento.cliente?.nit ?? "—"}</span>
                 </p>
-                <p className="font-mono">{documento.cliente?.nit ?? "—"}</p>
               </td>
             </tr>
             <tr>
               <td className="border border-border p-2.5 align-top">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Fecha
+                <p className="flex flex-wrap items-baseline gap-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Fecha:
+                  </span>
+                  <span className="font-mono">{formatearFecha(documento.fecha)}</span>
                 </p>
-                <p className="font-mono">{formatearFecha(documento.fecha)}</p>
               </td>
               <td className="border border-border p-2.5 align-top">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Dirección
+                <p className="flex flex-wrap items-baseline gap-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Dirección:
+                  </span>
+                  <span>{documento.cliente?.direccion ?? "—"}</span>
                 </p>
-                <p>{documento.cliente?.direccion ?? "—"}</p>
               </td>
             </tr>
             {/* Una sola fila con las dos columnas cuando hay condiciones de
@@ -227,17 +237,21 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
                 contenido lo permite. */}
             <tr>
               <td className="border border-border p-2.5 align-top">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Condiciones de pago
+                <p className="flex flex-wrap items-baseline gap-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Condiciones de pago:
+                  </span>
+                  <span>{documento.condicionesPago || "—"}</span>
                 </p>
-                <p>{documento.condicionesPago || "—"}</p>
               </td>
               <td className="border border-border p-2.5 align-top">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Oferta válida hasta
-                </p>
-                <p className="font-mono">
-                  {documento.vigenciaDias ?? "—"} días a partir de la fecha
+                <p className="flex flex-wrap items-baseline gap-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Oferta válida hasta:
+                  </span>
+                  <span className="font-mono">
+                    {documento.vigenciaDias ?? "—"} días a partir de la fecha
+                  </span>
                 </p>
               </td>
             </tr>
@@ -261,16 +275,23 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
         <table className="mb-4 w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th className="border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
+              {/* w-px + whitespace-nowrap: truco clásico de tablas para que
+                  la columna se encoja al ancho de su contenido/encabezado
+                  ("Cantidad") en vez de repartirse el espacio equitativamente
+                  — libera espacio para Descripción, que sí lo necesita. */}
+              <th className="w-px border border-border bg-brand p-2 text-left text-xs whitespace-nowrap uppercase tracking-wide text-surface">
                 Cantidad
               </th>
               <th className="border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
                 Descripción
               </th>
-              <th className="border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
+              {/* w-32 fijo: suficiente para cifras en millones con decimales
+                  (ej. "1234567.89") sin dejar que esta columna crezca más de
+                  lo necesario y le quite espacio a Descripción. */}
+              <th className="w-32 border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
                 Precio unitario
               </th>
-              <th className="border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
+              <th className="w-32 border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
                 Total
               </th>
             </tr>
@@ -281,16 +302,16 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
                 key={item.id}
                 className={`item-imprimible ${i % 2 === 1 ? "bg-muted/30" : ""}`}
               >
-                <td className="border border-border p-2 align-top font-mono">
+                <td className="w-px border border-border p-2 align-top font-mono whitespace-nowrap">
                   {Number(item.cantidad)}
                 </td>
                 <td className="border border-border p-2 align-top whitespace-pre-wrap">
                   {item.descripcion}
                 </td>
-                <td className="border border-border p-2 align-top font-mono">
+                <td className="w-32 border border-border p-2 align-top font-mono">
                   {Number(item.precioUnitario).toFixed(2)}
                 </td>
-                <td className="border border-border p-2 align-top font-mono">
+                <td className="w-32 border border-border p-2 align-top font-mono">
                   {(Number(item.cantidad) * Number(item.precioUnitario)).toFixed(2)}
                 </td>
               </tr>
