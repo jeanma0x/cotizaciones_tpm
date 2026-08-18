@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { assertAccesoEmpresa } from "@/lib/auth";
+import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
 import { type CostoOperativoInput, costoOperativoSchema } from "@/lib/validations/costo";
 
@@ -15,11 +16,53 @@ function normalizar(datos: CostoOperativoInput) {
   };
 }
 
+// Bitácora de solo-inserción (ver comentario en schema.prisma) — se llama
+// después de cada create/update/delete real, nunca en su lugar. Si esto
+// falla no debe tumbar la operación principal (perder el rastro de
+// auditoría es preferible a que Oldemar no pueda registrar un gasto).
+async function registrarAuditoria(datos: {
+  costoOperativoId: string | null;
+  empresaId: string;
+  accion: "CREADO" | "EDITADO" | "ELIMINADO";
+  categoria: string;
+  descripcion: string;
+  monto: number | string;
+  fechaGasto: Date;
+}) {
+  try {
+    const usuario = await getUsuarioActual();
+    await db.costoOperativoAuditoria.create({
+      data: {
+        costoOperativoId: datos.costoOperativoId,
+        empresaId: datos.empresaId,
+        accion: datos.accion,
+        categoria: datos.categoria as never,
+        descripcion: datos.descripcion,
+        monto: datos.monto,
+        fechaGasto: datos.fechaGasto,
+        usuarioId: usuario?.id ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("No se pudo registrar auditoría de costo:", error);
+  }
+}
+
 export async function crearCostoOperativo(input: unknown) {
   const datos = costoOperativoSchema.parse(input);
   await assertAccesoEmpresa(datos.empresaId);
 
-  await db.costoOperativo.create({ data: normalizar(datos) });
+  const normalizado = normalizar(datos);
+  const costo = await db.costoOperativo.create({ data: normalizado });
+  await registrarAuditoria({
+    costoOperativoId: costo.id,
+    empresaId: costo.empresaId,
+    accion: "CREADO",
+    categoria: normalizado.categoria,
+    descripcion: normalizado.descripcion,
+    monto: normalizado.monto,
+    fechaGasto: normalizado.fechaGasto,
+  });
   revalidatePath("/costos");
   revalidatePath("/dashboard");
 }
@@ -33,7 +76,17 @@ export async function actualizarCostoOperativo(id: string, input: unknown) {
   await assertAccesoEmpresa(existente.empresaId);
   await assertAccesoEmpresa(datos.empresaId);
 
-  await db.costoOperativo.update({ where: { id }, data: normalizar(datos) });
+  const normalizado = normalizar(datos);
+  await db.costoOperativo.update({ where: { id }, data: normalizado });
+  await registrarAuditoria({
+    costoOperativoId: id,
+    empresaId: normalizado.empresaId,
+    accion: "EDITADO",
+    categoria: normalizado.categoria,
+    descripcion: normalizado.descripcion,
+    monto: normalizado.monto,
+    fechaGasto: normalizado.fechaGasto,
+  });
   revalidatePath("/costos");
   revalidatePath("/dashboard");
 }
@@ -45,6 +98,18 @@ export async function eliminarCostoOperativo(id: string) {
   await assertAccesoEmpresa(existente.empresaId);
 
   await db.costoOperativo.delete({ where: { id } });
+  // costoOperativoId: null a propósito — la fila que se acaba de borrar ya
+  // no existe, onDelete: SetNull la dejaría en null de todas formas; se
+  // pasa explícito para no depender de ese efecto secundario.
+  await registrarAuditoria({
+    costoOperativoId: null,
+    empresaId: existente.empresaId,
+    accion: "ELIMINADO",
+    categoria: existente.categoria,
+    descripcion: existente.descripcion,
+    monto: Number(existente.monto),
+    fechaGasto: existente.fechaGasto,
+  });
   revalidatePath("/costos");
   revalidatePath("/dashboard");
 }

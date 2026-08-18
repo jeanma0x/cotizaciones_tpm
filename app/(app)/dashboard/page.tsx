@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { AnimatedNumber } from "@/components/app/animated-number";
 import { AtencionRequerida, type ItemAtencion } from "@/components/app/atencion-requerida";
+import { CostosCategoriaChart } from "@/components/app/costos-categoria-chart";
 import { DesgloseEmpresaChart } from "@/components/app/desglose-empresa-chart";
 import { DesgloseTipoChart } from "@/components/app/desglose-tipo-chart";
 import { DistribucionEstadoChart } from "@/components/app/distribucion-estado-chart";
@@ -21,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
+import { CATEGORIA_COSTO_LABELS } from "@/lib/validations/costo";
 
 const TIPO_LABELS: Record<string, string> = {
   COTIZACION: "Cotizaciones",
@@ -180,7 +182,7 @@ export default async function DashboardPage() {
     }),
     db.costoOperativo.findMany({
       where: { ...where, fechaGasto: { gte: inicioMes } },
-      select: { monto: true, empresa: { select: { moneda: true } } },
+      select: { monto: true, categoria: true, empresa: { select: { moneda: true } } },
     }),
   ]);
 
@@ -409,10 +411,33 @@ export default async function DashboardPage() {
       utilidadNetaPorMoneda[moneda] -= isr;
     }
   }
+  // Costos por categoría — misma agrupación por moneda que el resto del
+  // panel: nunca mezclar GTQ y USD. Pre-sembrado con TODAS las monedas de
+  // las empresas permitidas (mismo criterio que "Tendencia" arriba): si una
+  // empresa no tiene costos este mes, su tarjeta debe verse como "todavía
+  // no hay costos", nunca desaparecer sin explicación.
+  const costosPorCategoriaPorMoneda: Record<string, Record<string, number>> = {};
+  for (const moneda of new Set(empresas.map((e) => e.moneda))) {
+    costosPorCategoriaPorMoneda[moneda] = {};
+  }
   for (const costo of costosDelMes) {
     const moneda = costo.empresa.moneda;
     utilidadNetaPorMoneda[moneda] = (utilidadNetaPorMoneda[moneda] ?? 0) - Number(costo.monto);
+    const porCategoria = (costosPorCategoriaPorMoneda[moneda] ??= {});
+    porCategoria[costo.categoria] = (porCategoria[costo.categoria] ?? 0) + Number(costo.monto);
   }
+  const costosPorCategoriaEntradas = Object.entries(costosPorCategoriaPorMoneda).map(
+    ([moneda, porCategoria]) => ({
+      moneda,
+      data: Object.entries(porCategoria)
+        .map(([categoria, monto]) => ({
+          categoria: categoria as keyof typeof CATEGORIA_COSTO_LABELS,
+          label: CATEGORIA_COSTO_LABELS[categoria as keyof typeof CATEGORIA_COSTO_LABELS],
+          monto,
+        }))
+        .sort((a, b) => b.monto - a.monto),
+    }),
+  );
   const utilidadNetaEntradas = Object.entries(utilidadNetaPorMoneda);
   const utilidadNetaNegativa = utilidadNetaEntradas.some(([, monto]) => monto < 0);
   const isrEntradas = Object.entries(isrPorMoneda).filter(([, monto]) => monto > 0);
@@ -604,6 +629,25 @@ export default async function DashboardPage() {
             ))}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Costos por categoría del mes — una tarjeta por moneda, mismo
+          criterio que "Tendencia": nunca mezclar GTQ y USD en un mismo
+          gráfico, y mostrar la tarjeta aunque esa moneda no tenga costos
+          este mes (estado vacío explícito en vez de desaparecer). */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {costosPorCategoriaEntradas.map(({ moneda, data }) => (
+          <Card key={moneda}>
+            <CardHeader>
+              <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                Costos por categoría ({moneda}, este mes)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CostosCategoriaChart data={data} />
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );

@@ -54,9 +54,11 @@ export function EliminarCostoDialog({
         <DialogHeader>
           <DialogTitle>¿Eliminar &ldquo;{descripcion}&rdquo;?</DialogTitle>
           <DialogDescription>
-            Esto quita el registro del costo por completo — a diferencia de
-            cotizaciones/facturas, un costo mal cargado no necesita quedar en
-            historial. No se puede deshacer.
+            Esto quita el registro del costo por completo de la tabla — a
+            diferencia de cotizaciones/facturas, no queda como fila para
+            editar o reactivar después. Sí queda un rastro en el historial de
+            auditoría (quién y cuándo lo borró), pero el costo en sí no se
+            puede recuperar.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

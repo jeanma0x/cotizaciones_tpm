@@ -65,11 +65,12 @@ model Empresa {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  usuarios         UsuarioEmpresa[]
-  clientes         Cliente[]
-  servicios        Servicio[]
-  documentos       Documento[]
-  costosOperativos CostoOperativo[]
+  usuarios                  UsuarioEmpresa[]
+  clientes                  Cliente[]
+  servicios                 Servicio[]
+  documentos                Documento[]
+  costosOperativos          CostoOperativo[]
+  costosOperativosAuditoria CostoOperativoAuditoria[]
 
   @@map("empresas")
 }
@@ -89,7 +90,8 @@ model Usuario {
   createdAt DateTime   @default(now())
 
   empresas           UsuarioEmpresa[]
-  documentosFirmados Documento[]      @relation("DocumentoFirmante")
+  documentosFirmados Documento[]               @relation("DocumentoFirmante")
+  costosAuditados    CostoOperativoAuditoria[]
 
   @@map("usuarios")
 }
@@ -181,8 +183,45 @@ model CostoOperativo {
   fechaGasto  DateTime
   createdAt   DateTime       @default(now())
 
+  auditoria CostoOperativoAuditoria[]
+
   @@index([empresaId, fechaGasto])
   @@map("costos_operativos")
+}
+
+enum AccionCosto {
+  CREADO
+  EDITADO
+  ELIMINADO
+}
+
+// Bitácora de solo-inserción — a diferencia de HistorialEstado (que existe
+// para el flujo de negocio de un documento), esta tabla existe únicamente
+// para trazabilidad ("¿quién cambió/borró este gasto?"): CostoOperativo
+// sigue siendo borrado físico (decisión ya tomada — un costo mal cargado no
+// necesita quedar en la tabla en sí), pero ahora queda un rastro de quién
+// hizo qué y cuándo, incluso después de borrado. Por eso costoOperativoId es
+// opcional con onDelete: SetNull en vez de Cascade: si se borra el costo,
+// esta fila sobrevive (huérfana de esa relación) en vez de desaparecer con
+// él — y por eso categoria/descripcion/monto/fechaGasto se copian acá tal
+// cual quedaron en ese momento, no se leen por relación.
+model CostoOperativoAuditoria {
+  id               String          @id @default(cuid())
+  costoOperativoId String?
+  costoOperativo   CostoOperativo? @relation(fields: [costoOperativoId], references: [id], onDelete: SetNull)
+  empresaId        String
+  empresa          Empresa         @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  accion           AccionCosto
+  categoria        CategoriaCosto
+  descripcion      String
+  monto            Decimal         @db.Decimal(12, 2)
+  fechaGasto       DateTime
+  usuarioId        String?
+  usuario          Usuario?        @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  fecha            DateTime        @default(now())
+
+  @@index([empresaId, fecha])
+  @@map("costos_operativos_auditoria")
 }
 
 model Servicio {
