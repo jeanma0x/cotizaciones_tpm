@@ -33,8 +33,19 @@ export async function POST(request: Request) {
   const client = await clerkClient();
   const clerkUser = await client.users.getUser(usuario.clerkId);
 
-  const passwordNueva = generarPasswordClara(12);
-  await client.users.updateUser(usuario.clerkId, { password: passwordNueva });
+  // Clerk exige mezcla de mayúscula/minúscula/número/símbolo por defecto —
+  // el alfabeto "claro" anterior (sin l/I/1/0/O) no incluía símbolos.
+  const passwordNueva = generarPasswordClara(12) + "#7";
+
+  try {
+    await client.users.updateUser(usuario.clerkId, { password: passwordNueva });
+  } catch (error) {
+    const detalle =
+      error && typeof error === "object" && "errors" in error
+        ? (error as { errors: unknown }).errors
+        : String(error);
+    return NextResponse.json({ error: "Clerk rechazó la contraseña", detalle }, { status: 422 });
+  }
 
   return NextResponse.json({
     ok: true,
