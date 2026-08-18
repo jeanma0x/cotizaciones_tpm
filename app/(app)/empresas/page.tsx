@@ -1,5 +1,6 @@
 import { Building2Icon, PencilIcon } from "lucide-react";
 import { EmpresaFormDialog } from "@/components/app/empresa-form-dialog";
+import { HistorialAuditoriaSheet, type FilaAuditoriaGenerica } from "@/components/app/historial-auditoria-sheet";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { assertSuperusuario, getEmpresasPermitidas } from "@/lib/auth";
@@ -9,14 +10,36 @@ export default async function EmpresasPage() {
   await assertSuperusuario();
   const empresasPermitidas = await getEmpresasPermitidas();
 
-  const empresas = await db.empresa.findMany({
-    where: { id: { in: empresasPermitidas } },
-    orderBy: { nombre: "asc" },
-  });
+  const [empresas, auditoria] = await Promise.all([
+    db.empresa.findMany({
+      where: { id: { in: empresasPermitidas } },
+      orderBy: { nombre: "asc" },
+    }),
+    db.empresaAuditoria.findMany({
+      where: { empresaId: { in: empresasPermitidas } },
+      include: { empresa: true, usuario: true },
+      orderBy: { fecha: "desc" },
+      take: 100,
+    }),
+  ]);
+
+  const filasAuditoria: FilaAuditoriaGenerica[] = auditoria.map((a) => ({
+    id: a.id,
+    variant: "editado",
+    accionLabel: "Editado",
+    titulo: a.empresa.nombre,
+    detalle: a.detalle,
+    usuarioNombre: a.usuario?.nombre ?? null,
+    fecha: a.fecha.toISOString(),
+  }));
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Empresas" icon={Building2Icon} />
+      <PageHeader
+        title="Empresas"
+        icon={Building2Icon}
+        actions={<HistorialAuditoriaSheet titulo="Historial de empresas" entradas={filasAuditoria} />}
+      />
 
       {/* Tarjetas, no tabla — siempre son pocas (4 hoy), una fila de tabla
           larga con montañas de espacio vacío se ve a medio construir. */}

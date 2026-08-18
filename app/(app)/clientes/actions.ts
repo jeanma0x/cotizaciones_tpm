@@ -2,8 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { assertAccesoEmpresa } from "@/lib/auth";
+import { diffCampos } from "@/lib/auditoria";
+import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
 import { type ClienteInput, clienteSchema } from "@/lib/validations/cliente";
+
+const ETIQUETAS_CLIENTE = {
+  empresaId: "Empresa",
+  tipo: "Tipo",
+  nombre: "Nombre",
+  nit: "NIT",
+  direccion: "Dirección",
+  contacto: "Contacto",
+  telefono: "Teléfono",
+  email: "Correo",
+  codigoPais: "Código de país",
+  activo: "Activo",
+};
 
 function normalizar(datos: ClienteInput) {
   return {
@@ -20,6 +35,30 @@ function normalizar(datos: ClienteInput) {
   };
 }
 
+async function registrarAuditoriaCliente(datos: {
+  clienteId: string | null;
+  empresaId: string;
+  accion: "CREADO" | "EDITADO";
+  clienteNombre: string;
+  detalle: string;
+}) {
+  try {
+    const actor = await getUsuarioActual();
+    await db.clienteAuditoria.create({
+      data: {
+        clienteId: datos.clienteId,
+        empresaId: datos.empresaId,
+        accion: datos.accion,
+        clienteNombre: datos.clienteNombre,
+        detalle: datos.detalle,
+        usuarioId: actor?.id ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("No se pudo registrar auditoría de cliente:", error);
+  }
+}
+
 // Los contactos solo aplican a tipo EMPRESA — si el formulario se guarda
 // como INDIVIDUAL, cualquier contacto que hubiera quedado cargado se
 // descarta (evita contactos huérfanos de un cambio de tipo).
@@ -32,11 +71,18 @@ export async function crearCliente(input: unknown) {
   const datos = clienteSchema.parse(input);
   await assertAccesoEmpresa(datos.empresaId);
 
-  await db.cliente.create({
+  const cliente = await db.cliente.create({
     data: {
       ...normalizar(datos),
       contactos: { create: contactosParaGuardar(datos) },
     },
+  });
+  await registrarAuditoriaCliente({
+    clienteId: cliente.id,
+    empresaId: cliente.empresaId,
+    accion: "CREADO",
+    clienteNombre: cliente.nombre,
+    detalle: "Cliente creado",
   });
   revalidatePath("/clientes");
 }
@@ -52,16 +98,24 @@ export async function actualizarCliente(id: string, input: unknown) {
   await assertAccesoEmpresa(existente.empresaId);
   await assertAccesoEmpresa(datos.empresaId);
 
+  const nuevo = normalizar(datos);
   await db.$transaction([
     db.contactoCliente.deleteMany({ where: { clienteId: id } }),
     db.cliente.update({
       where: { id },
       data: {
-        ...normalizar(datos),
+        ...nuevo,
         contactos: { create: contactosParaGuardar(datos) },
       },
     }),
   ]);
+  await registrarAuditoriaCliente({
+    clienteId: id,
+    empresaId: nuevo.empresaId,
+    accion: "EDITADO",
+    clienteNombre: nuevo.nombre,
+    detalle: diffCampos(existente, nuevo, ETIQUETAS_CLIENTE),
+  });
   revalidatePath("/clientes");
 }
 
@@ -71,9 +125,17 @@ export async function alternarActivoCliente(id: string) {
 
   await assertAccesoEmpresa(existente.empresaId);
 
+  const nuevoActivo = !existente.activo;
   await db.cliente.update({
     where: { id },
-    data: { activo: !existente.activo },
+    data: { activo: nuevoActivo },
+  });
+  await registrarAuditoriaCliente({
+    clienteId: id,
+    empresaId: existente.empresaId,
+    accion: "EDITADO",
+    clienteNombre: existente.nombre,
+    detalle: `Activo: ${existente.activo ? "Sí" : "No"} → ${nuevoActivo ? "Sí" : "No"}`,
   });
   revalidatePath("/clientes");
 }

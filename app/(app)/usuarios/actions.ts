@@ -4,6 +4,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { assertSuperusuario } from "@/lib/auth";
+import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
 import {
   type AccesoUsuarioInput,
@@ -14,6 +15,36 @@ import {
   type InvitacionInput,
   invitacionSchema,
 } from "@/lib/validations/usuario";
+
+const ROL_LABELS: Record<string, string> = { SUPERUSUARIO: "Superusuario", MIEMBRO: "Miembro" };
+
+// Bitácora de solo-inserción (mismo criterio que CostoOperativoAuditoria) —
+// usuarioId/actorUsuarioId opcionales con SetNull porque cualquiera de los
+// dos (el afectado o quien hizo la acción) puede haber sido eliminado más
+// adelante; nunca debe tumbar la operación principal si falla.
+async function registrarAuditoriaUsuario(datos: {
+  usuarioId: string | null;
+  usuarioNombre: string;
+  usuarioEmail: string;
+  accion: "ACCESO_ACTUALIZADO" | "FIRMA_ACTUALIZADA" | "FIRMA_ELIMINADA" | "ELIMINADO";
+  detalle: string;
+}) {
+  try {
+    const actor = await getUsuarioActual();
+    await db.usuarioAuditoria.create({
+      data: {
+        usuarioId: datos.usuarioId,
+        usuarioNombre: datos.usuarioNombre,
+        usuarioEmail: datos.usuarioEmail,
+        accion: datos.accion,
+        detalle: datos.detalle,
+        actorUsuarioId: actor?.id ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("No se pudo registrar auditoría de usuario:", error);
+  }
+}
 
 export async function invitarUsuario(input: unknown) {
   const datos: InvitacionInput = invitacionSchema.parse(input);
@@ -59,7 +90,10 @@ export async function invitarUsuario(input: unknown) {
 export async function eliminarUsuario(usuarioId: string) {
   await assertSuperusuario();
 
-  const usuario = await db.usuario.findUnique({ where: { id: usuarioId } });
+  const usuario = await db.usuario.findUnique({
+    where: { id: usuarioId },
+    include: { empresas: { include: { empresa: true } } },
+  });
   if (!usuario) throw new Error("Usuario no encontrado");
 
   const { userId } = await auth();
@@ -76,6 +110,15 @@ export async function eliminarUsuario(usuarioId: string) {
   }
 
   await db.usuario.delete({ where: { id: usuarioId } });
+  await registrarAuditoriaUsuario({
+    usuarioId: null, // ya no existe — SetNull lo dejaría igual, pero explícito
+    usuarioNombre: usuario.nombre,
+    usuarioEmail: usuario.email,
+    accion: "ELIMINADO",
+    detalle: `Rol: ${ROL_LABELS[usuario.rol]} · Empresas: ${
+      usuario.empresas.map((e) => e.empresa.nombre).join(", ") || "ninguna"
+    }`,
+  });
   revalidatePath("/usuarios");
 }
 
@@ -97,7 +140,17 @@ export async function actualizarFirmaUsuario(usuarioId: string, input: unknown) 
     }
   }
 
-  await db.usuario.update({ where: { id: usuarioId }, data: { firma: datos.firma } });
+  const usuario = await db.usuario.update({
+    where: { id: usuarioId },
+    data: { firma: datos.firma },
+  });
+  await registrarAuditoriaUsuario({
+    usuarioId: usuario.id,
+    usuarioNombre: usuario.nombre,
+    usuarioEmail: usuario.email,
+    accion: datos.firma ? "FIRMA_ACTUALIZADA" : "FIRMA_ELIMINADA",
+    detalle: datos.firma ? "Firma cargada/reemplazada" : "Firma eliminada",
+  });
   revalidatePath("/usuarios");
 }
 
@@ -105,7 +158,13 @@ export async function actualizarAccesoUsuario(usuarioId: string, input: unknown)
   const datos: AccesoUsuarioInput = accesoUsuarioSchema.parse(input);
   await assertSuperusuario();
 
-  await db.$transaction([
+  const antes = await db.usuario.findUnique({
+    where: { id: usuarioId },
+    include: { empresas: { include: { empresa: true } } },
+  });
+  if (!antes) throw new Error("Usuario no encontrado");
+
+  const [usuario] = await db.$transaction([
     db.usuario.update({ where: { id: usuarioId }, data: { rol: datos.rol } }),
     db.usuarioEmpresa.deleteMany({ where: { usuarioId } }),
     db.usuarioEmpresa.createMany({
@@ -113,5 +172,26 @@ export async function actualizarAccesoUsuario(usuarioId: string, input: unknown)
     }),
   ]);
 
+  const empresasDespues = await db.empresa.findMany({
+    where: { id: { in: datos.empresaIds } },
+    select: { nombre: true },
+  });
+  const rolAntes = ROL_LABELS[antes.rol];
+  const rolDespues = ROL_LABELS[datos.rol];
+  const empresasAntesTexto = antes.empresas.map((e) => e.empresa.nombre).sort().join(", ") || "ninguna";
+  const empresasDespuesTexto = empresasDespues.map((e) => e.nombre).sort().join(", ") || "ninguna";
+  const cambios: string[] = [];
+  if (rolAntes !== rolDespues) cambios.push(`Rol: ${rolAntes} → ${rolDespues}`);
+  if (empresasAntesTexto !== empresasDespuesTexto) {
+    cambios.push(`Empresas: ${empresasAntesTexto} → ${empresasDespuesTexto}`);
+  }
+
+  await registrarAuditoriaUsuario({
+    usuarioId: usuario.id,
+    usuarioNombre: usuario.nombre,
+    usuarioEmail: usuario.email,
+    accion: "ACCESO_ACTUALIZADO",
+    detalle: cambios.length > 0 ? cambios.join(" · ") : "Sin cambios detectados",
+  });
   revalidatePath("/usuarios");
 }

@@ -71,6 +71,9 @@ model Empresa {
   documentos                Documento[]
   costosOperativos          CostoOperativo[]
   costosOperativosAuditoria CostoOperativoAuditoria[]
+  clientesAuditoria         ClienteAuditoria[]
+  serviciosAuditoria        ServicioAuditoria[]
+  auditoria                 EmpresaAuditoria[]
 
   @@map("empresas")
 }
@@ -89,9 +92,18 @@ model Usuario {
   firma     String?    @db.Text
   createdAt DateTime   @default(now())
 
-  empresas           UsuarioEmpresa[]
-  documentosFirmados Documento[]               @relation("DocumentoFirmante")
-  costosAuditados    CostoOperativoAuditoria[]
+  empresas               UsuarioEmpresa[]
+  documentosFirmados     Documento[]               @relation("DocumentoFirmante")
+  costosAuditados        CostoOperativoAuditoria[]
+  clientesAuditados      ClienteAuditoria[]
+  serviciosAuditados     ServicioAuditoria[]
+  empresasAuditadas      EmpresaAuditoria[]
+  // Dos relaciones distintas hacia Usuario en UsuarioAuditoria: una fila
+  // registra tanto "a quién le cambiaron algo" (usuarioId) como "quién lo
+  // hizo" (actorUsuarioId) — Prisma exige nombrar cada lado cuando hay más
+  // de una relación entre los mismos dos modelos.
+  auditoriasComoAfectado UsuarioAuditoria[]        @relation("UsuarioAuditado")
+  auditoriasComoActor    UsuarioAuditoria[]        @relation("UsuarioAuditor")
 
   @@map("usuarios")
 }
@@ -132,9 +144,37 @@ model Cliente {
   // Solo se usan cuando tipo = EMPRESA — ver TipoCliente. Un cliente
   // INDIVIDUAL sigue usando el campo `email` de acá arriba, sin tocar nada.
   contactos  ContactoCliente[]
+  auditoria  ClienteAuditoria[]
 
   @@index([empresaId])
   @@map("clientes")
+}
+
+enum AccionCliente {
+  CREADO
+  EDITADO
+}
+
+// Mismo criterio que CostoOperativoAuditoria: bitácora de solo-inserción,
+// clienteId opcional con SetNull (Cliente en sí no se borra físicamente,
+// solo se desactiva — pero si alguna vez se borrara, esta fila sobrevive).
+// `detalle` es un resumen legible de qué campos cambiaron (ver
+// lib/auditoria.ts, diffCampos) en vez de duplicar cada campo del modelo acá.
+model ClienteAuditoria {
+  id            String        @id @default(cuid())
+  clienteId     String?
+  cliente       Cliente?      @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  empresaId     String
+  empresa       Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  accion        AccionCliente
+  clienteNombre String
+  detalle       String
+  usuarioId     String?
+  usuario       Usuario?      @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  fecha         DateTime      @default(now())
+
+  @@index([empresaId, fecha])
+  @@map("clientes_auditoria")
 }
 
 // Destinatarios distintos bajo el mismo NIT corporativo (ej. CMI: 4 personas
@@ -232,8 +272,75 @@ model Servicio {
   precioFijo Decimal @db.Decimal(12, 2)
   activo     Boolean @default(true)
 
+  auditoria ServicioAuditoria[]
+
   @@index([empresaId])
   @@map("servicios")
+}
+
+enum AccionServicio {
+  CREADO
+  EDITADO
+}
+
+model ServicioAuditoria {
+  id             String         @id @default(cuid())
+  servicioId     String?
+  servicio       Servicio?      @relation(fields: [servicioId], references: [id], onDelete: SetNull)
+  empresaId      String
+  empresa        Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  accion         AccionServicio
+  servicioNombre String
+  detalle        String
+  usuarioId      String?
+  usuario        Usuario?       @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  fecha          DateTime       @default(now())
+
+  @@index([empresaId, fecha])
+  @@map("servicios_auditoria")
+}
+
+// Empresa no tiene alta/baja desde la UI (las 4 vienen precargadas) — solo
+// EDITADO existe hoy, sin enum de acción todavía porque no hay otra opción
+// real; se agrega si algún día se permite crear/eliminar una empresa.
+model EmpresaAuditoria {
+  id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  detalle   String
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  fecha     DateTime @default(now())
+
+  @@index([empresaId, fecha])
+  @@map("empresas_auditoria")
+}
+
+enum AccionUsuario {
+  ACCESO_ACTUALIZADO
+  FIRMA_ACTUALIZADA
+  FIRMA_ELIMINADA
+  ELIMINADO
+}
+
+// usuarioId (a quién le pasó esto) y actorUsuarioId (quién lo hizo) son
+// relaciones DISTINTAS hacia Usuario — ver comentario en el modelo Usuario.
+// usuarioNombre/usuarioEmail se copian porque si accion = ELIMINADO, la fila
+// de Usuario ya no existe (usuarioId queda null vía SetNull).
+model UsuarioAuditoria {
+  id             String        @id @default(cuid())
+  usuarioId      String?
+  usuario        Usuario?      @relation("UsuarioAuditado", fields: [usuarioId], references: [id], onDelete: SetNull)
+  usuarioNombre  String
+  usuarioEmail   String
+  accion         AccionUsuario
+  detalle        String
+  actorUsuarioId String?
+  actor          Usuario?      @relation("UsuarioAuditor", fields: [actorUsuarioId], references: [id], onDelete: SetNull)
+  fecha          DateTime      @default(now())
+
+  @@index([fecha])
+  @@map("usuarios_auditoria")
 }
 
 model Documento {

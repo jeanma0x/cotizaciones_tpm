@@ -2,10 +2,13 @@ import { PlusIcon, UsersIcon } from "lucide-react";
 import { ClienteFormDialog } from "@/components/app/cliente-form-dialog";
 import { ClientesFiltros } from "@/components/app/clientes-filtros";
 import { ClientesTable, type FilaCliente } from "@/components/app/clientes-table";
+import { HistorialAuditoriaSheet, type FilaAuditoriaGenerica } from "@/components/app/historial-auditoria-sheet";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
+
+const ACCION_CLIENTE_LABEL: Record<string, string> = { CREADO: "Creado", EDITADO: "Editado" };
 
 export default async function ClientesPage({
   searchParams,
@@ -15,7 +18,7 @@ export default async function ClientesPage({
   const { q, empresaId } = await searchParams;
   const empresasPermitidas = await getEmpresasPermitidas();
 
-  const [clientes, empresas] = await Promise.all([
+  const [clientes, empresas, auditoria] = await Promise.all([
     db.cliente.findMany({
       where: {
         empresaId:
@@ -38,7 +41,23 @@ export default async function ClientesPage({
       where: { id: { in: empresasPermitidas } },
       orderBy: { nombre: "asc" },
     }),
+    db.clienteAuditoria.findMany({
+      where: { empresaId: { in: empresasPermitidas } },
+      include: { usuario: true },
+      orderBy: { fecha: "desc" },
+      take: 100,
+    }),
   ]);
+
+  const filasAuditoria: FilaAuditoriaGenerica[] = auditoria.map((a) => ({
+    id: a.id,
+    variant: a.accion === "CREADO" ? "creado" : "editado",
+    accionLabel: ACCION_CLIENTE_LABEL[a.accion],
+    titulo: a.clienteNombre,
+    detalle: a.detalle,
+    usuarioNombre: a.usuario?.nombre ?? null,
+    fecha: a.fecha.toISOString(),
+  }));
 
   const filas: FilaCliente[] = clientes.map((c) => ({
     id: c.id,
@@ -62,15 +81,18 @@ export default async function ClientesPage({
         title="Clientes"
         icon={UsersIcon}
         actions={
-          <ClienteFormDialog
-            empresas={empresas}
-            trigger={
-              <Button>
-                <PlusIcon className="h-4 w-4" />
-                Nuevo cliente
-              </Button>
-            }
-          />
+          <div className="flex gap-2">
+            <HistorialAuditoriaSheet titulo="Historial de clientes" entradas={filasAuditoria} />
+            <ClienteFormDialog
+              empresas={empresas}
+              trigger={
+                <Button>
+                  <PlusIcon className="h-4 w-4" />
+                  Nuevo cliente
+                </Button>
+              }
+            />
+          </div>
         }
       />
 

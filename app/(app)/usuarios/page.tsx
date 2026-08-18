@@ -3,6 +3,10 @@ import { AccesoUsuarioDialog } from "@/components/app/acceso-usuario-dialog";
 import { AvatarIniciales } from "@/components/app/avatar-iniciales";
 import { EliminarUsuarioButton } from "@/components/app/eliminar-usuario-button";
 import { FirmaUsuarioDialog } from "@/components/app/firma-usuario-dialog";
+import {
+  HistorialAuditoriaSheet,
+  type FilaAuditoriaGenerica,
+} from "@/components/app/historial-auditoria-sheet";
 import { InvitarUsuarioDialog } from "@/components/app/invitar-usuario-dialog";
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -11,24 +15,54 @@ import { assertSuperusuario } from "@/lib/auth";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
 
+const ACCION_USUARIO_ESTILO: Record<
+  string,
+  { variant: FilaAuditoriaGenerica["variant"]; label: string }
+> = {
+  ACCESO_ACTUALIZADO: { variant: "editado", label: "Acceso actualizado" },
+  FIRMA_ACTUALIZADA: { variant: "editado", label: "Firma actualizada" },
+  FIRMA_ELIMINADA: { variant: "eliminado", label: "Firma eliminada" },
+  ELIMINADO: { variant: "eliminado", label: "Usuario eliminado" },
+};
+
 export default async function UsuariosPage() {
   await assertSuperusuario();
 
-  const [usuarios, empresas, usuarioActual] = await Promise.all([
+  const [usuarios, empresas, usuarioActual, auditoria] = await Promise.all([
     db.usuario.findMany({
       include: { empresas: { include: { empresa: true } } },
       orderBy: { createdAt: "asc" },
     }),
     db.empresa.findMany({ orderBy: { nombre: "asc" } }),
     getUsuarioActual(),
+    db.usuarioAuditoria.findMany({
+      include: { actor: true },
+      orderBy: { fecha: "desc" },
+      take: 100,
+    }),
   ]);
+
+  const filasAuditoria: FilaAuditoriaGenerica[] = auditoria.map((a) => ({
+    id: a.id,
+    variant: ACCION_USUARIO_ESTILO[a.accion].variant,
+    accionLabel: ACCION_USUARIO_ESTILO[a.accion].label,
+    titulo: `${a.usuarioNombre} (${a.usuarioEmail})`,
+    detalle: a.detalle,
+    usuarioNombre: a.actor?.nombre ?? null,
+    fecha: a.fecha.toISOString(),
+  }));
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Usuarios"
         icon={ShieldCheckIcon}
-        actions={<InvitarUsuarioDialog empresas={empresas} />}
+        actions={
+          <div className="flex gap-2">
+            <HistorialAuditoriaSheet titulo="Historial de usuarios" entradas={filasAuditoria} />
+            <InvitarUsuarioDialog empresas={empresas} />
+          </div>
+        }
       />
 
       {/* Tarjetas, no tabla — nunca van a ser más de un puñado de usuarios. */}
