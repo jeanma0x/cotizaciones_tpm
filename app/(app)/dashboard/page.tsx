@@ -18,7 +18,7 @@ import { ServiciosRankingChart } from "@/components/app/servicios-ranking-chart"
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { TendenciaMensualChart } from "@/components/app/tendencia-mensual-chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
@@ -542,6 +542,16 @@ export default async function DashboardPage() {
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
               Desglose por empresa
             </CardTitle>
+            {/* Aclaración pedida por Jean/Oldemar: "Cotizado" y "Facturado"
+                son totales independientes del período, no un embudo — no
+                todas las cotizaciones terminan en factura, y algunos
+                servicios se facturan directo, sin cotización previa. Sin
+                esta nota, los dos montos lado a lado se leen como si uno
+                debiera derivar del otro. */}
+            <CardDescription>
+              Totales independientes: no toda cotización termina en factura, y algunos
+              servicios se facturan directo, sin cotización previa.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <DesgloseEmpresaChart
