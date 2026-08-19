@@ -115,6 +115,10 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
     ? (documento.anexos as string[])
     : [];
   const moneda = documento.empresa.moneda === "USD" ? "USD" : "GTQ";
+  // Símbolo corto (Q./$) para la tabla de detalle — el código de 3 letras
+  // (GTQ/USD) se mantiene en el resumen de Subtotal/Descuento/Total, donde
+  // hay más espacio y ya se venía mostrando así.
+  const simboloMoneda = moneda === "USD" ? "$" : "Q.";
   const tipoLabel = TIPO_LABELS[documento.tipo];
 
   return (
@@ -187,10 +191,15 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
           <tbody>
             <tr>
               <td className="w-1/2 border border-border bg-muted/40 p-2.5 align-top">
-                <p className="flex flex-wrap items-baseline gap-1">
+                {/* Texto en flujo normal (no flex): así el valor envuelve
+                    palabra por palabra pegado a la etiqueta cuando es largo
+                    (ej. Dirección), en vez de saltar entero a la línea de
+                    abajo como pasaba con flex-wrap (cada <span> se trataba
+                    como un bloque indivisible). */}
+                <p className="text-sm">
                   <span className="text-xs uppercase tracking-wide text-muted-foreground">
                     Contacto de servicio:
-                  </span>
+                  </span>{" "}
                   <span className="font-medium">{documento.empresa.contacto ?? "—"}</span>
                 </p>
                 <p className="font-mono text-xs text-muted-foreground">
@@ -205,36 +214,36 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
             </tr>
             <tr>
               <td className="border border-border p-2.5 align-top">
-                <p className="flex flex-wrap items-baseline gap-1">
+                <p className="text-sm">
                   <span className="text-xs uppercase tracking-wide text-muted-foreground">
                     Cliente:
-                  </span>
+                  </span>{" "}
                   <span className="font-medium">{documento.cliente?.nombre ?? "—"}</span>
                 </p>
               </td>
               <td className="border border-border p-2.5 align-top">
-                <p className="flex flex-wrap items-baseline gap-1">
+                <p className="text-sm">
                   <span className="text-xs uppercase tracking-wide text-muted-foreground">
                     NIT:
-                  </span>
+                  </span>{" "}
                   <span className="font-mono">{documento.cliente?.nit ?? "—"}</span>
                 </p>
               </td>
             </tr>
             <tr>
               <td className="border border-border p-2.5 align-top">
-                <p className="flex flex-wrap items-baseline gap-1">
+                <p className="text-sm">
                   <span className="text-xs uppercase tracking-wide text-muted-foreground">
                     Fecha:
-                  </span>
+                  </span>{" "}
                   <span className="font-mono">{formatearFecha(documento.fecha)}</span>
                 </p>
               </td>
               <td className="border border-border p-2.5 align-top">
-                <p className="flex flex-wrap items-baseline gap-1">
+                <p className="text-sm">
                   <span className="text-xs uppercase tracking-wide text-muted-foreground">
                     Dirección:
-                  </span>
+                  </span>{" "}
                   <span>{documento.cliente?.direccion ?? "—"}</span>
                 </p>
               </td>
@@ -247,18 +256,18 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
                 contenido lo permite. */}
             <tr>
               <td className="border border-border p-2.5 align-top">
-                <p className="flex flex-wrap items-baseline gap-1">
+                <p className="text-sm">
                   <span className="text-xs uppercase tracking-wide text-muted-foreground">
                     Condiciones de pago:
-                  </span>
+                  </span>{" "}
                   <span>{documento.condicionesPago || "—"}</span>
                 </p>
               </td>
               <td className="border border-border p-2.5 align-top">
-                <p className="flex flex-wrap items-baseline gap-1">
+                <p className="text-sm">
                   <span className="text-xs uppercase tracking-wide text-muted-foreground">
                     Oferta válida hasta:
-                  </span>
+                  </span>{" "}
                   <span className="font-mono">
                     {documento.vigenciaDias ?? "—"} días a partir de la fecha
                   </span>
@@ -298,10 +307,10 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
               {/* w-32 fijo: suficiente para cifras en millones con decimales
                   (ej. "1,234,567.89") sin dejar que esta columna crezca más
                   de lo necesario y le quite espacio a Descripción. */}
-              <th className="w-32 border border-border bg-brand p-2 text-right text-xs uppercase tracking-wide text-surface">
+              <th className="w-36 border border-border bg-brand p-2 text-right text-xs uppercase tracking-wide text-surface">
                 Precio unitario
               </th>
-              <th className="w-32 border border-border bg-brand p-2 text-right text-xs uppercase tracking-wide text-surface">
+              <th className="w-36 border border-border bg-brand p-2 text-right text-xs uppercase tracking-wide text-surface">
                 Total
               </th>
             </tr>
@@ -318,11 +327,11 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
                 <td className="border border-border p-2 align-top whitespace-pre-wrap">
                   {item.descripcion}
                 </td>
-                <td className="w-32 border border-border p-2 text-right align-top font-mono">
-                  {formatearMonto(Number(item.precioUnitario))}
+                <td className="w-36 border border-border p-2 text-right align-top font-mono">
+                  {simboloMoneda} {formatearMonto(Number(item.precioUnitario))}
                 </td>
-                <td className="w-32 border border-border p-2 text-right align-top font-mono">
-                  {formatearMonto(Number(item.cantidad) * Number(item.precioUnitario))}
+                <td className="w-36 border border-border p-2 text-right align-top font-mono">
+                  {simboloMoneda} {formatearMonto(Number(item.cantidad) * Number(item.precioUnitario))}
                 </td>
               </tr>
             ))}
