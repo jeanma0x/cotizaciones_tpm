@@ -17,6 +17,16 @@ const TIPO_LABELS: Record<string, string> = {
 // justo el bug que esto corrige (detectado en desarrollo local, donde el
 // proceso corre en America/Guatemala; en producción/Vercel, que corre en
 // UTC, coincidía por casualidad).
+// Separador de miles + 2 decimales fijos (ej. 1234567.89 → "1,234,567.89") —
+// pedido explícito de Oldemar para que precio unitario/total en la tabla de
+// servicios se lean como cifras de dinero, no como números crudos.
+function formatearMonto(valor: number) {
+  return valor.toLocaleString("es-GT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 function formatearFecha(fecha: Date) {
   return fecha.toLocaleDateString("es-GT", {
     year: "numeric",
@@ -279,19 +289,19 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
                   la columna se encoja al ancho de su contenido/encabezado
                   ("Cantidad") en vez de repartirse el espacio equitativamente
                   — libera espacio para Descripción, que sí lo necesita. */}
-              <th className="w-px border border-border bg-brand p-2 text-left text-xs whitespace-nowrap uppercase tracking-wide text-surface">
+              <th className="w-px border border-border bg-brand p-2 text-center text-xs whitespace-nowrap uppercase tracking-wide text-surface">
                 Cantidad
               </th>
               <th className="border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
                 Descripción
               </th>
               {/* w-32 fijo: suficiente para cifras en millones con decimales
-                  (ej. "1234567.89") sin dejar que esta columna crezca más de
-                  lo necesario y le quite espacio a Descripción. */}
-              <th className="w-32 border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
+                  (ej. "1,234,567.89") sin dejar que esta columna crezca más
+                  de lo necesario y le quite espacio a Descripción. */}
+              <th className="w-32 border border-border bg-brand p-2 text-right text-xs uppercase tracking-wide text-surface">
                 Precio unitario
               </th>
-              <th className="w-32 border border-border bg-brand p-2 text-left text-xs uppercase tracking-wide text-surface">
+              <th className="w-32 border border-border bg-brand p-2 text-right text-xs uppercase tracking-wide text-surface">
                 Total
               </th>
             </tr>
@@ -302,17 +312,17 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
                 key={item.id}
                 className={`item-imprimible ${i % 2 === 1 ? "bg-muted/30" : ""}`}
               >
-                <td className="w-px border border-border p-2 align-top font-mono whitespace-nowrap">
+                <td className="w-px border border-border p-2 text-center align-top font-mono whitespace-nowrap">
                   {Number(item.cantidad)}
                 </td>
                 <td className="border border-border p-2 align-top whitespace-pre-wrap">
                   {item.descripcion}
                 </td>
-                <td className="w-32 border border-border p-2 align-top font-mono">
-                  {Number(item.precioUnitario).toFixed(2)}
+                <td className="w-32 border border-border p-2 text-right align-top font-mono">
+                  {formatearMonto(Number(item.precioUnitario))}
                 </td>
-                <td className="w-32 border border-border p-2 align-top font-mono">
-                  {(Number(item.cantidad) * Number(item.precioUnitario)).toFixed(2)}
+                <td className="w-32 border border-border p-2 text-right align-top font-mono">
+                  {formatearMonto(Number(item.cantidad) * Number(item.precioUnitario))}
                 </td>
               </tr>
             ))}
@@ -324,19 +334,19 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-mono">
-                {moneda} {Number(documento.subtotal).toFixed(2)}
+                {moneda} {formatearMonto(Number(documento.subtotal))}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Descuento</span>
               <span className="font-mono">
-                {moneda} {Number(documento.descuento).toFixed(2)}
+                {moneda} {formatearMonto(Number(documento.descuento))}
               </span>
             </div>
             <div className="flex justify-between border-t border-brand pt-1 text-base font-semibold text-brand">
               <span>Total</span>
               <span className="font-mono">
-                {moneda} {Number(documento.total).toFixed(2)}
+                {moneda} {formatearMonto(Number(documento.total))}
               </span>
             </div>
             <p className="mt-2 rounded border border-dashed border-border bg-muted/40 p-2 text-right text-xs italic text-muted-foreground">
