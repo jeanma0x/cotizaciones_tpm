@@ -94,6 +94,10 @@ export function Sidebar({
 
   const [colapsado, setColapsado] = useState(false);
   const [montado, setMontado] = useState(false);
+  // Ver comentario en selector-empresa-global.tsx: mientras la empresa
+  // activa se está guardando, la navegación por acá queda bloqueada para no
+  // aterrizar en la página siguiente con la empresa activa desactualizada.
+  const [cambiandoEmpresa, setCambiandoEmpresa] = useState(false);
   // Aparte de "colapsado" (angosto/ancho, solo aplica de md para arriba): en
   // mobile el sidebar entero se oculta fuera de pantalla y se desliza como
   // panel superpuesto — antes se quedaba fijo a su ancho completo (240px) en
@@ -194,6 +198,7 @@ export function Sidebar({
             empresas={empresas}
             empresaActivaId={empresaActivaId}
             colapsado={colapsadoEfectivo}
+            onPendingChange={setCambiandoEmpresa}
           />
         </div>
       )}
@@ -245,12 +250,15 @@ export function Sidebar({
             <Link
               href={href}
               aria-label={colapsadoEfectivo ? label : undefined}
+              aria-disabled={cambiandoEmpresa}
+              onClick={(e) => cambiandoEmpresa && e.preventDefault()}
               className={cn(
                 "flex items-center gap-3 rounded px-3 py-2 text-sm font-medium transition-colors duration-(--motion-fast)",
                 colapsadoEfectivo && "justify-center px-0",
                 activo
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground/80 hover:bg-white/10 hover:text-sidebar-foreground",
+                cambiandoEmpresa && "pointer-events-none opacity-50",
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />

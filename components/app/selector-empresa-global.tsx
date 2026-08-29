@@ -2,7 +2,7 @@
 
 import { Building2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useTransition } from "react";
 import {
   Select,
   SelectContent,
@@ -25,13 +25,25 @@ export function SelectorEmpresaGlobal({
   empresas,
   empresaActivaId,
   colapsado,
+  onPendingChange,
 }: {
   empresas: { id: string; nombre: string }[];
   empresaActivaId: string | null;
   colapsado?: boolean;
+  // Hallazgo real de la Fase 3.3: establecerEmpresaActiva es una server
+  // action asíncrona (cookie httpOnly + assertAccesoEmpresa) — si algo
+  // navega antes de que termine, la página siguiente puede cargar con la
+  // empresa activa todavía sin actualizar. Sidebar usa esto para bloquear la
+  // navegación mientras isPending sea true, en vez de confiar en que nadie
+  // haga clic demasiado rápido.
+  onPendingChange?: (pending: boolean) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    onPendingChange?.(isPending);
+  }, [isPending, onPendingChange]);
 
   if (empresas.length <= 1) return null;
 

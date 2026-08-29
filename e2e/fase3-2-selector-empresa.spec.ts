@@ -84,3 +84,33 @@ test("regresión: Documentos, Clientes y Servicios cargan sin errores para el MI
     }
   }
 });
+
+// Hallazgo real descubierto durante la Fase 3.3 (ver commit de esa fase):
+// establecerEmpresaActiva es una server action asíncrona — navegar
+// inmediatamente después de cambiar la empresa activa, sin esperar esa
+// respuesta, podía dejar la página siguiente con la empresa activa
+// desactualizada. El fix bloquea la navegación del sidebar mientras el
+// cambio está en curso (ver selector-empresa-global.tsx/sidebar.tsx).
+test("la navegación del sidebar queda bloqueada mientras se guarda el cambio de empresa activa, y se libera al terminar", async ({
+  page,
+}) => {
+  await page.goto("/dashboard");
+
+  const selector = page.getByLabel("Empresa activa");
+  await selector.click();
+  // Deliberadamente SIN esperar la respuesta de establecerEmpresaActiva —
+  // este test simula justo la condición de carrera que se encontró.
+  await page.getByRole("option", { name: /Todas las empresas/i }).click();
+
+  const linkDocumentos = page.getByRole("link", { name: "Documentos" });
+  await expect(linkDocumentos).toHaveAttribute("aria-disabled", "true");
+  await linkDocumentos.click({ force: true });
+  // Si el bloqueo funcionó, el clic (incluso forzado) no debió navegar.
+  await expect(page).toHaveURL(/\/dashboard/);
+
+  // Una vez que termina el cambio de empresa, la navegación se libera y
+  // funciona con normalidad.
+  await expect(linkDocumentos).toHaveAttribute("aria-disabled", "false");
+  await linkDocumentos.click();
+  await expect(page).toHaveURL(/\/documentos$/);
+});
