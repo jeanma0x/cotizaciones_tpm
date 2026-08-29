@@ -18,6 +18,8 @@ import { ServiciosRankingChart } from "@/components/app/servicios-ranking-chart"
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { TendenciaMensualChart } from "@/components/app/tendencia-mensual-chart";
+import { UtilidadProyectoFiltros } from "@/components/app/utilidad-proyecto-filtros";
+import { UtilidadProyectoTable } from "@/components/app/utilidad-proyecto-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { getUsuarioActual } from "@/lib/current-usuario";
@@ -81,7 +83,20 @@ function MontoPorMoneda({
 //   Borrador.
 // - "Atención hoy" (Zona 1 y 3): unión deduplicada de VENCIDA + sin
 //   respuesta hace más de 7 días + próximas a vencer en 3 días o menos.
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  // Fase 3.4 — filtros propios de la zona "Utilidad por proyecto". La
+  // empresa ya se filtra con el selector global (Fase 3.2), no hace falta
+  // repetirla acá.
+  searchParams: Promise<{
+    upClienteId?: string;
+    upProyectoId?: string;
+    upDesde?: string;
+    upHasta?: string;
+  }>;
+}) {
+  const { upClienteId, upProyectoId, upDesde, upHasta } = await searchParams;
   const [empresasPermitidasTodas, usuario, empresaActivaId] = await Promise.all([
     getEmpresasPermitidas(),
     getUsuarioActual(),
@@ -112,6 +127,8 @@ export default async function DashboardPage() {
     servicios,
     facturadoDelMes,
     costosDelMes,
+    clientesConProyectos,
+    proyectosFiltrados,
   ] = await Promise.all([
     db.documento.findMany({
       where: { ...where, estado: { in: ["ENVIADA", "EN_NEGOCIACION"] } },
@@ -191,7 +208,92 @@ export default async function DashboardPage() {
       where: { ...where, fechaGasto: { gte: inicioMes } },
       select: { monto: true, categoria: true, empresa: { select: { moneda: true } } },
     }),
+    // Fase 3.4 — catálogo completo de clientes/proyectos (sin filtrar por
+    // upClienteId/upProyectoId) para poblar los <select> de los filtros.
+    db.cliente.findMany({
+      where: { empresaId: { in: empresasPermitidas } },
+      orderBy: { nombre: "asc" },
+      select: {
+        id: true,
+        nombre: true,
+        proyectos: { orderBy: { nombre: "asc" }, select: { id: true, nombre: true } },
+      },
+    }),
+    // Proyectos EN ALCANCE de los filtros elegidos — la utilidad de cada uno
+    // se calcula después, una vez que se conocen sus IDs.
+    db.proyecto.findMany({
+      where: {
+        cliente: { empresaId: { in: empresasPermitidas } },
+        ...(upClienteId ? { clienteId: upClienteId } : {}),
+        ...(upProyectoId ? { id: upProyectoId } : {}),
+      },
+      include: { cliente: { include: { empresa: { select: { moneda: true } } } } },
+      orderBy: { nombre: "asc" },
+    }),
   ]);
+
+  // ---- Zona 8: utilidad por proyecto (Fase 3.4) ----
+  // Rango de fecha opcional: aplica tanto a lo facturado (Documento.fecha)
+  // como a los costos (CostoOperativo.fechaGasto) — misma "fecha de devengo"
+  // que ya rige en todo el resto del sistema (ver schema.prisma).
+  const rangoFechaUtilidad: { gte?: Date; lte?: Date } | undefined =
+    upDesde || upHasta
+      ? {
+          ...(upDesde ? { gte: new Date(`${upDesde}T00:00:00.000Z`) } : {}),
+          ...(upHasta ? { lte: new Date(`${upHasta}T23:59:59.999Z`) } : {}),
+        }
+      : undefined;
+
+  const proyectoIdsFiltrados = proyectosFiltrados.map((p) => p.id);
+  const [facturadoPorProyecto, costosPorProyecto] =
+    proyectoIdsFiltrados.length > 0
+      ? await Promise.all([
+          // estado FACTURADA (no tipo "FACTURA"): mismo criterio que el
+          // resto del panel ("Facturado (histórico)", desglose por
+          // empresa) — una cotización convertida a factura (ver
+          // convertir-a-factura-button.tsx) queda con tipo COTIZACION pero
+          // estado FACTURADA, y sí debe contar acá como facturado real.
+          db.documento.groupBy({
+            by: ["proyectoId"],
+            where: {
+              proyectoId: { in: proyectoIdsFiltrados },
+              estado: "FACTURADA",
+              ...(rangoFechaUtilidad ? { fecha: rangoFechaUtilidad } : {}),
+            },
+            _sum: { total: true },
+          }),
+          db.costoOperativo.groupBy({
+            by: ["proyectoId"],
+            where: {
+              proyectoId: { in: proyectoIdsFiltrados },
+              ...(rangoFechaUtilidad ? { fechaGasto: rangoFechaUtilidad } : {}),
+            },
+            _sum: { monto: true },
+          }),
+        ])
+      : [[], []];
+
+  const facturadoPorProyectoMapa = new Map(
+    facturadoPorProyecto.map((f) => [f.proyectoId, Number(f._sum.total ?? 0)]),
+  );
+  const costosPorProyectoMapa = new Map(
+    costosPorProyecto.map((c) => [c.proyectoId, Number(c._sum.monto ?? 0)]),
+  );
+  const utilidadPorProyecto = proyectosFiltrados
+    .map((p) => {
+      const facturado = facturadoPorProyectoMapa.get(p.id) ?? 0;
+      const costos = costosPorProyectoMapa.get(p.id) ?? 0;
+      return {
+        id: p.id,
+        clienteNombre: p.cliente.nombre,
+        proyectoNombre: p.nombre,
+        moneda: p.cliente.empresa.moneda,
+        facturado,
+        costos,
+        utilidad: facturado - costos,
+      };
+    })
+    .sort((a, b) => b.utilidad - a.utilidad);
 
   // ---- Zona 1 + 5: métricas generales y desglose por tipo/estado ----
   const montoVigentePorMoneda = vigentes.reduce<Record<string, number>>((acc, doc) => {
@@ -312,7 +414,12 @@ export default async function DashboardPage() {
     const cotizado = filas
       .filter((f) => f.estado === "ENVIADA" || f.estado === "EN_NEGOCIACION")
       .reduce((acc, f) => acc + Number(f._sum.total ?? 0), 0);
-    return { empresa, totalDocs, facturado, cotizado };
+    // Fase 3.4 — contraparte de "Facturado (histórico)": lo ya ACEPTADA
+    // pero que todavía no pasó a FACTURADA (pendiente de cobro real).
+    const aceptado = filas
+      .filter((f) => f.estado === "ACEPTADA")
+      .reduce((acc, f) => acc + Number(f._sum.total ?? 0), 0);
+    return { empresa, totalDocs, facturado, cotizado, aceptado };
   });
 
   // Acumulado histórico de todo lo facturado (no solo del mes) — es lo que
@@ -322,6 +429,15 @@ export default async function DashboardPage() {
   const montoFacturadoPorMoneda = desgloseEmpresa.reduce<Record<string, number>>(
     (acc, d) => {
       acc[d.empresa.moneda] = (acc[d.empresa.moneda] ?? 0) + d.facturado;
+      return acc;
+    },
+    {},
+  );
+  // Fase 3.4 — "Aceptado (sin facturar)": complemento de "Facturado
+  // (histórico)", mismo criterio de agregación por moneda.
+  const montoAceptadoPorMoneda = desgloseEmpresa.reduce<Record<string, number>>(
+    (acc, d) => {
+      acc[d.empresa.moneda] = (acc[d.empresa.moneda] ?? 0) + d.aceptado;
       return acc;
     },
     {},
@@ -357,6 +473,7 @@ export default async function DashboardPage() {
 
   const montoVigenteEntradas = Object.entries(montoVigentePorMoneda);
   const montoFacturadoEntradas = Object.entries(montoFacturadoPorMoneda);
+  const montoAceptadoEntradas = Object.entries(montoAceptadoPorMoneda);
 
   // ---- Utilidad neta (mes): Facturado del mes − Costos del mes − ISR, por moneda.
   //
@@ -474,6 +591,13 @@ export default async function DashboardPage() {
           tono="accent"
           size="hero"
           value={<MontoPorMoneda entradas={montoFacturadoEntradas} />}
+        />
+        <StatCard
+          label="Aceptado (sin facturar)"
+          icon={<ReceiptIcon className="h-4.5 w-4.5" />}
+          tono="accent"
+          size="hero"
+          value={<MontoPorMoneda entradas={montoAceptadoEntradas} />}
         />
         <StatCard
           label="Tasa de conversión"
@@ -666,6 +790,25 @@ export default async function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* Zona 8 (Fase 3.4) — utilidad por proyecto: facturado − costos, con
+          fecha de devengo (nunca fecha de pago/cierre) en ambos lados. La
+          empresa ya se filtra con el selector global; acá solo cliente,
+          proyecto y rango de fecha, propios de esta zona. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+            Utilidad por proyecto
+          </CardTitle>
+          <CardDescription>
+            Facturado menos costos de cada proyecto, usando la fecha del gasto (no de pago).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <UtilidadProyectoFiltros clientes={clientesConProyectos} />
+          <UtilidadProyectoTable data={utilidadPorProyecto} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
