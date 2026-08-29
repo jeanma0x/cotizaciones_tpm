@@ -45,10 +45,13 @@ export function ServicioFormDialog({
   empresas,
   servicio,
   trigger,
+  empresaActivaId = null,
 }: {
   empresas: Empresa[];
   servicio?: Servicio;
   trigger: React.ReactNode;
+  // Fase 3.2 — selector de empresa global. Solo relevante al crear.
+  empresaActivaId?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -64,7 +67,7 @@ export function ServicioFormDialog({
   } = useForm<ServicioFormValues, unknown, ServicioInput>({
     resolver: zodResolver(servicioSchema),
     defaultValues: {
-      empresaId: servicio?.empresaId ?? empresas[0]?.id ?? "",
+      empresaId: servicio?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       nombre: servicio?.nombre ?? "",
       precioFijo: servicio ? Number(servicio.precioFijo) : 0,
       activo: servicio?.activo ?? true,
@@ -102,7 +105,7 @@ export function ServicioFormDialog({
               items={Object.fromEntries(empresas.map((e) => [e.id, e.nombre]))}
               value={watch("empresaId")}
               onValueChange={(v) => setValue("empresaId", v as string)}
-              disabled={empresas.length <= 1}
+              disabled={empresas.length <= 1 || (!esEdicion && Boolean(empresaActivaId))}
             >
               <SelectTrigger id="empresaId" className="w-full">
                 <SelectValue placeholder="Seleccioná una empresa" />

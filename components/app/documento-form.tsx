@@ -99,12 +99,19 @@ export function DocumentoForm({
   servicios,
   usuarios,
   documento,
+  empresaActivaId = null,
 }: {
   empresas: Empresa[];
   clientes: Cliente[];
   servicios: Servicio[];
   usuarios: UsuarioFirmante[];
   documento?: DocumentoExistente;
+  // Fase 3.2 — selector de empresa global. Solo relevante al CREAR: si el
+  // usuario ya tiene una empresa activa elegida, el campo se precarga con
+  // ella y se bloquea (se cambia desde el selector global, no acá). Al
+  // editar, `documento?.empresaId` siempre gana — la empresa de un
+  // documento existente nunca cambia (ver actions.ts).
+  empresaActivaId?: string | null;
 }) {
   const esEdicion = Boolean(documento);
   const [submitting, setSubmitting] = useState(false);
@@ -126,7 +133,7 @@ export function DocumentoForm({
   } = useForm<DocumentoFormValues, unknown, DocumentoInput>({
     resolver: zodResolver(documentoSchema),
     defaultValues: {
-      empresaId: documento?.empresaId ?? empresas[0]?.id ?? "",
+      empresaId: documento?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       tipo: (documento?.tipo as DocumentoFormValues["tipo"]) ?? "COTIZACION",
       clienteId: documento?.clienteId ?? "",
       fecha: documento ? aFechaInput(documento.fecha) : aFechaInput(new Date()),
@@ -274,7 +281,7 @@ export function DocumentoForm({
                 setValue("empresaId", v as string);
                 setValue("clienteId", "");
               }}
-              disabled={esEdicion || empresas.length <= 1}
+              disabled={esEdicion || empresas.length <= 1 || Boolean(empresaActivaId)}
             >
               <SelectTrigger id="empresaId" className="w-full">
                 <SelectValue placeholder="Seleccioná una empresa" />

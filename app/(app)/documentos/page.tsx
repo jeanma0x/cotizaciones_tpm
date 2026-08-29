@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getEmpresaActivaId } from "@/lib/empresa-activa";
 import type { Prisma } from "@prisma/client";
 
 const TIPOS_VALIDOS = ["COTIZACION", "PROPUESTA", "FACTURA"];
@@ -26,12 +27,15 @@ export default async function DocumentosPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const params = await searchParams;
-  const empresasPermitidas = await getEmpresasPermitidas();
+  const [empresasPermitidas, empresaActivaId] = await Promise.all([
+    getEmpresasPermitidas(),
+    getEmpresaActivaId(),
+  ]);
 
-  const empresaIds =
-    params.empresaId && empresasPermitidas.includes(params.empresaId)
-      ? [params.empresaId]
-      : empresasPermitidas;
+  // Fase 3.2: el selector de empresa global reemplaza el filtro local de
+  // empresa que vivía en DocumentosFiltros — "todas" cuando no hay empresa
+  // activa elegida, igual que antes.
+  const empresaIds = empresaActivaId ? [empresaActivaId] : empresasPermitidas;
 
   const where: Prisma.DocumentoWhereInput = {
     empresaId: { in: empresaIds },
@@ -54,21 +58,15 @@ export default async function DocumentosPage({
     ];
   }
 
-  const [documentos, empresas] = await Promise.all([
-    db.documento.findMany({
-      where,
-      include: {
-        empresa: true,
-        cliente: true,
-        historial: { orderBy: { fecha: "desc" }, take: 1 },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    db.empresa.findMany({
-      where: { id: { in: empresasPermitidas } },
-      orderBy: { nombre: "asc" },
-    }),
-  ]);
+  const documentos = await db.documento.findMany({
+    where,
+    include: {
+      empresa: true,
+      cliente: true,
+      historial: { orderBy: { fecha: "desc" }, take: 1 },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
   const hoy = Date.now();
   const UN_DIA_MS = 24 * 60 * 60 * 1000;
@@ -110,7 +108,7 @@ export default async function DocumentosPage({
         }
       />
 
-      <DocumentosFiltros empresas={empresas} />
+      <DocumentosFiltros />
 
       <DocumentosTable data={filas} />
     </div>

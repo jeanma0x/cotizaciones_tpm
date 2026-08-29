@@ -54,10 +54,13 @@ export function ClienteFormDialog({
   empresas,
   cliente,
   trigger,
+  empresaActivaId = null,
 }: {
   empresas: Empresa[];
   cliente?: Cliente;
   trigger: React.ReactNode;
+  // Fase 3.2 — selector de empresa global. Solo relevante al crear.
+  empresaActivaId?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -74,7 +77,7 @@ export function ClienteFormDialog({
   } = useForm<ClienteFormValues, unknown, ClienteInput>({
     resolver: zodResolver(clienteSchema),
     defaultValues: {
-      empresaId: cliente?.empresaId ?? empresas[0]?.id ?? "",
+      empresaId: cliente?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       tipo: cliente?.tipo ?? "INDIVIDUAL",
       nombre: cliente?.nombre ?? "",
       nit: cliente?.nit ?? "",
@@ -122,7 +125,7 @@ export function ClienteFormDialog({
               items={Object.fromEntries(empresas.map((e) => [e.id, e.nombre]))}
               value={watch("empresaId")}
               onValueChange={(v) => setValue("empresaId", v as string)}
-              disabled={empresas.length <= 1}
+              disabled={empresas.length <= 1 || (!esEdicion && Boolean(empresaActivaId))}
             >
               <SelectTrigger id="empresaId" className="w-full">
                 <SelectValue placeholder="Seleccioná una empresa" />

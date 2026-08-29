@@ -7,24 +7,28 @@ import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getEmpresaActivaId } from "@/lib/empresa-activa";
 
 const ACCION_CLIENTE_LABEL: Record<string, string> = { CREADO: "Creado", EDITADO: "Editado" };
 
 export default async function ClientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; empresaId?: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const { q, empresaId } = await searchParams;
-  const empresasPermitidas = await getEmpresasPermitidas();
+  const { q } = await searchParams;
+  const [empresasPermitidas, empresaActivaId] = await Promise.all([
+    getEmpresasPermitidas(),
+    getEmpresaActivaId(),
+  ]);
+  // Fase 3.2: el selector de empresa global reemplaza el filtro local de
+  // empresa que vivía en ClientesFiltros.
+  const empresaIds = empresaActivaId ? [empresaActivaId] : empresasPermitidas;
 
   const [clientes, empresas, auditoria] = await Promise.all([
     db.cliente.findMany({
       where: {
-        empresaId:
-          empresaId && empresasPermitidas.includes(empresaId)
-            ? empresaId
-            : { in: empresasPermitidas },
+        empresaId: { in: empresaIds },
         ...(q
           ? {
               OR: [
@@ -42,7 +46,7 @@ export default async function ClientesPage({
       orderBy: { nombre: "asc" },
     }),
     db.clienteAuditoria.findMany({
-      where: { empresaId: { in: empresasPermitidas } },
+      where: { empresaId: { in: empresaIds } },
       include: { usuario: true },
       orderBy: { fecha: "desc" },
       take: 100,
@@ -85,6 +89,7 @@ export default async function ClientesPage({
             <HistorialAuditoriaSheet titulo="Historial de clientes" entradas={filasAuditoria} />
             <ClienteFormDialog
               empresas={empresas}
+              empresaActivaId={empresaActivaId}
               trigger={
                 <Button>
                   <PlusIcon className="h-4 w-4" />
@@ -96,7 +101,7 @@ export default async function ClientesPage({
         }
       />
 
-      <ClientesFiltros empresas={empresas} placeholder="Buscar por nombre o NIT…" />
+      <ClientesFiltros placeholder="Buscar por nombre o NIT…" />
 
       <ClientesTable
         data={filas}

@@ -4,6 +4,7 @@ import { MobileTopBar } from "@/components/app/mobile-topbar";
 import { PageTransition } from "@/components/app/page-transition";
 import { Sidebar } from "@/components/app/sidebar";
 import { getUsuarioActual } from "@/lib/current-usuario";
+import { getEmpresaActivaId } from "@/lib/empresa-activa";
 
 export default async function AppLayout({
   children,
@@ -12,7 +13,10 @@ export default async function AppLayout({
 }) {
   await auth.protect({ unauthenticatedUrl: "/sign-in" });
 
-  const usuario = await getUsuarioActual();
+  const [usuario, empresaActivaId] = await Promise.all([
+    getUsuarioActual(),
+    getEmpresaActivaId(),
+  ]);
 
   if (!usuario) {
     return (
@@ -31,7 +35,13 @@ export default async function AppLayout({
     // se oculta y solo queda visible el documento (que el Dialog porta fuera
     // de este div).
     <div className="app-shell flex h-screen overflow-hidden">
-      <Sidebar esSuperusuario={usuario.rol === "SUPERUSUARIO"} />
+      <Sidebar
+        esSuperusuario={usuario.rol === "SUPERUSUARIO"}
+        empresas={usuario.empresas
+          .map((ue) => ue.empresa)
+          .sort((a, b) => a.nombre.localeCompare(b.nombre))}
+        empresaActivaId={empresaActivaId}
+      />
       <div className="flex flex-1 flex-col overflow-hidden">
         <MobileTopBar />
         <main className="flex-1 overflow-y-auto bg-surface-sunken p-4 md:p-8">

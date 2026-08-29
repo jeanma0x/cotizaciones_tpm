@@ -51,10 +51,14 @@ export function CostoFormDialog({
   empresas,
   costo,
   trigger,
+  empresaActivaId = null,
 }: {
   empresas: Empresa[];
   costo?: Costo;
   trigger: React.ReactNode;
+  // Fase 3.2 — selector de empresa global. Solo relevante al crear: precarga
+  // y bloquea el campo con la empresa activa, igual que en DocumentoForm.
+  empresaActivaId?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -70,7 +74,7 @@ export function CostoFormDialog({
   } = useForm<CostoOperativoFormValues, unknown, CostoOperativoInput>({
     resolver: zodResolver(costoOperativoSchema),
     defaultValues: {
-      empresaId: costo?.empresaId ?? empresas[0]?.id ?? "",
+      empresaId: costo?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       categoria: costo?.categoria ?? "COMBUSTIBLE",
       descripcion: costo?.descripcion ?? "",
       monto: costo?.monto ?? 0,
@@ -109,7 +113,7 @@ export function CostoFormDialog({
               items={Object.fromEntries(empresas.map((e) => [e.id, e.nombre]))}
               value={watch("empresaId")}
               onValueChange={(v) => setValue("empresaId", v as string)}
-              disabled={empresas.length <= 1}
+              disabled={empresas.length <= 1 || (!esEdicion && Boolean(empresaActivaId))}
             >
               <SelectTrigger id="empresaId" className="w-full">
                 <SelectValue placeholder="Seleccioná una empresa" />

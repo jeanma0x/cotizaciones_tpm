@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getEmpresaActivaId } from "@/lib/empresa-activa";
 import { CATEGORIA_COSTO_LABELS } from "@/lib/validations/costo";
 import type { CategoriaCosto, Prisma } from "@prisma/client";
 
@@ -15,17 +16,21 @@ export default async function CostosPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    empresaId?: string;
     categoria?: string;
     desde?: string;
     hasta?: string;
   }>;
 }) {
-  const { empresaId, categoria, desde, hasta } = await searchParams;
-  const empresasPermitidas = await getEmpresasPermitidas();
+  const { categoria, desde, hasta } = await searchParams;
+  const [empresasPermitidas, empresaActivaId] = await Promise.all([
+    getEmpresasPermitidas(),
+    getEmpresaActivaId(),
+  ]);
 
-  const empresaFiltrada =
-    empresaId && empresasPermitidas.includes(empresaId) ? empresaId : undefined;
+  // Fase 3.2: el selector de empresa global reemplaza el filtro local de
+  // empresa que vivía en CostosFiltros.
+  const empresaFiltrada = empresaActivaId ?? undefined;
+  const empresaIds = empresaActivaId ? [empresaActivaId] : empresasPermitidas;
   const categoriaFiltrada =
     categoria && categoria in CATEGORIA_COSTO_LABELS ? (categoria as CategoriaCosto) : undefined;
 
@@ -54,7 +59,7 @@ export default async function CostosPage({
     // Capado a 100 — es una bitácora de actividad reciente, no un reporte
     // contable completo (para eso está Exportar, sobre costos_operativos).
     db.costoOperativoAuditoria.findMany({
-      where: { empresaId: { in: empresasPermitidas } },
+      where: { empresaId: { in: empresaIds } },
       include: { empresa: true, usuario: true },
       orderBy: { fecha: "desc" },
       take: 100,
@@ -92,9 +97,10 @@ export default async function CostosPage({
         actions={
           <div className="flex gap-2">
             <HistorialCostosSheet entradas={filasAuditoria} mostrarEmpresa={empresas.length > 1} />
-            <ExportarCostosDialog empresaId={empresaId} />
+            <ExportarCostosDialog empresaId={empresaFiltrada} />
             <CostoFormDialog
               empresas={empresas}
+              empresaActivaId={empresaActivaId}
               trigger={
                 <Button>
                   <PlusIcon className="h-4 w-4" />
@@ -106,7 +112,7 @@ export default async function CostosPage({
         }
       />
 
-      <CostosFiltros empresas={empresas} />
+      <CostosFiltros />
 
       <CostosTable
         data={filas}

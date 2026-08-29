@@ -16,11 +16,9 @@ const CATEGORIAS_ITEMS = {
   ...CATEGORIA_COSTO_LABELS,
 };
 
-export function CostosFiltros({
-  empresas,
-}: {
-  empresas: { id: string; nombre: string }[];
-}) {
+// Fase 3.2: el filtro de empresa que vivía acá se reemplazó por el selector
+// de empresa global (ver components/app/selector-empresa-global.tsx).
+export function CostosFiltros() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
@@ -34,35 +32,11 @@ export function CostosFiltros({
     });
   }
 
-  const empresasItems = {
-    TODOS: "Todas las empresas",
-    ...Object.fromEntries(empresas.map((e) => [e.id, e.nombre])),
-  };
-
   const desde = searchParams.get("desde") ?? "";
   const hasta = searchParams.get("hasta") ?? "";
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {empresas.length > 1 && (
-        <Select
-          items={empresasItems}
-          value={searchParams.get("empresaId") ?? "TODOS"}
-          onValueChange={(v) => setParam("empresaId", v as string)}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(empresasItems).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
-
       <Select
         items={CATEGORIAS_ITEMS}
         value={searchParams.get("categoria") ?? "TODAS"}

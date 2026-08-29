@@ -23,6 +23,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SelectorEmpresaGlobal } from "@/components/app/selector-empresa-global";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -79,7 +80,15 @@ function SelectorTema({ colapsado }: { colapsado: boolean }) {
   );
 }
 
-export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
+export function Sidebar({
+  esSuperusuario,
+  empresas,
+  empresaActivaId,
+}: {
+  esSuperusuario: boolean;
+  empresas: { id: string; nombre: string }[];
+  empresaActivaId: string | null;
+}) {
   const pathname = usePathname();
   const items = esSuperusuario ? [...NAV_ITEMS, ...NAV_ITEMS_SUPERUSUARIO] : NAV_ITEMS;
 
@@ -178,6 +187,16 @@ export function Sidebar({ esSuperusuario }: { esSuperusuario: boolean }) {
           <XIcon className="h-5 w-5" />
         </Button>
       </div>
+
+      {empresas.length > 1 && (
+        <div className={cn("px-3 pb-3", colapsadoEfectivo && "flex justify-center")}>
+          <SelectorEmpresaGlobal
+            empresas={empresas}
+            empresaActivaId={empresaActivaId}
+            colapsado={colapsadoEfectivo}
+          />
+        </div>
+      )}
 
       <div className="px-3">
         {colapsadoEfectivo ? (

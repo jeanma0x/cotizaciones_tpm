@@ -4,9 +4,13 @@ import { PageHeader } from "@/components/app/page-header";
 import { VolverLink } from "@/components/app/volver-link";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getEmpresaActivaId } from "@/lib/empresa-activa";
 
 export default async function NuevoDocumentoPage() {
-  const empresasPermitidas = await getEmpresasPermitidas();
+  const [empresasPermitidas, empresaActivaId] = await Promise.all([
+    getEmpresasPermitidas(),
+    getEmpresaActivaId(),
+  ]);
 
   const [empresas, clientes, servicios, usuariosConFirma] = await Promise.all([
     db.empresa.findMany({
@@ -41,6 +45,7 @@ export default async function NuevoDocumentoPage() {
       </div>
       <DocumentoForm
         empresas={empresas}
+        empresaActivaId={empresaActivaId}
         clientes={clientes}
         servicios={servicios.map((s) => ({ ...s, precioFijo: Number(s.precioFijo) }))}
         usuarios={usuariosConFirma.map((u) => ({

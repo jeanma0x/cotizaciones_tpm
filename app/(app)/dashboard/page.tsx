@@ -22,6 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
+import { getEmpresaActivaId } from "@/lib/empresa-activa";
 import { CATEGORIA_COSTO_LABELS } from "@/lib/validations/costo";
 
 const TIPO_LABELS: Record<string, string> = {
@@ -81,11 +82,17 @@ function MontoPorMoneda({
 // - "Atención hoy" (Zona 1 y 3): unión deduplicada de VENCIDA + sin
 //   respuesta hace más de 7 días + próximas a vencer en 3 días o menos.
 export default async function DashboardPage() {
-  const [empresasPermitidas, usuario] = await Promise.all([
+  const [empresasPermitidasTodas, usuario, empresaActivaId] = await Promise.all([
     getEmpresasPermitidas(),
     getUsuarioActual(),
+    getEmpresaActivaId(),
   ]);
   const primerNombre = usuario?.nombre?.split(" ")[0] ?? "";
+  // Selector de empresa global (Fase 3.2): si el usuario eligió una empresa
+  // activa, el panel se agrega solo para esa empresa; si eligió "todas" (o
+  // solo tiene una permitida), el comportamiento es igual al de antes de
+  // esta fase — agregado de todas las permitidas.
+  const empresasPermitidas = empresaActivaId ? [empresaActivaId] : empresasPermitidasTodas;
   const where = { empresaId: { in: empresasPermitidas } };
   const hoy = new Date();
   const hace12Meses = new Date(hoy.getTime() - MESES_TENDENCIA * 31 * UN_DIA_MS);

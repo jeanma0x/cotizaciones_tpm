@@ -28,11 +28,11 @@ const ESTADOS = {
   FACTURADA: "Facturada",
 };
 
-export function DocumentosFiltros({
-  empresas,
-}: {
-  empresas: { id: string; nombre: string }[];
-}) {
+// Fase 3.2: el filtro de empresa que vivía acá se reemplazó por el selector
+// de empresa global (ver components/app/selector-empresa-global.tsx) —
+// dejar dos selectores de empresa distintos en pantalla confundía cuál
+// mandaba. Este componente ya no recibe `empresas`.
+export function DocumentosFiltros() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
@@ -59,11 +59,6 @@ export function DocumentosFiltros({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => setParam("q", value), 350);
   }
-
-  const empresasItems = {
-    TODOS: "Todas las empresas",
-    ...Object.fromEntries(empresas.map((e) => [e.id, e.nombre])),
-  };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -109,24 +104,6 @@ export function DocumentosFiltros({
           ))}
         </SelectContent>
       </Select>
-      {empresas.length > 1 && (
-        <Select
-          items={empresasItems}
-          value={searchParams.get("empresaId") ?? "TODOS"}
-          onValueChange={(v) => setParam("empresaId", v as string)}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(empresasItems).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
     </div>
   );
 }

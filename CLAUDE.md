@@ -27,6 +27,12 @@ cuatro entidades distintas.
 9. `docs/design-review.md` — checklist de corrección abierto tras revisar capturas
    reales de la Fase 6. Mientras tenga ítems sin marcar, el criterio de salida de esa
    fase no está cumplido, sin importar qué tan avanzada esté la funcionalidad.
+10. `docs/fase3-clientes-proyectos-costos-activos.md` — **léelo solo cuando se te
+    pida trabajar en la Fase 3** (Clientes/Proyectos, Costos, Activos, selector de
+    empresa global). Es un contrato aprobado por separado, con su propio alcance
+    cerrado — no se construye nada de ahí mientras se esté trabajando en otra cosa,
+    y nada de esta fase reemplaza o modifica lo ya definido en `scope.md` para la
+    Fase 2, que sigue vigente tal cual.
 
 ## Reglas no negociables
 

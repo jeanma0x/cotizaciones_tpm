@@ -8,21 +8,10 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-export function ClientesFiltros({
-  empresas,
-  placeholder,
-}: {
-  empresas: { id: string; nombre: string }[];
-  placeholder: string;
-}) {
+// Fase 3.2: el filtro de empresa que vivía acá se reemplazó por el selector
+// de empresa global (ver components/app/selector-empresa-global.tsx).
+export function ClientesFiltros({ placeholder }: { placeholder: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
@@ -50,11 +39,6 @@ export function ClientesFiltros({
     debounceRef.current = setTimeout(() => setParam("q", value), 350);
   }
 
-  const empresasItems = {
-    TODOS: "Todas las empresas",
-    ...Object.fromEntries(empresas.map((e) => [e.id, e.nombre])),
-  };
-
   return (
     <div className="flex flex-wrap items-center gap-2">
       <InputGroup className="w-64">
@@ -67,24 +51,6 @@ export function ClientesFiltros({
           onChange={(e) => onBuscarChange(e.target.value)}
         />
       </InputGroup>
-      {empresas.length > 1 && (
-        <Select
-          items={empresasItems}
-          value={searchParams.get("empresaId") ?? "TODOS"}
-          onValueChange={(v) => setParam("empresaId", v as string)}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(empresasItems).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
     </div>
   );
 }

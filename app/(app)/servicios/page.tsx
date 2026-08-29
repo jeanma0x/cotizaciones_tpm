@@ -7,6 +7,7 @@ import { ServiciosTable, type FilaServicio } from "@/components/app/servicios-ta
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getEmpresaActivaId } from "@/lib/empresa-activa";
 
 const ACCION_SERVICIO_LABEL: Record<string, string> = { CREADO: "Creado", EDITADO: "Editado" };
 
@@ -16,12 +17,19 @@ export default async function ServiciosPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const empresasPermitidas = await getEmpresasPermitidas();
+  const [empresasPermitidas, empresaActivaId] = await Promise.all([
+    getEmpresasPermitidas(),
+    getEmpresaActivaId(),
+  ]);
+  // Fase 3.2: antes de esta fase, Servicios nunca tuvo forma de filtrar por
+  // una sola empresa — ahora respeta el selector global igual que los demás
+  // módulos.
+  const empresaIds = empresaActivaId ? [empresaActivaId] : empresasPermitidas;
 
   const [servicios, empresas, auditoria] = await Promise.all([
     db.servicio.findMany({
       where: {
-        empresaId: { in: empresasPermitidas },
+        empresaId: { in: empresaIds },
         ...(q ? { nombre: { contains: q, mode: "insensitive" } } : {}),
       },
       include: { empresa: true },
@@ -32,7 +40,7 @@ export default async function ServiciosPage({
       orderBy: { nombre: "asc" },
     }),
     db.servicioAuditoria.findMany({
-      where: { empresaId: { in: empresasPermitidas } },
+      where: { empresaId: { in: empresaIds } },
       include: { usuario: true },
       orderBy: { fecha: "desc" },
       take: 100,
@@ -69,6 +77,7 @@ export default async function ServiciosPage({
             <HistorialAuditoriaSheet titulo="Historial de servicios" entradas={filasAuditoria} />
             <ServicioFormDialog
               empresas={empresas}
+              empresaActivaId={empresaActivaId}
               trigger={
                 <Button>
                   <PlusIcon className="h-4 w-4" />
