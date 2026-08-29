@@ -6,6 +6,7 @@ import { diffCampos } from "@/lib/auditoria";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
 import { type ClienteInput, clienteSchema } from "@/lib/validations/cliente";
+import { type ProyectoInput, proyectoSchema } from "@/lib/validations/proyecto";
 
 const ETIQUETAS_CLIENTE = {
   empresaId: "Empresa",
@@ -136,6 +137,61 @@ export async function alternarActivoCliente(id: string) {
     accion: "EDITADO",
     clienteNombre: existente.nombre,
     detalle: `Activo: ${existente.activo ? "Sí" : "No"} → ${nuevoActivo ? "Sí" : "No"}`,
+  });
+  revalidatePath("/clientes");
+}
+
+// Fase 3.3 — catálogo de Proyectos por cliente. Proyecto no tiene empresaId
+// propio (ver schema.prisma): el aislamiento por empresa se valida siempre a
+// través del Cliente dueño del proyecto, nunca asumiendo el empresaId de
+// quien llama la acción.
+export async function crearProyecto(input: unknown) {
+  const datos: ProyectoInput = proyectoSchema.parse(input);
+
+  const cliente = await db.cliente.findUnique({ where: { id: datos.clienteId } });
+  if (!cliente) throw new Error("Cliente no encontrado");
+  await assertAccesoEmpresa(cliente.empresaId);
+
+  await db.proyecto.create({
+    data: { clienteId: datos.clienteId, nombre: datos.nombre, activo: datos.activo },
+  });
+  revalidatePath("/clientes");
+}
+
+export async function actualizarProyecto(id: string, input: unknown) {
+  const datos: ProyectoInput = proyectoSchema.parse(input);
+
+  const existente = await db.proyecto.findUnique({
+    where: { id },
+    include: { cliente: true },
+  });
+  if (!existente) throw new Error("Proyecto no encontrado");
+  // El proyecto no puede "moverse" a un cliente de otra empresa por esta vía
+  // — clienteId de un proyecto ya creado no es editable en el formulario,
+  // pero igual se revalida por si el input viniera manipulado.
+  await assertAccesoEmpresa(existente.cliente.empresaId);
+  if (datos.clienteId !== existente.clienteId) {
+    throw new Error("El proyecto no puede reasignarse a otro cliente");
+  }
+
+  await db.proyecto.update({
+    where: { id },
+    data: { nombre: datos.nombre, activo: datos.activo },
+  });
+  revalidatePath("/clientes");
+}
+
+export async function alternarActivoProyecto(id: string) {
+  const existente = await db.proyecto.findUnique({
+    where: { id },
+    include: { cliente: true },
+  });
+  if (!existente) throw new Error("Proyecto no encontrado");
+  await assertAccesoEmpresa(existente.cliente.empresaId);
+
+  await db.proyecto.update({
+    where: { id },
+    data: { activo: !existente.activo },
   });
   revalidatePath("/clientes");
 }

@@ -14,10 +14,21 @@ export type FilaCosto = {
   empresaId: string;
   empresaNombre: string;
   moneda: string;
+  clienteId: string | null;
+  clienteNombre: string | null;
+  proyectoId: string | null;
+  proyectoNombre: string | null;
   categoria: keyof typeof CATEGORIA_COSTO_LABELS;
   descripcion: string;
   monto: number;
   fechaGasto: string;
+};
+
+type ClienteConProyectos = {
+  id: string;
+  empresaId: string;
+  nombre: string;
+  proyectos: { id: string; nombre: string; activo: boolean }[];
 };
 
 function formatearFecha(fecha: string) {
@@ -28,10 +39,12 @@ function formatearFecha(fecha: string) {
 export function CostosTable({
   data,
   empresas,
+  clientes,
   emptyMessage,
 }: {
   data: FilaCosto[];
   empresas: { id: string; nombre: string }[];
+  clientes: ClienteConProyectos[];
   emptyMessage: string;
 }) {
   const columns: ColumnDef<FilaCosto, unknown>[] = [
@@ -54,6 +67,23 @@ export function CostosTable({
     },
     { accessorKey: "empresaNombre", header: "Empresa" },
     {
+      id: "clienteProyecto",
+      header: "Cliente / Proyecto",
+      cell: ({ row }) =>
+        row.original.clienteNombre ? (
+          <div className="flex flex-col">
+            <span>{row.original.clienteNombre}</span>
+            {row.original.proyectoNombre && (
+              <span className="text-xs text-muted-foreground">
+                {row.original.proyectoNombre}
+              </span>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
       accessorKey: "monto",
       header: "Monto",
       cell: ({ row }) => (
@@ -70,6 +100,7 @@ export function CostosTable({
         <div className={`flex justify-end gap-2 ${accionesRevelablesClassName}`}>
           <CostoFormDialog
             empresas={empresas}
+            clientes={clientes}
             costo={row.original}
             trigger={
               <Button variant="outline" size="sm">

@@ -20,6 +20,7 @@ export default async function EditarDocumentoPage({
       correlativo: true,
       tipo: true,
       clienteId: true,
+      proyectoId: true,
       fecha: true,
       vigenciaDias: true,
       condicionesPago: true,
@@ -47,7 +48,7 @@ export default async function EditarDocumentoPage({
     db.cliente.findMany({
       where: { empresaId: documento.empresaId },
       orderBy: { nombre: "asc" },
-      include: { contactos: true },
+      include: { contactos: true, proyectos: { orderBy: { nombre: "asc" } } },
     }),
     db.servicio.findMany({
       where: { empresaId: documento.empresaId, activo: true },

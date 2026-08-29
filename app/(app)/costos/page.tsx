@@ -42,19 +42,24 @@ export default async function CostosPage({
         }
       : undefined;
 
-  const [costos, empresas, auditoria] = await Promise.all([
+  const [costos, empresas, clientes, auditoria] = await Promise.all([
     db.costoOperativo.findMany({
       where: {
         empresaId: empresaFiltrada ?? { in: empresasPermitidas },
         ...(categoriaFiltrada ? { categoria: categoriaFiltrada } : {}),
         ...(fechaGastoFiltro ? { fechaGasto: fechaGastoFiltro } : {}),
       },
-      include: { empresa: true },
+      include: { empresa: true, cliente: true, proyecto: true },
       orderBy: { fechaGasto: "desc" },
     }),
     db.empresa.findMany({
       where: { id: { in: empresasPermitidas } },
       orderBy: { nombre: "asc" },
+    }),
+    db.cliente.findMany({
+      where: { empresaId: { in: empresasPermitidas } },
+      orderBy: { nombre: "asc" },
+      include: { proyectos: { orderBy: { nombre: "asc" } } },
     }),
     // Capado a 100 — es una bitácora de actividad reciente, no un reporte
     // contable completo (para eso está Exportar, sobre costos_operativos).
@@ -71,6 +76,10 @@ export default async function CostosPage({
     empresaId: c.empresaId,
     empresaNombre: c.empresa.nombre,
     moneda: c.empresa.moneda,
+    clienteId: c.clienteId,
+    clienteNombre: c.cliente?.nombre ?? null,
+    proyectoId: c.proyectoId,
+    proyectoNombre: c.proyecto?.nombre ?? null,
     categoria: c.categoria,
     descripcion: c.descripcion,
     monto: Number(c.monto),
@@ -100,6 +109,7 @@ export default async function CostosPage({
             <ExportarCostosDialog empresaId={empresaFiltrada} />
             <CostoFormDialog
               empresas={empresas}
+              clientes={clientes}
               empresaActivaId={empresaActivaId}
               trigger={
                 <Button>
@@ -117,6 +127,7 @@ export default async function CostosPage({
       <CostosTable
         data={filas}
         empresas={empresas}
+        clientes={clientes}
         emptyMessage="Todavía no hay costos registrados con estos filtros."
       />
     </div>

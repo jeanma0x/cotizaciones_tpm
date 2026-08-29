@@ -18,6 +18,9 @@ export const documentoSchema = z.object({
   empresaId: z.string().min(1, "Seleccioná una empresa"),
   tipo: z.enum(["COTIZACION", "PROPUESTA", "FACTURA"]),
   clienteId: z.string().min(1, "Seleccioná un cliente"),
+  // Fase 3.3 — opcional: "" = sin proyecto específico (el documento queda
+  // ligado solo al cliente en general), mismo criterio que firmanteUsuarioId.
+  proyectoId: z.string().optional().or(z.literal("")),
   fecha: z.string().min(1, "La fecha es obligatoria"),
   vigenciaDias: z.coerce.number().int().positive().optional(),
   condicionesPago: z.string().trim().optional().or(z.literal("")),

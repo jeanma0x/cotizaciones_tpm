@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { actualizarCostoOperativo, crearCostoOperativo } from "@/app/(app)/costos/actions";
@@ -33,10 +33,18 @@ import {
 } from "@/lib/validations/costo";
 
 type Empresa = { id: string; nombre: string };
+type Cliente = {
+  id: string;
+  empresaId: string;
+  nombre: string;
+  proyectos: { id: string; nombre: string; activo: boolean }[];
+};
 
 type Costo = {
   id: string;
   empresaId: string;
+  clienteId: string | null;
+  proyectoId: string | null;
   categoria: keyof typeof CATEGORIA_COSTO_LABELS;
   descripcion: string;
   monto: number;
@@ -49,11 +57,13 @@ function hoyISO() {
 
 export function CostoFormDialog({
   empresas,
+  clientes,
   costo,
   trigger,
   empresaActivaId = null,
 }: {
   empresas: Empresa[];
+  clientes: Cliente[];
   costo?: Costo;
   trigger: React.ReactNode;
   // Fase 3.2 — selector de empresa global. Solo relevante al crear: precarga
@@ -75,12 +85,31 @@ export function CostoFormDialog({
     resolver: zodResolver(costoOperativoSchema),
     defaultValues: {
       empresaId: costo?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
+      clienteId: costo?.clienteId ?? "",
+      proyectoId: costo?.proyectoId ?? "",
       categoria: costo?.categoria ?? "COMBUSTIBLE",
       descripcion: costo?.descripcion ?? "",
       monto: costo?.monto ?? 0,
       fechaGasto: costo?.fechaGasto ?? hoyISO(),
     },
   });
+
+  const empresaId = watch("empresaId");
+  const clienteId = watch("clienteId");
+  // Fase 3.3 — mismo criterio que DocumentoForm: solo clientes/proyectos de
+  // la empresa/cliente elegidos, con el ya asociado siempre visible aunque
+  // esté inactivo (para no perder la asociación existente al editar).
+  const clientesDeEmpresa = useMemo(
+    () => clientes.filter((c) => c.empresaId === empresaId),
+    [clientes, empresaId],
+  );
+  const clienteActual = clientesDeEmpresa.find((c) => c.id === clienteId);
+  const proyectosDelCliente = useMemo(() => {
+    if (!clienteActual) return [];
+    return clienteActual.proyectos.filter(
+      (p) => p.activo || p.id === costo?.proyectoId,
+    );
+  }, [clienteActual, costo?.proyectoId]);
 
   async function onSubmit(datos: CostoOperativoInput) {
     try {
@@ -151,6 +180,59 @@ export function CostoFormDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="clienteId">Cliente (opcional)</Label>
+              <Select
+                items={{
+                  "": "Sin cliente específico",
+                  ...Object.fromEntries(clientesDeEmpresa.map((c) => [c.id, c.nombre])),
+                }}
+                value={clienteId || ""}
+                onValueChange={(v) => {
+                  setValue("clienteId", v as string);
+                  setValue("proyectoId", "");
+                }}
+              >
+                <SelectTrigger id="clienteId" className="w-full">
+                  <SelectValue placeholder="Sin cliente específico" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin cliente específico</SelectItem>
+                  {clientesDeEmpresa.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="proyectoId">Proyecto (opcional)</Label>
+              <Select
+                items={{
+                  "": "Sin proyecto específico",
+                  ...Object.fromEntries(proyectosDelCliente.map((p) => [p.id, p.nombre])),
+                }}
+                value={watch("proyectoId") || ""}
+                onValueChange={(v) => setValue("proyectoId", v as string)}
+                disabled={!clienteActual}
+              >
+                <SelectTrigger id="proyectoId" className="w-full">
+                  <SelectValue placeholder="Sin proyecto específico" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin proyecto específico</SelectItem>
+                  {proyectosDelCliente.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">

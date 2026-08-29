@@ -20,7 +20,7 @@ export default async function NuevoDocumentoPage() {
     db.cliente.findMany({
       where: { empresaId: { in: empresasPermitidas }, activo: true },
       orderBy: { nombre: "asc" },
-      include: { contactos: true },
+      include: { contactos: true, proyectos: { orderBy: { nombre: "asc" } } },
     }),
     db.servicio.findMany({
       where: { empresaId: { in: empresasPermitidas }, activo: true },

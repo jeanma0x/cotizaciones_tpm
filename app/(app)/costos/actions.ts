@@ -9,11 +9,35 @@ import { type CostoOperativoInput, costoOperativoSchema } from "@/lib/validation
 function normalizar(datos: CostoOperativoInput) {
   return {
     empresaId: datos.empresaId,
+    clienteId: datos.clienteId || null,
+    proyectoId: datos.proyectoId || null,
     categoria: datos.categoria,
     descripcion: datos.descripcion,
     monto: datos.monto,
     fechaGasto: new Date(`${datos.fechaGasto}T00:00:00.000Z`),
   };
+}
+
+// Fase 3.3 — mismo criterio que assertClienteDeEmpresa/assertProyectoDeCliente
+// en documentos/actions.ts: nunca confiar en que el <select> del formulario
+// ya filtró por empresa/cliente. "" (sin elegir) es válido para ambos.
+async function assertClienteDeEmpresa(clienteId: string, empresaId: string) {
+  if (!clienteId) return;
+  const cliente = await db.cliente.findUnique({ where: { id: clienteId } });
+  if (!cliente || cliente.empresaId !== empresaId) {
+    throw new Error("El cliente elegido no pertenece a la empresa seleccionada");
+  }
+}
+
+async function assertProyectoDeCliente(proyectoId: string, clienteId: string) {
+  if (!proyectoId) return;
+  if (!clienteId) {
+    throw new Error("Elegí un cliente antes de asociar un proyecto");
+  }
+  const proyecto = await db.proyecto.findUnique({ where: { id: proyectoId } });
+  if (!proyecto || proyecto.clienteId !== clienteId) {
+    throw new Error("El proyecto elegido no pertenece al cliente seleccionado");
+  }
 }
 
 // Bitácora de solo-inserción (ver comentario en schema.prisma) — se llama
@@ -51,6 +75,8 @@ async function registrarAuditoria(datos: {
 export async function crearCostoOperativo(input: unknown) {
   const datos = costoOperativoSchema.parse(input);
   await assertAccesoEmpresa(datos.empresaId);
+  await assertClienteDeEmpresa(datos.clienteId ?? "", datos.empresaId);
+  await assertProyectoDeCliente(datos.proyectoId ?? "", datos.clienteId ?? "");
 
   const normalizado = normalizar(datos);
   const costo = await db.costoOperativo.create({ data: normalizado });
@@ -75,6 +101,8 @@ export async function actualizarCostoOperativo(id: string, input: unknown) {
 
   await assertAccesoEmpresa(existente.empresaId);
   await assertAccesoEmpresa(datos.empresaId);
+  await assertClienteDeEmpresa(datos.clienteId ?? "", datos.empresaId);
+  await assertProyectoDeCliente(datos.proyectoId ?? "", datos.clienteId ?? "");
 
   const normalizado = normalizar(datos);
   await db.costoOperativo.update({ where: { id }, data: normalizado });

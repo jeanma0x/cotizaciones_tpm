@@ -26,6 +26,18 @@ async function assertClienteDeEmpresa(clienteId: string, empresaId: string) {
   }
 }
 
+// Fase 3.3 — "" (sin proyecto elegido) es válido y no se valida acá. Un
+// documento no puede asociarse a un proyecto de un cliente distinto al
+// suyo — regla explícita del alcance de la Fase 3, nunca confiar en que el
+// <select> del formulario ya lo filtró por cliente.
+async function assertProyectoDeCliente(proyectoId: string, clienteId: string) {
+  if (!proyectoId) return;
+  const proyecto = await db.proyecto.findUnique({ where: { id: proyectoId } });
+  if (!proyecto || proyecto.clienteId !== clienteId) {
+    throw new Error("El proyecto elegido no pertenece al cliente de este documento");
+  }
+}
+
 // "" (sin firmante elegido) es válido y no se valida acá — nunca confiar
 // solo en que el <select> del formulario ya lo filtró por empresa.
 async function assertFirmanteDeEmpresa(firmanteUsuarioId: string, empresaId: string) {
@@ -50,6 +62,7 @@ export async function crearDocumento(input: unknown) {
   const datos = documentoSchema.parse(input);
   await assertAccesoEmpresa(datos.empresaId);
   await assertClienteDeEmpresa(datos.clienteId, datos.empresaId);
+  await assertProyectoDeCliente(datos.proyectoId ?? "", datos.clienteId);
   await assertFirmanteDeEmpresa(datos.firmanteUsuarioId ?? "", datos.empresaId);
 
   const { subtotal, total } = calcularTotales(datos.items, datos.descuento);
@@ -63,6 +76,7 @@ export async function crearDocumento(input: unknown) {
         tipo: datos.tipo,
         correlativo,
         clienteId: datos.clienteId,
+        proyectoId: datos.proyectoId || null,
         fecha: new Date(datos.fecha),
         vigenciaDias: datos.vigenciaDias,
         condicionesPago: datos.condicionesPago || null,
@@ -96,6 +110,7 @@ export async function actualizarDocumento(id: string, input: unknown) {
   // La empresa de un documento no cambia después de creado: el correlativo
   // ya quedó asignado dentro de esa empresa.
   await assertClienteDeEmpresa(datos.clienteId, existente.empresaId);
+  await assertProyectoDeCliente(datos.proyectoId ?? "", datos.clienteId);
   await assertFirmanteDeEmpresa(datos.firmanteUsuarioId ?? "", existente.empresaId);
 
   const { subtotal, total } = calcularTotales(datos.items, datos.descuento);
@@ -115,6 +130,7 @@ export async function actualizarDocumento(id: string, input: unknown) {
       data: {
         tipo: datos.tipo,
         clienteId: datos.clienteId,
+        proyectoId: datos.proyectoId || null,
         fecha: new Date(datos.fecha),
         vigenciaDias: datos.vigenciaDias,
         condicionesPago: datos.condicionesPago || null,

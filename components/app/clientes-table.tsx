@@ -5,6 +5,7 @@ import { PencilIcon } from "lucide-react";
 import { AvatarIniciales } from "@/components/app/avatar-iniciales";
 import { ClienteFormDialog } from "@/components/app/cliente-form-dialog";
 import { accionesRevelablesClassName, DataTable } from "@/components/app/data-table";
+import { ProyectosClienteSheet } from "@/components/app/proyectos-cliente-sheet";
 import { ToggleActivoCliente } from "@/components/app/toggle-activo-cliente";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export type FilaCliente = {
   codigoPais: string | null;
   activo: boolean;
   contactos: { id: string; nombre: string; email: string }[];
+  proyectos: { id: string; nombre: string; activo: boolean }[];
 };
 
 export function ClientesTable({
@@ -87,6 +89,11 @@ export function ClientesTable({
       enableSorting: false,
       cell: ({ row }) => (
         <div className={`flex justify-end gap-2 ${accionesRevelablesClassName}`}>
+          <ProyectosClienteSheet
+            clienteId={row.original.id}
+            clienteNombre={row.original.nombre}
+            proyectos={row.original.proyectos}
+          />
           <ClienteFormDialog
             empresas={empresas}
             cliente={row.original}

@@ -59,6 +59,7 @@ type Cliente = {
   nombre: string;
   contacto: string | null;
   contactos: { id: string; nombre: string }[];
+  proyectos: { id: string; nombre: string; activo: boolean }[];
 };
 type Servicio = {
   id: string;
@@ -76,6 +77,7 @@ type DocumentoExistente = {
   empresaId: string;
   tipo: string;
   clienteId: string | null;
+  proyectoId: string | null;
   fecha: Date;
   vigenciaDias: number | null;
   condicionesPago: string | null;
@@ -136,6 +138,7 @@ export function DocumentoForm({
       empresaId: documento?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       tipo: (documento?.tipo as DocumentoFormValues["tipo"]) ?? "COTIZACION",
       clienteId: documento?.clienteId ?? "",
+      proyectoId: documento?.proyectoId ?? "",
       fecha: documento ? aFechaInput(documento.fecha) : aFechaInput(new Date()),
       vigenciaDias: documento?.vigenciaDias ?? 15,
       condicionesPago: documento?.condicionesPago ?? "",
@@ -197,6 +200,17 @@ export function DocumentoForm({
   );
   const empresaActual = empresas.find((e) => e.id === empresaId);
   const clienteActual = clientesDeEmpresa.find((c) => c.id === clienteId);
+  // Fase 3.3 — solo proyectos activos del cliente elegido, salvo que el
+  // proyecto ya asociado (al editar) esté inactivo: en ese caso se mantiene
+  // visible en la lista para no perder la asociación existente al reabrir el
+  // formulario, aunque ya no se pueda elegir de nuevo desde cero.
+  const proyectoIdActual = watch("proyectoId");
+  const proyectosDelCliente = useMemo(() => {
+    if (!clienteActual) return [];
+    return clienteActual.proyectos.filter(
+      (p) => p.activo || p.id === proyectoIdActual,
+    );
+  }, [clienteActual, proyectoIdActual]);
   // Nombres ya conocidos de ESTE cliente, para elegir rápido quién acepta el
   // documento — el contacto suelto (clientes tipo Individual) y/o la lista
   // de contactos (tipo Empresa, ver ContactoCliente). "Nombre de
@@ -280,6 +294,7 @@ export function DocumentoForm({
               onValueChange={(v) => {
                 setValue("empresaId", v as string);
                 setValue("clienteId", "");
+                setValue("proyectoId", "");
               }}
               disabled={esEdicion || empresas.length <= 1 || Boolean(empresaActivaId)}
             >
@@ -301,11 +316,39 @@ export function DocumentoForm({
             <ClienteCombobox
               clientes={clientesDeEmpresa}
               value={watch("clienteId")}
-              onValueChange={(v) => setValue("clienteId", v)}
+              onValueChange={(v) => {
+                setValue("clienteId", v);
+                setValue("proyectoId", "");
+              }}
             />
             {errors.clienteId && (
               <p className="text-xs text-destructive">{errors.clienteId.message}</p>
             )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="proyectoId">Proyecto (opcional)</Label>
+            <Select
+              items={{
+                "": "Sin proyecto específico",
+                ...Object.fromEntries(proyectosDelCliente.map((p) => [p.id, p.nombre])),
+              }}
+              value={watch("proyectoId") || ""}
+              onValueChange={(v) => setValue("proyectoId", v as string)}
+              disabled={!clienteActual}
+            >
+              <SelectTrigger id="proyectoId" className="w-full">
+                <SelectValue placeholder="Sin proyecto específico" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Sin proyecto específico</SelectItem>
+                {proyectosDelCliente.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </FormSection>

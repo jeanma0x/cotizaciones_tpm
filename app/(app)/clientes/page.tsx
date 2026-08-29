@@ -38,7 +38,11 @@ export default async function ClientesPage({
             }
           : {}),
       },
-      include: { empresa: true, contactos: true },
+      include: {
+        empresa: true,
+        contactos: true,
+        proyectos: { orderBy: { nombre: "asc" } },
+      },
       orderBy: { createdAt: "desc" },
     }),
     db.empresa.findMany({
@@ -77,6 +81,7 @@ export default async function ClientesPage({
     codigoPais: c.codigoPais,
     activo: c.activo,
     contactos: c.contactos,
+    proyectos: c.proyectos,
   }));
 
   return (

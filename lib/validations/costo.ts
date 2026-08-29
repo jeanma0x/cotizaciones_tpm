@@ -21,6 +21,11 @@ export const costoOperativoSchema = z.object({
     "CONSUMIBLES",
     "OTRO",
   ]),
+  // Fase 3.3 — ambos opcionales: un costo puede quedar sin asociar a ningún
+  // cliente/proyecto (costo general de la empresa, ej. planilla), asociado
+  // solo al cliente en general, o a un proyecto específico de ese cliente.
+  clienteId: z.string().optional().or(z.literal("")),
+  proyectoId: z.string().optional().or(z.literal("")),
   descripcion: z.string().trim().min(1, "La descripción es obligatoria"),
   monto: z.coerce
     .number({ message: "Monto inválido" })
