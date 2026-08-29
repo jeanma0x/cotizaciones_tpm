@@ -1,5 +1,6 @@
 import {
   AlertTriangleIcon,
+  InfoIcon,
   LayoutGridIcon,
   PiggyBankIcon,
   ReceiptIcon,
@@ -650,15 +651,22 @@ export default async function DashboardPage({
 
       {/* Transparencia del descuento de ISR en "Utilidad neta" — nunca un
           cálculo invisible. Solo aparece cuando hay algo que mostrar (mes
-          sin facturación de empresas de Guatemala = sin línea). */}
+          sin facturación de empresas de Guatemala = sin línea). Mismo
+          patrón visual que "Todo al día" (icono en círculo + tarjeta), pero
+          en tono neutro: esto es información, no un estado positivo. */}
       {isrEntradas.length > 0 && (
-        <p className="-mt-4 text-xs text-muted-foreground">
-          Incluye ISR estimado (régimen opcional simplificado, 5%/7% sobre
-          ingresos, solo empresas de Guatemala):{" "}
-          <span className="font-mono">
-            {isrEntradas.map(([moneda, monto]) => `${moneda} ${monto.toFixed(2)}`).join(" · ")}
+        <div className="-mt-4 flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-4 shadow-sm">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
+            <InfoIcon className="h-4.5 w-4.5 text-muted-foreground" />
           </span>
-        </p>
+          <p className="text-xs text-muted-foreground">
+            Incluye ISR estimado (régimen opcional simplificado, 5%/7% sobre
+            ingresos, solo empresas de Guatemala):{" "}
+            <span className="font-mono font-medium text-text-primary">
+              {isrEntradas.map(([moneda, monto]) => `${moneda} ${monto.toFixed(2)}`).join(" · ")}
+            </span>
+          </p>
+        </div>
       )}
 
       {/* Zona 3 — atención requerida: lista accionable, nunca solo un número */}
