@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { AnimatedNumber } from "@/components/app/animated-number";
 import { AtencionRequerida, type ItemAtencion } from "@/components/app/atencion-requerida";
+import { CardEntrance } from "@/components/app/card-entrance";
 import { CostosCategoriaChart } from "@/components/app/costos-categoria-chart";
 import { DesgloseEmpresaChart } from "@/components/app/desglose-empresa-chart";
 import { DesgloseTipoChart } from "@/components/app/desglose-tipo-chart";
@@ -475,6 +476,17 @@ export default async function DashboardPage({
   const montoFacturadoEntradas = Object.entries(montoFacturadoPorMoneda);
   const montoAceptadoEntradas = Object.entries(montoAceptadoPorMoneda);
 
+  // Sparkline de "Facturado (histórico)": la prop ya existía en StatCard
+  // (gradiente, animación) pero ninguna tarjeta la usaba. Solo se activa con
+  // una única moneda activa — mezclar GTQ/USD en una sola línea rompería el
+  // mismo criterio de aislamiento por moneda que rige el resto del panel.
+  const sparklineFacturado =
+    montoFacturadoEntradas.length === 1
+      ? tendenciaPorMoneda
+          .find((t) => t.moneda === montoFacturadoEntradas[0][0])
+          ?.data.map((d) => d.facturado)
+      : undefined;
+
   // ---- Utilidad neta (mes): Facturado del mes − Costos del mes − ISR, por moneda.
   //
   // ISR: Régimen Opcional Simplificado sobre Ingresos de Actividades
@@ -591,6 +603,7 @@ export default async function DashboardPage({
           tono="accent"
           size="hero"
           value={<MontoPorMoneda entradas={montoFacturadoEntradas} />}
+          sparkline={sparklineFacturado}
         />
         <StatCard
           label="Aceptado (sin facturar)"
@@ -653,22 +666,25 @@ export default async function DashboardPage({
 
       {/* Zona 2 — tendencia mensual, una tarjeta por moneda: nunca sumar GTQ
           y USD en el mismo gráfico (ver punto 1, ronda de cierre de huecos). */}
-      {tendenciaPorMoneda.map(({ moneda, data }) => (
-        <Card key={moneda}>
-          <CardHeader>
-            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-              Tendencia — cotizado vs. facturado ({moneda}, últimos 12 meses)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TendenciaMensualChart data={data} />
-          </CardContent>
-        </Card>
+      {tendenciaPorMoneda.map(({ moneda, data }, i) => (
+        <CardEntrance key={moneda} index={i} interactive>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                Tendencia — cotizado vs. facturado ({moneda}, últimos 12 meses)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TendenciaMensualChart data={data} />
+            </CardContent>
+          </Card>
+        </CardEntrance>
       ))}
 
       {/* Zonas 4-7 — grilla más pareja, container queries para reacomodarse */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <CardEntrance index={0} interactive className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
               Desglose por empresa
@@ -709,7 +725,9 @@ export default async function DashboardPage({
             </div>
           </CardContent>
         </Card>
+        </CardEntrance>
 
+        <CardEntrance index={1} interactive>
         <Card>
           <CardHeader>
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -720,9 +738,11 @@ export default async function DashboardPage({
             <DesgloseTipoChart data={desgloseTipo} />
           </CardContent>
         </Card>
+        </CardEntrance>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <CardEntrance index={0} interactive>
         <Card>
           <CardHeader>
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -733,7 +753,9 @@ export default async function DashboardPage({
             <ServiciosRankingChart data={rankingServicios} />
           </CardContent>
         </Card>
+        </CardEntrance>
 
+        <CardEntrance index={1} interactive>
         <Card>
           <CardHeader>
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -744,6 +766,7 @@ export default async function DashboardPage({
             <DistribucionEstadoChart data={chartData} />
           </CardContent>
         </Card>
+        </CardEntrance>
 
         <Card>
           <CardHeader>
@@ -777,17 +800,19 @@ export default async function DashboardPage({
           gráfico, y mostrar la tarjeta aunque esa moneda no tenga costos
           este mes (estado vacío explícito en vez de desaparecer). */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {costosPorCategoriaEntradas.map(({ moneda, data }) => (
-          <Card key={moneda}>
-            <CardHeader>
-              <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-                Costos por categoría ({moneda}, este mes)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CostosCategoriaChart data={data} />
-            </CardContent>
-          </Card>
+        {costosPorCategoriaEntradas.map(({ moneda, data }, i) => (
+          <CardEntrance key={moneda} index={i} interactive>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Costos por categoría ({moneda}, este mes)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CostosCategoriaChart data={data} />
+              </CardContent>
+            </Card>
+          </CardEntrance>
         ))}
       </div>
 

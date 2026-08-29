@@ -1,6 +1,7 @@
 "use client";
 
 import { PieChartIcon } from "lucide-react";
+import { useState } from "react";
 import { Cell, Pie, PieChart } from "recharts";
 import {
   ChartContainer,
@@ -9,6 +10,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
+import { cn } from "@/lib/utils";
 
 // Gráfico restringido a variaciones de navy + un solo acento ámbar para lo
 // que requiere atención — nunca la paleta de colores semánticos completa
@@ -32,6 +34,10 @@ export function DistribucionEstadoChart({
   const config: ChartConfig = Object.fromEntries(
     data.map((d) => [d.estado, { label: d.label, color: COLORES_ESTADO[d.estado] }]),
   );
+  // Conecta la leyenda con el donut: pasar el mouse sobre una fila resalta
+  // su porción (y atenúa las demás) en vez de ser dos elementos que
+  // conviven sin relacionarse.
+  const [resaltado, setResaltado] = useState<string | null>(null);
 
   if (data.every((d) => d.cantidad === 0)) {
     return (
@@ -65,9 +71,15 @@ export function DistribucionEstadoChart({
               outerRadius={70}
               strokeWidth={2}
               paddingAngle={conDatos.length > 1 ? 2 : 0}
+              isAnimationActive
+              animationDuration={400}
             >
               {conDatos.map((d) => (
-                <Cell key={d.estado} fill={COLORES_ESTADO[d.estado] ?? "var(--color-text-secondary)"} />
+                <Cell
+                  key={d.estado}
+                  fill={COLORES_ESTADO[d.estado] ?? "var(--color-text-secondary)"}
+                  fillOpacity={resaltado && resaltado !== d.estado ? 0.4 : 1}
+                />
               ))}
             </Pie>
           </PieChart>
@@ -82,7 +94,15 @@ export function DistribucionEstadoChart({
       {/* Sin esto el donut es decorativo, no informativo. */}
       <div className="grid w-full grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
         {conDatos.map((d) => (
-          <div key={d.estado} className="flex items-center gap-1.5">
+          <div
+            key={d.estado}
+            className={cn(
+              "flex items-center gap-1.5 rounded transition-opacity duration-(--motion-fast)",
+              resaltado && resaltado !== d.estado && "opacity-50",
+            )}
+            onMouseEnter={() => setResaltado(d.estado)}
+            onMouseLeave={() => setResaltado(null)}
+          >
             <span
               className="h-2.5 w-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: COLORES_ESTADO[d.estado] }}

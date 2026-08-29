@@ -1,7 +1,8 @@
 "use client";
 
 import { Building2Icon } from "lucide-react";
-import { Bar, BarChart, Cell, XAxis, YAxis } from "recharts";
+import { useId } from "react";
+import { Bar, BarChart, Cell, LabelList, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -22,6 +23,8 @@ export function DesgloseEmpresaChart({
 }: {
   data: { nombre: string; totalDocs: number }[];
 }) {
+  const idBase = useId();
+
   if (data.every((d) => d.totalDocs === 0)) {
     return (
       <EstadoVacioGrafico
@@ -33,6 +36,7 @@ export function DesgloseEmpresaChart({
   }
 
   const max = Math.max(...data.map((d) => d.totalDocs));
+  const colores = [...TONOS, "var(--color-accent)"];
 
   return (
     <ChartContainer
@@ -40,7 +44,15 @@ export function DesgloseEmpresaChart({
       className="w-full"
       style={{ height: Math.max(data.length * 34, 96) }}
     >
-      <BarChart data={data} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
+      <BarChart data={data} layout="vertical" margin={{ left: 0, right: 28, top: 0, bottom: 0 }}>
+        <defs>
+          {colores.map((color, i) => (
+            <linearGradient key={color} id={`${idBase}-${i}`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={color} stopOpacity={0.95} />
+              <stop offset="100%" stopColor={color} stopOpacity={0.65} />
+            </linearGradient>
+          ))}
+        </defs>
         <XAxis type="number" hide />
         <YAxis
           dataKey="nombre"
@@ -51,13 +63,24 @@ export function DesgloseEmpresaChart({
           tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
         />
         <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="nombre" />} />
-        <Bar dataKey="totalDocs" radius={4} isAnimationActive animationDuration={400}>
-          {data.map((d, i) => (
-            <Cell
-              key={d.nombre}
-              fill={d.totalDocs === max && max > 0 ? "var(--color-accent)" : TONOS[i % TONOS.length]}
-            />
-          ))}
+        <Bar
+          dataKey="totalDocs"
+          radius={4}
+          isAnimationActive
+          animationDuration={400}
+          activeBar={{ fillOpacity: 0.85 }}
+        >
+          <LabelList
+            dataKey="totalDocs"
+            position="right"
+            fill="var(--color-text-secondary)"
+            fontSize={11}
+          />
+          {data.map((d, i) => {
+            const esMax = d.totalDocs === max && max > 0;
+            const idxColor = esMax ? colores.length - 1 : i % TONOS.length;
+            return <Cell key={d.nombre} fill={`url(#${idBase}-${idxColor})`} />;
+          })}
         </Bar>
       </BarChart>
     </ChartContainer>
