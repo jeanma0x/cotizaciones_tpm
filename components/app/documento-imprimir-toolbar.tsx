@@ -18,6 +18,17 @@ function soloDigitos(valor: string | null | undefined) {
   return (valor ?? "").replace(/\D/g, "");
 }
 
+// Fase 3.6 — el navegador sugiere document.title como nombre de archivo al
+// "Guardar como PDF", así que sin esto todos los documentos se exportaban
+// con el título genérico de la app ("Servicios Generales TPM"), sin forma
+// de distinguir uno de otro en la carpeta de Descargas. Se restaura el
+// título original en "afterprint" (no con un setTimeout arbitrario):
+// window.print() no es garantizadamente síncrono en todos los navegadores,
+// así que hay que esperar a que el diálogo de impresión realmente cierre.
+function nombreArchivoPdf(correlativo: number, tipoLabel: string, clienteNombre: string) {
+  return [`TPM-${correlativo}`, tipoLabel, clienteNombre].filter(Boolean).join(" - ");
+}
+
 // timeZone: "UTC" — ver el mismo comentario en documento-imprimible.tsx.
 // "fecha" es una fecha de calendario pura guardada como medianoche UTC;
 // leerla de vuelta en UTC es lo que reproduce el mismo día que se escribió,
@@ -150,6 +161,17 @@ export function DocumentoImprimirToolbar({
     }
   }
 
+  function imprimir() {
+    const tituloOriginal = document.title;
+    document.title = nombreArchivoPdf(correlativo, tipoLabel, clienteNombre);
+    function restaurarTitulo() {
+      document.title = tituloOriginal;
+      window.removeEventListener("afterprint", restaurarTitulo);
+    }
+    window.addEventListener("afterprint", restaurarTitulo);
+    window.print();
+  }
+
   const codigoPais = (clienteCodigoPais || empresaCodigoPais).replace(/\D/g, "");
   const telefono = soloDigitos(clienteTelefono);
   const telefonoConCodigo = telefono ? `${codigoPais}${telefono}` : "";
@@ -247,7 +269,7 @@ export function DocumentoImprimirToolbar({
           <MessageCircleIcon className="h-4 w-4" />
           WhatsApp
         </Button>
-        <Button size="sm" onClick={() => window.print()}>
+        <Button size="sm" onClick={imprimir}>
           <DownloadIcon className="h-4 w-4" />
           Imprimir / Exportar PDF
         </Button>
