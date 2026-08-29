@@ -105,7 +105,7 @@ test("el panel muestra utilidad por proyecto (facturado − costos) y el filtro 
   await page.goto("/dashboard");
 
   const filaA = page.getByRole("row").filter({ hasText: NOMBRE_PROYECTO_A });
-  await expect(filaA).toContainText("1000.00");
+  await expect(filaA).toContainText("1,000.00");
   await expect(filaA).toContainText("300.00");
   await expect(filaA).toContainText("700.00");
 

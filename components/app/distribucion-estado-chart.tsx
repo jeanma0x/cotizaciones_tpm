@@ -86,7 +86,7 @@ export function DistribucionEstadoChart({
         </ChartContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="font-mono text-2xl font-bold text-text-primary">{total}</span>
-          <span className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
             {total === 1 ? "documento" : "documentos"}
           </span>
         </div>

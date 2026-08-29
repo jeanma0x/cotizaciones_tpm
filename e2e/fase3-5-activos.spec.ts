@@ -39,7 +39,7 @@ test("registrar un camión y un furgón con categoría/costo/valor/modelo, segme
   const filaCamion = page.getByRole("row").filter({ hasText: PLACA_CAMION });
   await expect(filaCamion).toContainText("Camión");
   await expect(filaCamion).toContainText(MODELO_CAMION);
-  await expect(filaCamion).toContainText("450000.00");
+  await expect(filaCamion).toContainText("450,000.00");
 
   // 2) Furgón (con categoría) en Empresa B.
   await cambiarEmpresaActiva(page, EMPRESA_B);
@@ -64,7 +64,7 @@ test("registrar un camión y un furgón con categoría/costo/valor/modelo, segme
   await expect(filaFurgon).toContainText("Furgón o plataforma");
   await expect(filaFurgon).toContainText("Furgón refrigerado");
   await expect(filaFurgon).toContainText(MODELO_FURGON);
-  await expect(filaFurgon).toContainText("280000.00");
+  await expect(filaFurgon).toContainText("280,000.00");
 
   await page.screenshot({ path: "e2e/screenshots/3.5-activos-empresa-b.png", fullPage: true });
 

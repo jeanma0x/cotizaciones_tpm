@@ -5,6 +5,7 @@ import { AlertTriangleIcon } from "lucide-react";
 import Link from "next/link";
 import { DataTable } from "@/components/app/data-table";
 import { DocumentoVistaRapidaSheet } from "@/components/app/documento-vista-rapida-sheet";
+import { formatearMonto } from "@/lib/formato-numero";
 import { EstadoBadge } from "@/components/app/estado-badge";
 
 const TIPO_LABELS: Record<string, string> = {
@@ -50,7 +51,7 @@ const columns: ColumnDef<FilaDocumento, unknown>[] = [
     header: "Total",
     cell: ({ row }) => (
       <span className="font-mono text-sm">
-        {row.original.empresaMoneda} {row.original.total.toFixed(2)}
+        {row.original.empresaMoneda} {formatearMonto(row.original.total)}
       </span>
     ),
   },

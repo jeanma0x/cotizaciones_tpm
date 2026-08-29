@@ -5,6 +5,7 @@ import { PencilIcon } from "lucide-react";
 import { accionesRevelablesClassName, DataTable } from "@/components/app/data-table";
 import { ServicioFormDialog } from "@/components/app/servicio-form-dialog";
 import { ToggleActivoServicio } from "@/components/app/toggle-activo-servicio";
+import { formatearMonto } from "@/lib/formato-numero";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -39,7 +40,7 @@ export function ServiciosTable({
       header: "Precio fijo",
       cell: ({ row }) => (
         <span className="font-mono text-sm">
-          {row.original.moneda} {row.original.precioFijo.toFixed(2)}
+          {row.original.moneda} {formatearMonto(row.original.precioFijo)}
         </span>
       ),
     },

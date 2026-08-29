@@ -5,6 +5,7 @@ import { PencilIcon } from "lucide-react";
 import { ActivoFormDialog } from "@/components/app/activo-form-dialog";
 import { accionesRevelablesClassName, DataTable } from "@/components/app/data-table";
 import { ToggleEstadoActivo } from "@/components/app/toggle-estado-activo";
+import { formatearMonto } from "@/lib/formato-numero";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CATEGORIA_FURGON_LABELS, TIPO_ACTIVO_LABELS } from "@/lib/validations/activo";
@@ -65,7 +66,7 @@ export function ActivosTable({
       header: "Valor",
       cell: ({ row }) => (
         <span className="font-mono text-sm">
-          {row.original.moneda} {row.original.valor.toFixed(2)}
+          {row.original.moneda} {formatearMonto(row.original.valor)}
         </span>
       ),
     },

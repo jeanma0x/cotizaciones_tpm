@@ -1,6 +1,6 @@
 import { PlusIcon, UsersIcon } from "lucide-react";
+import { BuscadorLista } from "@/components/app/buscador-lista";
 import { ClienteFormDialog } from "@/components/app/cliente-form-dialog";
-import { ClientesFiltros } from "@/components/app/clientes-filtros";
 import { ClientesTable, type FilaCliente } from "@/components/app/clientes-table";
 import { HistorialAuditoriaSheet, type FilaAuditoriaGenerica } from "@/components/app/historial-auditoria-sheet";
 import { PageHeader } from "@/components/app/page-header";
@@ -22,7 +22,8 @@ export default async function ClientesPage({
     getEmpresaActivaId(),
   ]);
   // Fase 3.2: el selector de empresa global reemplaza el filtro local de
-  // empresa que vivía en ClientesFiltros.
+  // empresa que vivía acá antes (el buscador de texto ahora es BuscadorLista,
+  // reusado en Servicios/Activos — ya no un ClientesFiltros duplicado).
   const empresaIds = empresaActivaId ? [empresaActivaId] : empresasPermitidas;
 
   const [clientes, empresas, auditoria] = await Promise.all([
@@ -106,7 +107,7 @@ export default async function ClientesPage({
         }
       />
 
-      <ClientesFiltros placeholder="Buscar por nombre o NIT…" />
+      <BuscadorLista basePath="/clientes" placeholder="Buscar por nombre o NIT…" />
 
       <ClientesTable
         data={filas}

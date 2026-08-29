@@ -46,8 +46,12 @@ export const activoSchema = z
     // Reemplaza el concepto de "año" — pedido explícito del cliente (ver
     // docs/fase3-clientes-proyectos-costos-activos.md).
     modelo: z.string().trim().optional().or(z.literal("")),
-    costo: z.coerce.number({ message: "Costo inválido" }).nonnegative(),
-    valor: z.coerce.number({ message: "Valor inválido" }).nonnegative(),
+    costo: z.coerce
+      .number({ message: "Costo inválido" })
+      .nonnegative("El costo no puede ser negativo"),
+    valor: z.coerce
+      .number({ message: "Valor inválido" })
+      .nonnegative("El valor no puede ser negativo"),
     activo: z.boolean().default(true),
   })
   .refine((datos) => datos.tipo !== "FURGON_O_PLATAFORMA" || Boolean(datos.categoria), {

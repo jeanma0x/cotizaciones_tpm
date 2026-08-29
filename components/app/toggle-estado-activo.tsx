@@ -35,6 +35,7 @@ export function ToggleEstadoActivo({
     startTransition(async () => {
       try {
         await alternarActivoRegistroActivo(id);
+        toast.success(activo ? "Activo desactivado" : "Activo activado");
         router.refresh();
         setOpen(false);
       } catch (error) {

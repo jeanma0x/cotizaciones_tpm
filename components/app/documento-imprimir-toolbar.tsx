@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { VolverLink } from "@/components/app/volver-link";
+import { formatearMonto } from "@/lib/formato-numero";
 
 function soloDigitos(valor: string | null | undefined) {
   return (valor ?? "").replace(/\D/g, "");
@@ -117,7 +118,7 @@ export function DocumentoImprimirToolbar({
     `Le compartimos la ${tipoLabel.toLowerCase()} TPM-${correlativo} de ${empresaNombre}, adjunta en este correo.`,
     "",
     "Resumen:",
-    `- Total: ${moneda} ${total.toFixed(2)}`,
+    `- Total: ${moneda} ${formatearMonto(total)}`,
     vigenciaDias ? `- Oferta válida por ${vigenciaDias} días a partir del ${formatearFecha(fecha)}.` : null,
     condicionesPago ? `- Condiciones de pago: ${condicionesPago}` : null,
     "",
@@ -177,7 +178,7 @@ export function DocumentoImprimirToolbar({
   const telefonoConCodigo = telefono ? `${codigoPais}${telefono}` : "";
   const textoWhatsapp = [
     `Hola ${clienteNombre}, te comparto la ${tipoLabel.toLowerCase()} TPM-${correlativo} de ${empresaNombre}.`,
-    `Total: ${moneda} ${total.toFixed(2)}${vigenciaDias ? ` · válida ${vigenciaDias} días` : ""}.`,
+    `Total: ${moneda} ${formatearMonto(total)}${vigenciaDias ? ` · válida ${vigenciaDias} días` : ""}.`,
     "Adjunto el PDF a continuación.",
   ].join("\n");
   const whatsappHref = telefonoConCodigo

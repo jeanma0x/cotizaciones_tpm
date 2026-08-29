@@ -1,4 +1,5 @@
 import { EstadoBadge } from "@/components/app/estado-badge";
+import { formatearMonto } from "@/lib/formato-numero";
 
 // Mismo componente en dos contextos de ancho distintos — página completa
 // (app/(app)/documentos/[id]/page.tsx) y dentro del Sheet de vista rápida
@@ -64,7 +65,7 @@ export function DocumentoResumen({ data }: { data: DocumentoResumenData }) {
         <div className="doc-resumen-span-full">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Total</p>
           <p className="font-mono text-lg font-semibold text-brand dark:text-brand-hover">
-            {data.moneda} {data.total.toFixed(2)}
+            {data.moneda} {formatearMonto(data.total)}
           </p>
         </div>
       </div>

@@ -11,6 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { CATEGORIA_COSTO_LABELS } from "@/lib/validations/costo";
+import { formatearMonto } from "@/lib/formato-numero";
 
 export type FilaAuditoriaCosto = {
   id: string;
@@ -90,7 +91,7 @@ export function HistorialCostosSheet({
                 <p className="font-medium text-text-primary">{entrada.descripcion}</p>
                 <p className="text-xs text-muted-foreground">
                   {CATEGORIA_COSTO_LABELS[entrada.categoria]} · {entrada.moneda}{" "}
-                  {entrada.monto.toFixed(2)}
+                  {formatearMonto(entrada.monto)}
                   {mostrarEmpresa && ` · ${entrada.empresaNombre}`}
                 </p>
                 <p className="text-xs text-muted-foreground">

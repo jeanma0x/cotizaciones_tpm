@@ -1,4 +1,5 @@
 import { PlusIcon, WalletIcon } from "lucide-react";
+import { BuscadorLista } from "@/components/app/buscador-lista";
 import { CostoFormDialog } from "@/components/app/costo-form-dialog";
 import { CostosFiltros } from "@/components/app/costos-filtros";
 import { CostosTable, type FilaCosto } from "@/components/app/costos-table";
@@ -16,12 +17,13 @@ export default async function CostosPage({
   searchParams,
 }: {
   searchParams: Promise<{
+    q?: string;
     categoria?: string;
     desde?: string;
     hasta?: string;
   }>;
 }) {
-  const { categoria, desde, hasta } = await searchParams;
+  const { q, categoria, desde, hasta } = await searchParams;
   const [empresasPermitidas, empresaActivaId] = await Promise.all([
     getEmpresasPermitidas(),
     getEmpresaActivaId(),
@@ -46,6 +48,7 @@ export default async function CostosPage({
     db.costoOperativo.findMany({
       where: {
         empresaId: empresaFiltrada ?? { in: empresasPermitidas },
+        ...(q ? { descripcion: { contains: q, mode: "insensitive" } } : {}),
         ...(categoriaFiltrada ? { categoria: categoriaFiltrada } : {}),
         ...(fechaGastoFiltro ? { fechaGasto: fechaGastoFiltro } : {}),
       },
@@ -122,13 +125,20 @@ export default async function CostosPage({
         }
       />
 
-      <CostosFiltros />
+      <div className="flex flex-wrap items-center gap-2">
+        <BuscadorLista basePath="/costos" placeholder="Buscar por descripción…" />
+        <CostosFiltros />
+      </div>
 
       <CostosTable
         data={filas}
         empresas={empresas}
         clientes={clientes}
-        emptyMessage="Todavía no hay costos registrados con estos filtros."
+        emptyMessage={
+          q
+            ? "Ningún costo coincide con la búsqueda."
+            : "Todavía no hay costos registrados con estos filtros."
+        }
       />
     </div>
   );

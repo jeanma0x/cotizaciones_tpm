@@ -26,6 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
+import { formatearMonto } from "@/lib/formato-numero";
 import { getEmpresaActivaId } from "@/lib/empresa-activa";
 import { CATEGORIA_COSTO_LABELS } from "@/lib/validations/costo";
 
@@ -663,7 +664,7 @@ export default async function DashboardPage({
             Incluye ISR estimado (régimen opcional simplificado, 5%/7% sobre
             ingresos, solo empresas de Guatemala):{" "}
             <span className="font-mono font-medium text-text-primary">
-              {isrEntradas.map(([moneda, monto]) => `${moneda} ${monto.toFixed(2)}`).join(" · ")}
+              {isrEntradas.map(([moneda, monto]) => `${moneda} ${formatearMonto(monto)}`).join(" · ")}
             </span>
           </p>
         </div>
@@ -723,10 +724,10 @@ export default async function DashboardPage({
                 >
                   <span className="font-medium text-text-primary">{empresa.nombre}</span>
                   <span className="font-mono text-brand dark:text-brand-hover">
-                    Facturado {empresa.moneda} {facturado.toFixed(2)}
+                    Facturado {empresa.moneda} {formatearMonto(facturado)}
                   </span>
                   <span className="font-mono text-status-enviada">
-                    Cotizado {empresa.moneda} {cotizado.toFixed(2)}
+                    Cotizado {empresa.moneda} {formatearMonto(cotizado)}
                   </span>
                 </div>
               ))}

@@ -5,6 +5,7 @@ import { PencilIcon } from "lucide-react";
 import { accionesRevelablesClassName, DataTable } from "@/components/app/data-table";
 import { CostoFormDialog } from "@/components/app/costo-form-dialog";
 import { EliminarCostoDialog } from "@/components/app/eliminar-costo-dialog";
+import { formatearMonto } from "@/lib/formato-numero";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CATEGORIA_COSTO_LABELS } from "@/lib/validations/costo";
@@ -88,7 +89,7 @@ export function CostosTable({
       header: "Monto",
       cell: ({ row }) => (
         <span className="font-mono text-sm">
-          {row.original.moneda} {row.original.monto.toFixed(2)}
+          {row.original.moneda} {formatearMonto(row.original.monto)}
         </span>
       ),
     },

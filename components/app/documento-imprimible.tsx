@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { totalEnLetras } from "@/lib/numero-a-letras";
 import { PORTADA_INSTITUCIONAL } from "@/lib/portada-institucional";
+import { formatearMonto } from "@/lib/formato-numero";
 
 const TIPO_LABELS: Record<string, string> = {
   COTIZACION: "Cotización",
@@ -17,16 +18,6 @@ const TIPO_LABELS: Record<string, string> = {
 // justo el bug que esto corrige (detectado en desarrollo local, donde el
 // proceso corre en America/Guatemala; en producción/Vercel, que corre en
 // UTC, coincidía por casualidad).
-// Separador de miles + 2 decimales fijos (ej. 1234567.89 → "1,234,567.89") —
-// pedido explícito de Oldemar para que precio unitario/total en la tabla de
-// servicios se lean como cifras de dinero, no como números crudos.
-function formatearMonto(valor: number) {
-  return valor.toLocaleString("es-GT", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
 function formatearFecha(fecha: Date) {
   return fecha.toLocaleDateString("es-GT", {
     year: "numeric",

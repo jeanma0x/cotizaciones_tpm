@@ -67,7 +67,7 @@ export function DataTable<TData>({
                       <button
                         type="button"
                         onClick={header.column.getToggleSortingHandler()}
-                        className="flex items-center gap-1 transition-colors hover:text-text-primary"
+                        className="flex cursor-pointer items-center gap-1 transition-colors hover:text-text-primary"
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {orden === "asc" && <ArrowUpIcon className="h-3 w-3" />}

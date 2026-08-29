@@ -162,7 +162,7 @@ export function DocumentoEstadoForm({
                     {estilo?.label ?? h.estado}
                   </span>
                   {esActual && (
-                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-accent-hover">
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-accent-hover">
                       Actual
                     </span>
                   )}

@@ -4,9 +4,11 @@ export const itemDocumentoSchema = z.object({
   cantidad: z.coerce
     .number({ message: "Cantidad inválida" })
     .int("La cantidad debe ser un número entero")
-    .positive(),
+    .positive("La cantidad debe ser mayor a 0"),
   descripcion: z.string().trim().min(1, "La descripción es obligatoria"),
-  precioUnitario: z.coerce.number({ message: "Precio inválido" }).nonnegative(),
+  precioUnitario: z.coerce
+    .number({ message: "Precio inválido" })
+    .nonnegative("El precio no puede ser negativo"),
 });
 
 export const notaSchema = z.object({
@@ -22,10 +24,14 @@ export const documentoSchema = z.object({
   // ligado solo al cliente en general), mismo criterio que firmanteUsuarioId.
   proyectoId: z.string().optional().or(z.literal("")),
   fecha: z.string().min(1, "La fecha es obligatoria"),
-  vigenciaDias: z.coerce.number().int().positive().optional(),
+  vigenciaDias: z.coerce
+    .number()
+    .int()
+    .positive("La vigencia debe ser mayor a 0 días")
+    .optional(),
   condicionesPago: z.string().trim().optional().or(z.literal("")),
   descripcionGeneral: z.string().trim().optional().or(z.literal("")),
-  descuento: z.coerce.number().nonnegative().default(0),
+  descuento: z.coerce.number().nonnegative("El descuento no puede ser negativo").default(0),
   items: z.array(itemDocumentoSchema).min(1, "Agregá al menos un ítem"),
   notas: z.array(notaSchema).default([]),
   anexos: z.array(z.string().trim().min(1)).default([]),

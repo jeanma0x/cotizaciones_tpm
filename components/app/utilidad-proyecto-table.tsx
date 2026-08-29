@@ -1,3 +1,5 @@
+import { formatearMonto } from "@/lib/formato-numero";
+
 type FilaUtilidadProyecto = {
   id: string;
   clienteNombre: string;
@@ -39,17 +41,17 @@ export function UtilidadProyectoTable({ data }: { data: FilaUtilidadProyecto[] }
               <td className="py-2 pr-2">{fila.clienteNombre}</td>
               <td className="py-2 pr-2">{fila.proyectoNombre}</td>
               <td className="py-2 pr-2 text-right font-mono text-brand dark:text-brand-hover">
-                {fila.moneda} {fila.facturado.toFixed(2)}
+                {fila.moneda} {formatearMonto(fila.facturado)}
               </td>
               <td className="py-2 pr-2 text-right font-mono text-status-enviada">
-                {fila.moneda} {fila.costos.toFixed(2)}
+                {fila.moneda} {formatearMonto(fila.costos)}
               </td>
               <td
                 className={`py-2 pr-2 text-right font-mono font-semibold ${
                   fila.utilidad < 0 ? "text-danger" : "text-success"
                 }`}
               >
-                {fila.moneda} {fila.utilidad.toFixed(2)}
+                {fila.moneda} {formatearMonto(fila.utilidad)}
               </td>
             </tr>
           ))}

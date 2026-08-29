@@ -11,6 +11,7 @@ import { VolverLink } from "@/components/app/volver-link";
 import { Button } from "@/components/ui/button";
 import { getEmpresasPermitidas } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { formatearMonto } from "@/lib/formato-numero";
 
 const TIPO_LABELS: Record<string, string> = {
   COTIZACION: "Cotización",
@@ -118,11 +119,11 @@ export default async function DocumentoDetallePage({
                 <span className="text-xs text-muted-foreground sm:hidden">
                   Precio unitario:{" "}
                 </span>
-                {Number(item.precioUnitario).toFixed(2)}
+                {formatearMonto(Number(item.precioUnitario))}
               </span>
               <span className="font-mono sm:order-4">
                 <span className="text-xs text-muted-foreground sm:hidden">Total: </span>
-                {(Number(item.cantidad) * Number(item.precioUnitario)).toFixed(2)}
+                {formatearMonto(Number(item.cantidad) * Number(item.precioUnitario))}
               </span>
             </div>
           ))}
@@ -131,19 +132,19 @@ export default async function DocumentoDetallePage({
           <div className="flex w-64 justify-between">
             <span className="text-muted-foreground">Subtotal</span>
             <span className="font-mono">
-              {documento.empresa.moneda} {Number(documento.subtotal).toFixed(2)}
+              {documento.empresa.moneda} {formatearMonto(Number(documento.subtotal))}
             </span>
           </div>
           <div className="flex w-64 justify-between">
             <span className="text-muted-foreground">Descuento</span>
             <span className="font-mono">
-              {documento.empresa.moneda} {Number(documento.descuento).toFixed(2)}
+              {documento.empresa.moneda} {formatearMonto(Number(documento.descuento))}
             </span>
           </div>
           <div className="flex w-64 justify-between border-t border-border pt-1 font-semibold">
             <span>Total</span>
             <span className="font-mono">
-              {documento.empresa.moneda} {Number(documento.total).toFixed(2)}
+              {documento.empresa.moneda} {formatearMonto(Number(documento.total))}
             </span>
           </div>
         </div>

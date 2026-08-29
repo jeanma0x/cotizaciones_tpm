@@ -25,6 +25,7 @@ import Link from "next/link";
 import { AutosizeTextarea } from "@/components/app/autosize-textarea";
 import { ClienteCombobox } from "@/components/app/cliente-combobox";
 import { FormSection } from "@/components/app/form-section";
+import { formatearMonto } from "@/lib/formato-numero";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -256,8 +257,16 @@ export function DocumentoForm({
         await crearDocumento(datos);
       }
     } catch (error) {
-      // redirect() de Next.js lanza un error especial que no debemos atrapar como falla.
-      if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+      // redirect() de Next.js lanza un error especial que no debemos atrapar
+      // como falla — es justo la señal de que el guardado sí funcionó (los
+      // otros 4 formularios del sistema muestran un toast de éxito; acá el
+      // toast se dispara en este mismo punto, antes de relanzar el error de
+      // redirect, para no perder la confirmación visual solo porque el éxito
+      // se resuelve como una excepción especial en vez de un valor normal).
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        toast.success(esEdicion ? "Documento actualizado" : "Documento creado");
+        throw error;
+      }
       toast.error(error instanceof Error ? error.message : "Ocurrió un error");
       setSubmitting(false);
     }
@@ -444,7 +453,7 @@ export function DocumentoForm({
                   {...register(`items.${index}.precioUnitario` as const)}
                 />
                 <div className="flex h-8 items-center font-mono text-sm">
-                  {(cantidad * precio).toFixed(2)}
+                  {formatearMonto(cantidad * precio)}
                 </div>
                 <Tooltip>
                   <TooltipTrigger
@@ -475,7 +484,7 @@ export function DocumentoForm({
           <div className="flex w-full max-w-xs items-center justify-between gap-4 sm:w-64">
             <span className="text-muted-foreground">Subtotal</span>
             <span className="font-mono">
-              {empresaActual?.moneda} {subtotal.toFixed(2)}
+              {empresaActual?.moneda} {formatearMonto(subtotal)}
             </span>
           </div>
           <div className="flex w-full max-w-xs items-center justify-between gap-4 sm:w-64">
@@ -493,7 +502,7 @@ export function DocumentoForm({
           <div className="flex w-full max-w-xs items-center justify-between gap-4 border-t border-border pt-1 font-semibold sm:w-64">
             <span>Total</span>
             <span className="font-mono">
-              {empresaActual?.moneda} {total.toFixed(2)}
+              {empresaActual?.moneda} {formatearMonto(total)}
             </span>
           </div>
         </div>

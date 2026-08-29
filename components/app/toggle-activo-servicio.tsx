@@ -33,6 +33,7 @@ export function ToggleActivoServicio({
     startTransition(async () => {
       try {
         await alternarActivoServicio(id);
+        toast.success(activo ? "Servicio desactivado" : "Servicio activado");
         router.refresh();
         setOpen(false);
       } catch (error) {
