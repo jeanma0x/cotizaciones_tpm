@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { db } from "@/lib/db";
+import { cambiarEmpresaActiva } from "./helpers";
 
 // Verificación de regresión + criterio de salida de la Fase 3.3 (ver
 // docs/fase3-clientes-proyectos-costos-activos.md): "se puede crear un
@@ -25,19 +26,12 @@ test.afterAll(async () => {
 test("crear cliente + proyecto, asociar un costo y una cotización, y confirmar que quedan ligados", async ({
   page,
 }) => {
-  // 1) Empresa activa: QA_PLAYWRIGHT_Empresa de Pruebas. IMPORTANTE: el
-  // cambio de empresa activa (establecerEmpresaActiva) es una server action
-  // asíncrona (cookie httpOnly) — hay que esperar esa respuesta antes de
-  // navegar, si no la próxima página puede cargar con la empresa activa
-  // todavía sin actualizar (se confirmó este hallazgo real: sin esta espera,
-  // el cliente se creaba bajo la empresa QA equivocada).
+  // 1) Empresa activa: QA_PLAYWRIGHT_Empresa de Pruebas. Ver e2e/helpers.ts
+  // — hallazgo real: un waitForResponse genérico (POST+200) puede atrapar
+  // por accidente la telemetría de Clerk en vez de la respuesta real de
+  // establecerEmpresaActiva, dejando que se navegue antes de tiempo.
   await page.goto("/dashboard");
-  await page.getByLabel("Empresa activa").click();
-  await Promise.all([
-    page.waitForResponse((res) => res.request().method() === "POST" && res.status() === 200),
-    page.getByRole("option", { name: EMPRESA_QA }).click(),
-  ]);
-  await expect(page.getByLabel("Empresa activa")).toContainText(EMPRESA_QA);
+  await cambiarEmpresaActiva(page, EMPRESA_QA);
 
   // 2) Nuevo cliente.
   await page.goto("/clientes");
