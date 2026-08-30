@@ -466,6 +466,11 @@
     page-break-after: always;
   }
 
+  .page-break-before {
+    break-before: page;
+    page-break-before: always;
+  }
+
   @page {
     margin: 1.5cm;
   }

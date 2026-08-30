@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
+import { RangoFechaInput } from "@/components/app/rango-fecha-input";
 import {
   Select,
   SelectContent,
@@ -54,22 +55,12 @@ export function CostosFiltros() {
         </SelectContent>
       </Select>
 
-      <input
-        type="date"
-        aria-label="Desde"
-        value={desde}
-        max={hasta || undefined}
-        onChange={(e) => setParam("desde", e.target.value)}
-        className="h-8 rounded-md border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-      />
-      <span className="text-sm text-muted-foreground">a</span>
-      <input
-        type="date"
-        aria-label="Hasta"
-        value={hasta}
-        min={desde || undefined}
-        onChange={(e) => setParam("hasta", e.target.value)}
-        className="h-8 rounded-md border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      <RangoFechaInput
+        idPrefix="costos-filtros"
+        desde={desde}
+        hasta={hasta}
+        onDesdeChange={(v) => setParam("desde", v)}
+        onHastaChange={(v) => setParam("hasta", v)}
       />
     </div>
   );

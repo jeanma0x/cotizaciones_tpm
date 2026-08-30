@@ -18,7 +18,7 @@ factura) contra gastos (lo que le cuesta operar) solo de memoria o en Excel apar
 Esta fase existe para resolver exactamente eso, más un control de sus activos
 (camiones, maquinaria) que hoy tampoco tiene en ningún sistema.
 
-## Alcance contratado (los 6 módulos de la cotización aprobada)
+## Alcance contratado (7 módulos, acordados con el cliente)
 
 1. **Clientes y Proyectos** — nueva entidad Proyecto, ligada a un Cliente. KPIs de
    utilidad y gasto cruzados por proyecto, filtros por cliente/proyecto/empresa/fecha
@@ -32,6 +32,10 @@ Esta fase existe para resolver exactamente eso, más un control de sus activos
    los módulos se filtren automáticamente por ella.
 5. **Módulo de Activos** — registro de camiones, maquinaria y equipo por empresa.
 6. **Nombre de PDF con correlativo** — ajuste puntual en la exportación.
+7. **Módulo de Reportes** — un reporte formal, exportable (PDF y Excel/CSV), que
+   resume cotizado/facturado/costos/utilidad de un período — para que Oldemar se lo
+   entregue a su contador o lo guarde como respaldo, distinto del panel interactivo
+   del día a día.
 
 Además, sin costo adicional: revisar que el cálculo de ISR estimado que ya existe en
 el panel esté funcionando correctamente (no es una funcionalidad nueva de esta fase,
@@ -143,6 +147,48 @@ consulta del sistema. Extender el patrón de `security.md`:
   pasó a Facturada.
 - Filtros combinables por cliente, proyecto, empresa y rango de fecha.
 
+## Módulo de Reportes — qué muestra y qué exporta
+
+Esto se conversó con el cliente pero no había quedado por escrito en las notas
+originales — se agrega ahora al alcance. La diferencia con el panel principal: el
+panel es para ver el negocio *en vivo*, del día a día; el Reporte es un documento
+*formal y estático* de un período cerrado, pensado para entregarle a su contador o
+guardar como respaldo — mismo espíritu que ya tienen las cotizaciones/facturas, pero
+resumiendo números en vez de un solo servicio.
+
+**Filtros para generar el reporte:**
+
+- Rango de fechas (obligatorio).
+- Empresa (opcional — si no se elige, se agrupa por las 4).
+- Cliente (opcional).
+- Proyecto (opcional, solo aparece si ya se eligió un cliente).
+
+**Contenido del reporte:**
+
+1. Resumen ejecutivo del período: total cotizado, total facturado, total de costos,
+   utilidad neta (facturado − costos).
+2. Desglose por proyecto: cliente, proyecto, facturado, costos, utilidad de cada uno
+   — la misma lógica de cruce que ya existe en el panel (Fase 3.4), pero congelada en
+   un documento de un período específico en vez de un número que cambia en vivo.
+3. Desglose por empresa, si el reporte no se filtró a una sola.
+4. Detalle opcional (con un interruptor de "incluir detalle"): listado de los
+   documentos y de los costos individuales que componen los totales del período —
+   para que el contador pueda auditar de dónde sale cada cifra, no solo confiar en el
+   total.
+
+**Formato de exportación:**
+
+- **PDF** — reutilizar exactamente la misma identidad visual que ya tienen los
+  documentos exportables (`document-export.md`, `design-system.md`): el logo real
+  (`public/marca/svg/logo-color.svg`) en el encabezado, misma tipografía, mismos
+  tokens de color. Que se sienta parte de la misma familia de documentos que ya
+  conoce Oldemar, no una pantalla distinta pegada como PDF.
+- **Excel/CSV** — una tabla plana de los datos del período (documentos y costos
+  incluidos, con sus columnas: fecha, cliente, proyecto, tipo, monto), para que el
+  contador la manipule directamente en Excel sin tener que copiar desde un PDF.
+- El nombre del archivo exportado debe incluir el rango de fechas del reporte (mismo
+  criterio que ya se pidió para el nombre del PDF de un documento individual).
+
 ## Explícitamente fuera de esta fase (no construir sin confirmarlo aparte)
 
 - Integración real con proveedores (de combustible o cualquier otro) — los costos se
@@ -203,7 +249,19 @@ sistema.
 **Criterio de salida:** se puede registrar un camión y un furgón con su categoría,
 costo, valor y modelo, y aparecen correctamente segmentados por empresa.
 
-### Fase 3.6 — Ajustes finales
+### Fase 3.6 — Módulo de Reportes
+
+Depende de que 3.1–3.4 ya estén funcionando con datos reales (necesita Proyecto,
+Costo-con-proyecto, y la lógica de utilidad cruzada ya construidas). Pantalla de
+filtros (fecha, empresa, cliente, proyecto opcionales) + generación del reporte en
+PDF (con el logo real y la misma identidad visual de los documentos existentes) y en
+Excel/CSV. Ver la sección "Módulo de Reportes" arriba para el detalle completo de
+contenido y formato.
+**Criterio de salida:** generar un reporte de un mes con datos reales, exportarlo en
+PDF (con membrete y logo correctos) y en Excel, y confirmar que los totales del
+reporte coinciden exactamente con lo que muestra el panel para ese mismo período.
+
+### Fase 3.7 — Ajustes finales
 
 Nombre del PDF exportado con el correlativo incluido. Verificación del cálculo de ISR
 estimado ya existente (confirmar la regla exacta que aplica y que el monto calculado
@@ -216,5 +274,5 @@ cálculo de ISR fue revisado y confirmado (o corregido, si se encontró un error
 Con Playwright, capturas de las pantallas nuevas y de las que ya existían (para
 confirmar que no cambiaron de forma no intencional), y un reporte fase por fase —
 mismo formato que ya se usó en la Fase 2: qué se hizo, qué se verificó, qué quedó
-pendiente y por qué. No dar por cerrada la fase completa hasta que las 6 verificaciones
+pendiente y por qué. No dar por cerrada la fase completa hasta que las 7 verificaciones
 de regresión (una por cada sub-fase) hayan pasado.

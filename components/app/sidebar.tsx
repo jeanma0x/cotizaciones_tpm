@@ -7,6 +7,7 @@ import {
   ChevronsRightIcon,
   ClipboardList,
   ContainerIcon,
+  FileBarChart2Icon,
   FilePlus,
   LayoutGrid,
   MoonIcon,
@@ -42,6 +43,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/servicios", label: "Servicios", icon: Truck },
   { href: "/costos", label: "Costos", icon: WalletIcon },
   { href: "/activos", label: "Activos", icon: ContainerIcon },
+  { href: "/reportes", label: "Reportes", icon: FileBarChart2Icon },
 ];
 
 const NAV_ITEMS_SUPERUSUARIO: NavItem[] = [
