@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { actualizarServicio, crearServicio } from "@/app/(app)/servicios/actions";
+import { ConfirmarDuplicadoDialog } from "@/components/app/confirmar-duplicado-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { esErrorDuplicado, mensajeDuplicado } from "@/lib/duplicado";
 import {
   type ServicioFormValues,
   type ServicioInput,
@@ -56,6 +58,10 @@ export function ServicioFormDialog({
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const esEdicion = Boolean(servicio);
+  const [duplicado, setDuplicado] = useState<{ mensaje: string; datos: ServicioInput } | null>(
+    null,
+  );
+  const [confirmandoDuplicado, setConfirmandoDuplicado] = useState(false);
 
   const {
     register,
@@ -87,11 +93,34 @@ export function ServicioFormDialog({
       setOpen(false);
       router.refresh();
     } catch (error) {
+      const mensaje = error instanceof Error ? error.message : "Ocurrió un error";
+      if (!esEdicion && esErrorDuplicado(mensaje)) {
+        setDuplicado({ mensaje: mensajeDuplicado(mensaje), datos });
+        return;
+      }
+      toast.error(mensaje);
+    }
+  }
+
+  async function confirmarCrearDuplicado() {
+    if (!duplicado) return;
+    setConfirmandoDuplicado(true);
+    try {
+      await crearServicio({ ...duplicado.datos, confirmarDuplicado: true });
+      toast.success("Servicio creado");
+      reset();
+      setDuplicado(null);
+      setOpen(false);
+      router.refresh();
+    } catch (error) {
       toast.error(error instanceof Error ? error.message : "Ocurrió un error");
+    } finally {
+      setConfirmandoDuplicado(false);
     }
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger as React.ReactElement} />
       <DialogContent className="sm:max-w-md">
@@ -153,5 +182,13 @@ export function ServicioFormDialog({
         </form>
       </DialogContent>
     </Dialog>
+    <ConfirmarDuplicadoDialog
+      open={Boolean(duplicado)}
+      mensaje={duplicado?.mensaje ?? ""}
+      pendiente={confirmandoDuplicado}
+      onConfirm={confirmarCrearDuplicado}
+      onCancel={() => setDuplicado(null)}
+    />
+    </>
   );
 }

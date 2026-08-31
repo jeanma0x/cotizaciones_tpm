@@ -9,6 +9,8 @@ import {
   alternarActivoProyecto,
   crearProyecto,
 } from "@/app/(app)/clientes/actions";
+import { ConfirmarDuplicadoDialog } from "@/components/app/confirmar-duplicado-dialog";
+import { esErrorDuplicado, mensajeDuplicado } from "@/lib/duplicado";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +42,7 @@ export function ProyectosClienteSheet({
   const [nombreNuevo, setNombreNuevo] = useState("");
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nombreEditado, setNombreEditado] = useState("");
+  const [duplicado, setDuplicado] = useState<{ mensaje: string; nombre: string } | null>(null);
 
   function agregar() {
     const nombre = nombreNuevo.trim();
@@ -48,6 +51,25 @@ export function ProyectosClienteSheet({
       try {
         await crearProyecto({ clienteId, nombre, activo: true });
         setNombreNuevo("");
+        router.refresh();
+      } catch (error) {
+        const mensaje = error instanceof Error ? error.message : "Ocurrió un error";
+        if (esErrorDuplicado(mensaje)) {
+          setDuplicado({ mensaje: mensajeDuplicado(mensaje), nombre });
+          return;
+        }
+        toast.error(mensaje);
+      }
+    });
+  }
+
+  function confirmarAgregarDuplicado() {
+    if (!duplicado) return;
+    startTransition(async () => {
+      try {
+        await crearProyecto({ clienteId, nombre: duplicado.nombre, activo: true, confirmarDuplicado: true });
+        setNombreNuevo("");
+        setDuplicado(null);
         router.refresh();
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Ocurrió un error");
@@ -81,6 +103,7 @@ export function ProyectosClienteSheet({
   }
 
   return (
+    <>
     <Sheet>
       <SheetTrigger
         render={
@@ -194,5 +217,13 @@ export function ProyectosClienteSheet({
         </div>
       </SheetContent>
     </Sheet>
+    <ConfirmarDuplicadoDialog
+      open={Boolean(duplicado)}
+      mensaje={duplicado?.mensaje ?? ""}
+      pendiente={isPending}
+      onConfirm={confirmarAgregarDuplicado}
+      onCancel={() => setDuplicado(null)}
+    />
+    </>
   );
 }

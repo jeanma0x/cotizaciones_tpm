@@ -9,6 +9,8 @@ import { db } from "@/lib/db";
 import {
   type DocumentoInput,
   documentoSchema,
+  ESTADOS_DOCUMENTO_LABELS,
+  TRANSICIONES_ESTADO_VALIDAS,
 } from "@/lib/validations/documento";
 
 function calcularTotales(items: DocumentoInput["items"], descuento: number) {
@@ -107,6 +109,15 @@ export async function actualizarDocumento(id: string, input: unknown) {
   const existente = await db.documento.findUnique({ where: { id } });
   if (!existente) throw new Error("Documento no encontrado");
   await assertAccesoEmpresa(existente.empresaId);
+  // Un documento ya facturado es un hecho consumado (ver docs/security.md,
+  // "nunca se pierde el historial") — editarlo reescribiría lo que el
+  // cliente ya recibió como cobro real. Duplicar (DuplicarDocumentoButton)
+  // es la vía correcta si hace falta una versión nueva.
+  if (existente.estado === "FACTURADA") {
+    throw new Error(
+      "Este documento ya fue facturado y no se puede editar — duplicalo si necesitás una versión nueva.",
+    );
+  }
   // La empresa de un documento no cambia después de creado: el correlativo
   // ya quedó asignado dentro de esa empresa.
   await assertClienteDeEmpresa(datos.clienteId, existente.empresaId);
@@ -177,6 +188,17 @@ export async function cambiarEstadoDocumento(
     | "RECHAZADA"
     | "VENCIDA"
     | "FACTURADA";
+
+  // Máquina de estados (ver lib/validations/documento.ts): nunca confiar en
+  // que el <Select> del cliente ya filtró las opciones válidas — si
+  // llegara un estado manipulado a mano (o un cliente desactualizado), el
+  // servidor es la fuente de verdad final.
+  const transicionesValidas = TRANSICIONES_ESTADO_VALIDAS[existente.estado] ?? [];
+  if (!transicionesValidas.includes(estado)) {
+    throw new Error(
+      `No se puede pasar de "${ESTADOS_DOCUMENTO_LABELS[existente.estado] ?? existente.estado}" a "${ESTADOS_DOCUMENTO_LABELS[estado] ?? estado}".`,
+    );
+  }
 
   await db.$transaction([
     db.documento.update({ where: { id }, data: { estado } }),

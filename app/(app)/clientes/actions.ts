@@ -5,6 +5,7 @@ import { assertAccesoEmpresa } from "@/lib/auth";
 import { diffCampos } from "@/lib/auditoria";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
+import { PREFIJO_ERROR_DUPLICADO } from "@/lib/duplicado";
 import { type ClienteInput, clienteSchema } from "@/lib/validations/cliente";
 import { type ProyectoInput, proyectoSchema } from "@/lib/validations/proyecto";
 
@@ -34,6 +35,26 @@ function normalizar(datos: ClienteInput) {
     codigoPais: datos.codigoPais || null,
     activo: datos.activo,
   };
+}
+
+// Doble confirmación (no un bloqueo duro): el usuario trabaja desde Excel/
+// WhatsApp y puede repetir nombres fácilmente (dos personas cargando al
+// mismo cliente el mismo día) — homónimos legítimos también existen, así
+// que esto solo avisa antes de crear, nunca lo impide. Ver confirmarDuplicado
+// en lib/validations/cliente.ts.
+async function buscarClienteDuplicado(empresaId: string, nombre: string, nit: string) {
+  const porNombre = await db.cliente.findFirst({
+    where: { empresaId, nombre: { equals: nombre, mode: "insensitive" } },
+  });
+  if (porNombre) return { campo: "nombre" as const, nombre: porNombre.nombre };
+
+  if (nit) {
+    const porNit = await db.cliente.findFirst({
+      where: { empresaId, nit: { equals: nit, mode: "insensitive" } },
+    });
+    if (porNit) return { campo: "NIT" as const, nombre: porNit.nombre };
+  }
+  return null;
 }
 
 async function registrarAuditoriaCliente(datos: {
@@ -71,6 +92,15 @@ function contactosParaGuardar(datos: ClienteInput) {
 export async function crearCliente(input: unknown) {
   const datos = clienteSchema.parse(input);
   await assertAccesoEmpresa(datos.empresaId);
+
+  if (!datos.confirmarDuplicado) {
+    const duplicado = await buscarClienteDuplicado(datos.empresaId, datos.nombre, datos.nit ?? "");
+    if (duplicado) {
+      throw new Error(
+        `${PREFIJO_ERROR_DUPLICADO}Ya existe un cliente con este ${duplicado.campo} ("${duplicado.nombre}"). ¿Creás este de todas formas?`,
+      );
+    }
+  }
 
   const cliente = await db.cliente.create({
     data: {
@@ -151,6 +181,17 @@ export async function crearProyecto(input: unknown) {
   const cliente = await db.cliente.findUnique({ where: { id: datos.clienteId } });
   if (!cliente) throw new Error("Cliente no encontrado");
   await assertAccesoEmpresa(cliente.empresaId);
+
+  if (!datos.confirmarDuplicado) {
+    const duplicado = await db.proyecto.findFirst({
+      where: { clienteId: datos.clienteId, nombre: { equals: datos.nombre, mode: "insensitive" } },
+    });
+    if (duplicado) {
+      throw new Error(
+        `${PREFIJO_ERROR_DUPLICADO}${cliente.nombre} ya tiene un proyecto llamado "${duplicado.nombre}". ¿Creás este de todas formas?`,
+      );
+    }
+  }
 
   await db.proyecto.create({
     data: { clienteId: datos.clienteId, nombre: datos.nombre, activo: datos.activo },

@@ -5,6 +5,7 @@ import { assertAccesoEmpresa } from "@/lib/auth";
 import { diffCampos } from "@/lib/auditoria";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
+import { PREFIJO_ERROR_DUPLICADO } from "@/lib/duplicado";
 import { type ServicioInput, servicioSchema } from "@/lib/validations/servicio";
 
 const ETIQUETAS_SERVICIO = {
@@ -50,6 +51,19 @@ async function registrarAuditoriaServicio(datos: {
 export async function crearServicio(input: unknown) {
   const datos = servicioSchema.parse(input);
   await assertAccesoEmpresa(datos.empresaId);
+
+  if (!datos.confirmarDuplicado) {
+    // Doble confirmación (no un bloqueo duro): mismo criterio que
+    // crearCliente — avisa antes de crear, nunca lo impide.
+    const duplicado = await db.servicio.findFirst({
+      where: { empresaId: datos.empresaId, nombre: { equals: datos.nombre, mode: "insensitive" } },
+    });
+    if (duplicado) {
+      throw new Error(
+        `${PREFIJO_ERROR_DUPLICADO}Ya existe un servicio con este nombre ("${duplicado.nombre}"). ¿Creás este de todas formas?`,
+      );
+    }
+  }
 
   const servicio = await db.servicio.create({ data: normalizar(datos) });
   await registrarAuditoriaServicio({

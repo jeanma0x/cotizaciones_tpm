@@ -2,7 +2,7 @@
 
 import { RefreshCwIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useOptimistic, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { cambiarEstadoDocumento } from "@/app/(app)/documentos/actions";
 import { EstadoBadge, getEstiloEstado } from "@/components/app/estado-badge";
@@ -16,16 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const ESTADOS: Record<string, string> = {
-  BORRADOR: "Borrador",
-  ENVIADA: "Enviada",
-  EN_NEGOCIACION: "En negociación",
-  ACEPTADA: "Aceptada",
-  RECHAZADA: "Rechazada",
-  VENCIDA: "Vencida",
-  FACTURADA: "Facturada",
-};
+import {
+  ESTADOS_DOCUMENTO_LABELS,
+  TRANSICIONES_ESTADO_VALIDAS,
+} from "@/lib/validations/documento";
 
 type Historial = { id: string; fecha: Date; estado: string; nota: string | null };
 
@@ -48,10 +42,27 @@ export function DocumentoEstadoForm({
   estadoActual: string;
   historialInicial: Historial[];
 }) {
-  const [estado, setEstado] = useState(estadoActual);
+  // Nunca se inicializa en estadoActual: no es una transición válida desde
+  // sí mismo (ver TRANSICIONES_ESTADO_VALIDAS) — arranca sin selección, el
+  // usuario elige un destino real. Se resetea cada vez que estadoActual
+  // cambia (después de aplicar un cambio, router.refresh() actualiza el
+  // prop pero no remonta este componente — sin este efecto, quedaría
+  // seleccionado un estado que ya no es válido como destino desde el nuevo
+  // estadoActual).
+  const [estado, setEstado] = useState("");
   const [nota, setNota] = useState("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+
+  useEffect(() => {
+    setEstado("");
+  }, [estadoActual]);
+
+  const transicionesValidas = TRANSICIONES_ESTADO_VALIDAS[estadoActual] ?? [];
+  const esEstadoTerminal = transicionesValidas.length === 0;
+  const opcionesEstado = Object.fromEntries(
+    transicionesValidas.map((e) => [e, ESTADOS_DOCUMENTO_LABELS[e] ?? e]),
+  );
 
   // Actualiza estado e historial en la UI de inmediato, sin esperar la
   // respuesta del servidor — revierte con un toast si la mutación falla.
@@ -83,7 +94,7 @@ export function DocumentoEstadoForm({
         router.refresh();
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Ocurrió un error");
-        setEstado(estadoActual);
+        setEstado("");
       }
     });
   }
@@ -96,32 +107,39 @@ export function DocumentoEstadoForm({
         {isPending && <span className="text-xs italic">Guardando…</span>}
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <Select items={ESTADOS} value={estado} onValueChange={(v) => setEstado(v as string)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(ESTADOS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {esEstadoTerminal ? (
+        <p className="text-sm text-muted-foreground">
+          {ESTADOS_DOCUMENTO_LABELS[estadoActual] ?? estadoActual} es un estado final — este
+          documento ya no puede cambiar de estado.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <Select items={opcionesEstado} value={estado} onValueChange={(v) => setEstado(v as string)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Elegí el nuevo estado" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(opcionesEstado).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Input
+            placeholder="Nota (opcional)"
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+            className="sm:w-64"
+          />
+          <Button onClick={aplicar} disabled={isPending || !estado}>
+            <RefreshCwIcon className="h-4 w-4" />
+            Cambiar estado
+          </Button>
         </div>
-        <Input
-          placeholder="Nota (opcional)"
-          value={nota}
-          onChange={(e) => setNota(e.target.value)}
-          className="sm:w-64"
-        />
-        <Button onClick={aplicar} disabled={isPending || estado === estadoActual}>
-          <RefreshCwIcon className="h-4 w-4" />
-          Cambiar estado
-        </Button>
-      </div>
+      )}
 
       {/* Línea de tiempo, no una lista de filas idénticas: cada paso tiene su
           propio ícono/color (los mismos del EstadoBadge, ver getEstiloEstado)

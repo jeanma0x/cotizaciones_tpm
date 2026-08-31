@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { DocumentoForm } from "@/components/app/documento-form";
 import { VolverLink } from "@/components/app/volver-link";
 import { getEmpresasPermitidas } from "@/lib/auth";
@@ -18,6 +18,7 @@ export default async function EditarDocumentoPage({
       id: true,
       empresaId: true,
       correlativo: true,
+      estado: true,
       tipo: true,
       clienteId: true,
       proyectoId: true,
@@ -39,6 +40,12 @@ export default async function EditarDocumentoPage({
   });
   if (!documento || !empresasPermitidas.includes(documento.empresaId)) {
     notFound();
+  }
+  // Mismo bloqueo que actualizarDocumento (documentos/actions.ts) — nunca
+  // confiar solo en que el botón "Editar" esté oculto en la página de
+  // detalle, la URL directa /editar tiene que estar protegida igual.
+  if (documento.estado === "FACTURADA") {
+    redirect(`/documentos/${documento.id}`);
   }
 
   const [empresas, clientes, servicios, usuariosConFirma] = await Promise.all([

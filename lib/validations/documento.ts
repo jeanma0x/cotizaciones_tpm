@@ -1,5 +1,34 @@
 import { z } from "zod";
 
+export const ESTADOS_DOCUMENTO_LABELS: Record<string, string> = {
+  BORRADOR: "Borrador",
+  ENVIADA: "Enviada",
+  EN_NEGOCIACION: "En negociación",
+  ACEPTADA: "Aceptada",
+  RECHAZADA: "Rechazada",
+  VENCIDA: "Vencida",
+  FACTURADA: "Facturada",
+};
+
+// Máquina de estados de Documento — estricta y lineal (confirmado con el
+// usuario en el audit crítico): un documento no puede saltar de BORRADOR
+// directo a FACTURADA, ni volver atrás desde un estado ya cerrado.
+// FACTURADA y RECHAZADA son terminales (no aparecen como llave acá, o sea
+// su lista de destinos válidos es vacía). VENCIDA → ENVIADA es la única
+// forma de "reactivar" un documento (ej. el cliente responde tarde).
+// Compartido entre el servidor (cambiarEstadoDocumento, la fuente de
+// verdad) y el cliente (documento-estado-form.tsx, que filtra el <Select>
+// para nunca ofrecer una transición que el servidor va a rechazar).
+export const TRANSICIONES_ESTADO_VALIDAS: Record<string, string[]> = {
+  BORRADOR: ["ENVIADA"],
+  ENVIADA: ["EN_NEGOCIACION", "ACEPTADA", "RECHAZADA", "VENCIDA"],
+  EN_NEGOCIACION: ["ACEPTADA", "RECHAZADA", "VENCIDA"],
+  ACEPTADA: ["FACTURADA"],
+  VENCIDA: ["ENVIADA"],
+  RECHAZADA: [],
+  FACTURADA: [],
+};
+
 export const itemDocumentoSchema = z.object({
   cantidad: z.coerce
     .number({ message: "Cantidad inválida" })

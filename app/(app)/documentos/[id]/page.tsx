@@ -50,14 +50,19 @@ export default async function DocumentoDetallePage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <VolverLink href="/documentos" label="Volver a documentos" />
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={<Link href={`/documentos/${id}/editar`} />}
-          >
-            <PencilIcon className="h-4 w-4" />
-            Editar
-          </Button>
+          {/* Un documento ya facturado no se puede editar (ver
+              documentos/actions.ts, actualizarDocumento) — Duplicar, más
+              abajo, es la vía correcta si hace falta una versión nueva. */}
+          {documento.estado !== "FACTURADA" && (
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href={`/documentos/${id}/editar`} />}
+            >
+              <PencilIcon className="h-4 w-4" />
+              Editar
+            </Button>
+          )}
           <DocumentoImprimirDialog documento={serializarDocumento(documento)} />
           <DuplicarDocumentoButton
             documentoId={documento.id}

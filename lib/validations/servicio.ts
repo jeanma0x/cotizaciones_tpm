@@ -7,6 +7,10 @@ export const servicioSchema = z.object({
     .number({ message: "Precio inválido" })
     .positive("El precio debe ser mayor a 0"),
   activo: z.boolean().default(true),
+  // No viene del formulario visible — lo pone el cliente al reenviar
+  // después de que el usuario confirma explícitamente crear un duplicado
+  // (ver crearServicio en servicios/actions.ts).
+  confirmarDuplicado: z.boolean().default(false),
 });
 
 export type ServicioInput = z.infer<typeof servicioSchema>;

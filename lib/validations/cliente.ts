@@ -34,6 +34,10 @@ export const clienteSchema = z.object({
   activo: z.boolean().default(true),
   // Solo se usa/guarda cuando tipo === "EMPRESA".
   contactos: z.array(contactoClienteSchema).default([]),
+  // No viene del formulario visible — lo pone el cliente al reenviar
+  // después de que el usuario confirma explícitamente crear un duplicado
+  // (ver crearCliente en clientes/actions.ts).
+  confirmarDuplicado: z.boolean().default(false),
 });
 
 export type ClienteInput = z.infer<typeof clienteSchema>;
