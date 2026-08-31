@@ -46,6 +46,7 @@ type Costo = {
   clienteId: string | null;
   proyectoId: string | null;
   categoria: keyof typeof CATEGORIA_COSTO_LABELS;
+  categoriaOtroDetalle: string | null;
   descripcion: string;
   monto: number;
   fechaGasto: string;
@@ -88,6 +89,7 @@ export function CostoFormDialog({
       clienteId: costo?.clienteId ?? "",
       proyectoId: costo?.proyectoId ?? "",
       categoria: costo?.categoria ?? "COMBUSTIBLE",
+      categoriaOtroDetalle: costo?.categoriaOtroDetalle ?? "",
       descripcion: costo?.descripcion ?? "",
       monto: costo?.monto ?? 0,
       fechaGasto: costo?.fechaGasto ?? hoyISO(),
@@ -96,6 +98,7 @@ export function CostoFormDialog({
 
   const empresaId = watch("empresaId");
   const clienteId = watch("clienteId");
+  const categoria = watch("categoria");
   // Fase 3.3 — mismo criterio que DocumentoForm: solo clientes/proyectos de
   // la empresa/cliente elegidos, con el ya asociado siempre visible aunque
   // esté inactivo (para no perder la asociación existente al editar).
@@ -181,6 +184,24 @@ export function CostoFormDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {categoria === "OTRO" && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="categoriaOtroDetalle">¿A qué categoría corresponde?</Label>
+              <Input
+                id="categoriaOtroDetalle"
+                placeholder="Ej. Seguros, Multas…"
+                {...register("categoriaOtroDetalle")}
+              />
+              {errors.categoriaOtroDetalle && (
+                <p className="text-xs text-destructive">{errors.categoriaOtroDetalle.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Este texto queda disponible para filtrar más adelante, como si fuera una
+                categoría más.
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-3">
             <div className="flex flex-1 flex-col gap-1.5">

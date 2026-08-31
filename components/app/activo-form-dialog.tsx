@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { actualizarActivo, crearActivo } from "@/app/(app)/activos/actions";
+import { AutosizeTextarea } from "@/components/app/autosize-textarea";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,6 +43,8 @@ type Activo = {
   categoria: keyof typeof CATEGORIA_FURGON_LABELS | null;
   placa: string | null;
   modelo: string | null;
+  marca: string | null;
+  descripcion: string | null;
   costo: unknown;
   valor: unknown;
   activo: boolean;
@@ -78,6 +81,8 @@ export function ActivoFormDialog({
       categoria: activo?.categoria ?? "",
       placa: activo?.placa ?? "",
       modelo: activo?.modelo ?? "",
+      marca: activo?.marca ?? "",
+      descripcion: activo?.descripcion ?? "",
       costo: activo ? Number(activo.costo) : 0,
       valor: activo ? Number(activo.valor) : 0,
       activo: activo?.activo ?? true,
@@ -191,9 +196,18 @@ export function ActivoFormDialog({
               <Input id="placa" {...register("placa")} />
             </div>
             <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="marca">Marca</Label>
+              <Input id="marca" {...register("marca")} />
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="modelo">Modelo</Label>
               <Input id="modelo" {...register("modelo")} />
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="descripcion">Descripción (opcional)</Label>
+            <AutosizeTextarea id="descripcion" {...register("descripcion")} />
           </div>
 
           <div className="flex gap-3">

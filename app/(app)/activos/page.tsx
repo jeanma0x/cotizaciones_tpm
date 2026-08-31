@@ -29,6 +29,7 @@ export default async function ActivosPage({
               OR: [
                 { placa: { contains: q, mode: "insensitive" } },
                 { modelo: { contains: q, mode: "insensitive" } },
+                { marca: { contains: q, mode: "insensitive" } },
               ],
             }
           : {}),
@@ -51,6 +52,8 @@ export default async function ActivosPage({
     categoria: a.categoria,
     placa: a.placa,
     modelo: a.modelo,
+    marca: a.marca,
+    descripcion: a.descripcion,
     costo: Number(a.costo),
     valor: Number(a.valor),
     activo: a.activo,
@@ -75,7 +78,7 @@ export default async function ActivosPage({
         }
       />
 
-      <BuscadorLista basePath="/activos" placeholder="Buscar por placa o modelo…" />
+      <BuscadorLista basePath="/activos" placeholder="Buscar por placa, marca o modelo…" />
 
       <ActivosTable
         data={filas}

@@ -4,6 +4,7 @@ import {
   LayoutGridIcon,
   PiggyBankIcon,
   ReceiptIcon,
+  TrendingDownIcon,
   TrendingUpIcon,
   WalletIcon,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { TendenciaMensualChart } from "@/components/app/tendencia-mensual-chart";
 import { UtilidadProyectoFiltros } from "@/components/app/utilidad-proyecto-filtros";
+import { UtilidadProyectoChart } from "@/components/app/utilidad-proyecto-chart";
 import { UtilidadProyectoTable } from "@/components/app/utilidad-proyecto-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmpresasPermitidas } from "@/lib/auth";
@@ -299,6 +301,22 @@ export default async function DashboardPage({
     })
     .sort((a, b) => b.utilidad - a.utilidad);
 
+  // Gráfica "por cliente/proyecto" pedida por Oldemar, similar a "Costos por
+  // categoría" — mismo criterio de una gráfica por moneda (nunca mezclar
+  // GTQ/USD en la misma barra), solo con facturado > 0 (una barra en 0 no
+  // aporta nada al vistazo rápido; el detalle con costos/utilidad exacta
+  // sigue en la tabla de abajo, sin este filtro).
+  const utilidadPorProyectoPorMoneda = new Map<string, { label: string; facturado: number }[]>();
+  for (const p of utilidadPorProyecto) {
+    if (p.facturado <= 0) continue;
+    const lista = utilidadPorProyectoPorMoneda.get(p.moneda) ?? [];
+    lista.push({ label: `${p.clienteNombre} · ${p.proyectoNombre}`, facturado: p.facturado });
+    utilidadPorProyectoPorMoneda.set(p.moneda, lista);
+  }
+  const utilidadPorProyectoEntradas = Array.from(utilidadPorProyectoPorMoneda.entries()).map(
+    ([moneda, data]) => ({ moneda, data: data.sort((a, b) => b.facturado - a.facturado) }),
+  );
+
   // ---- Zona 1 + 5: métricas generales y desglose por tipo/estado ----
   const montoVigentePorMoneda = vigentes.reduce<Record<string, number>>((acc, doc) => {
     const moneda = doc.empresa.moneda;
@@ -426,19 +444,34 @@ export default async function DashboardPage({
     return { empresa, totalDocs, facturado, cotizado, aceptado };
   });
 
-  // Acumulado histórico de todo lo facturado (no solo del mes) — es lo que
-  // Oldemar pidió como "histórico de ingresos ya cerrados" en la reunión del
-  // 14/08, sin darse cuenta de que el dato ya existía por empresa acá abajo,
-  // solo que sin una tarjeta principal que lo destaque junto al vigente.
-  const montoFacturadoPorMoneda = desgloseEmpresa.reduce<Record<string, number>>(
+  // "Facturado (mes en curso)" — antes era un acumulado histórico de toda
+  // la vida del sistema (Oldemar lo pidió así en la reunión del 14/08, sin
+  // darse cuenta de que ese dato ya existía en "Desglose por empresa" más
+  // abajo). Feedback posterior: quiere el monto al día del mes en curso acá,
+  // y el histórico/un mes específico lo pide desde Reportes (que ya tiene
+  // filtro de rango de fechas). facturadoDelMes ya viene filtrado por
+  // fecha >= inicioMes (ver query inicial) — mismo dato que alimenta
+  // "Utilidad neta (mes)".
+  const montoFacturadoMesPorMoneda = facturadoDelMes.reduce<Record<string, number>>(
     (acc, d) => {
-      acc[d.empresa.moneda] = (acc[d.empresa.moneda] ?? 0) + d.facturado;
+      acc[d.empresa.moneda] = (acc[d.empresa.moneda] ?? 0) + Number(d.total);
+      return acc;
+    },
+    {},
+  );
+  // "Costos (mes en curso)" — feedback de Oldemar: quiere Facturado/Costo/
+  // Rentabilidad como los indicadores más relevantes del panel. El dato ya
+  // existía (alimenta "Utilidad neta (mes)" y "Costos por categoría"), solo
+  // faltaba destacarlo como cifra principal.
+  const montoCostosMesPorMoneda = costosDelMes.reduce<Record<string, number>>(
+    (acc, c) => {
+      acc[c.empresa.moneda] = (acc[c.empresa.moneda] ?? 0) + Number(c.monto);
       return acc;
     },
     {},
   );
   // Fase 3.4 — "Aceptado (sin facturar)": complemento de "Facturado
-  // (histórico)", mismo criterio de agregación por moneda.
+  // (mes en curso)", mismo criterio de agregación por moneda.
   const montoAceptadoPorMoneda = desgloseEmpresa.reduce<Record<string, number>>(
     (acc, d) => {
       acc[d.empresa.moneda] = (acc[d.empresa.moneda] ?? 0) + d.aceptado;
@@ -476,10 +509,11 @@ export default async function DashboardPage({
     .slice(0, 5);
 
   const montoVigenteEntradas = Object.entries(montoVigentePorMoneda);
-  const montoFacturadoEntradas = Object.entries(montoFacturadoPorMoneda);
+  const montoFacturadoEntradas = Object.entries(montoFacturadoMesPorMoneda);
+  const montoCostosEntradas = Object.entries(montoCostosMesPorMoneda);
   const montoAceptadoEntradas = Object.entries(montoAceptadoPorMoneda);
 
-  // Sparkline de "Facturado (histórico)": la prop ya existía en StatCard
+  // Sparkline de "Facturado (mes en curso)": la prop ya existía en StatCard
   // (gradiente, animación) pero ninguna tarjeta la usaba. Solo se activa con
   // una única moneda activa — mezclar GTQ/USD en una sola línea rompería el
   // mismo criterio de aislamiento por moneda que rige el resto del panel.
@@ -567,13 +601,35 @@ export default async function DashboardPage({
           size="hero"
           value={<MontoPorMoneda entradas={montoVigenteEntradas} />}
         />
+        {/* Facturado/Costos/Utilidad agrupados y consecutivos — feedback de
+            Oldemar: son los 3 indicadores que más le importan, no deberían
+            quedar salteados por Aceptado/Tasa de conversión en medio. */}
         <StatCard
-          label="Facturado (histórico)"
+          label="Facturado (mes en curso)"
           icon={<ReceiptIcon className="h-4.5 w-4.5" />}
           tono="accent"
           size="hero"
           value={<MontoPorMoneda entradas={montoFacturadoEntradas} />}
           sparkline={sparklineFacturado}
+        />
+        <StatCard
+          label="Costos (mes en curso)"
+          icon={<TrendingDownIcon className="h-4.5 w-4.5" />}
+          tono="accent"
+          size="hero"
+          value={<MontoPorMoneda entradas={montoCostosEntradas} />}
+        />
+        <StatCard
+          label="Utilidad neta (mes)"
+          icon={<PiggyBankIcon className="h-4.5 w-4.5" />}
+          tono={utilidadNetaNegativa ? "danger" : "success"}
+          size="hero"
+          value={
+            <MontoPorMoneda
+              entradas={utilidadNetaEntradas}
+              claseColor={utilidadNetaNegativa ? "text-danger" : "text-success"}
+            />
+          }
         />
         <StatCard
           label="Aceptado (sin facturar)"
@@ -602,18 +658,6 @@ export default async function DashboardPage({
             <span className={itemsAtencion.length > 0 ? "text-danger" : "text-success"}>
               <AnimatedNumber value={itemsAtencion.length} />
             </span>
-          }
-        />
-        <StatCard
-          label="Utilidad neta (mes)"
-          icon={<PiggyBankIcon className="h-4.5 w-4.5" />}
-          tono={utilidadNetaNegativa ? "danger" : "success"}
-          size="hero"
-          value={
-            <MontoPorMoneda
-              entradas={utilidadNetaEntradas}
-              claseColor={utilidadNetaNegativa ? "text-danger" : "text-success"}
-            />
           }
         />
       </div>
@@ -797,20 +841,30 @@ export default async function DashboardPage({
           fecha de devengo (nunca fecha de pago/cierre) en ambos lados. La
           empresa ya se filtra con el selector global; acá solo cliente,
           proyecto y rango de fecha, propios de esta zona. */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-            Utilidad por proyecto
-          </CardTitle>
-          <CardDescription>
-            Facturado menos costos de cada proyecto, usando la fecha del gasto (no de pago).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <UtilidadProyectoFiltros clientes={clientesConProyectos} />
-          <UtilidadProyectoTable data={utilidadPorProyecto} />
-        </CardContent>
-      </Card>
+      <CardEntrance interactive>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+              Utilidad por proyecto
+            </CardTitle>
+            <CardDescription>
+              Facturado menos costos de cada proyecto, usando la fecha del gasto (no de pago).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <UtilidadProyectoFiltros clientes={clientesConProyectos} />
+            {utilidadPorProyectoEntradas.map(({ moneda, data }) => (
+              <div key={moneda} className="flex flex-col gap-1.5">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Facturado por proyecto ({moneda})
+                </p>
+                <UtilidadProyectoChart data={data} />
+              </div>
+            ))}
+            <UtilidadProyectoTable data={utilidadPorProyecto} />
+          </CardContent>
+        </Card>
+      </CardEntrance>
     </div>
   );
 }

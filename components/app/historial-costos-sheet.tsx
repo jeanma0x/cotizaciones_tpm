@@ -17,6 +17,7 @@ export type FilaAuditoriaCosto = {
   id: string;
   accion: "CREADO" | "EDITADO" | "ELIMINADO";
   categoria: keyof typeof CATEGORIA_COSTO_LABELS;
+  categoriaOtroDetalle: string | null;
   descripcion: string;
   monto: number;
   moneda: string;
@@ -90,7 +91,10 @@ export function HistorialCostosSheet({
                 </div>
                 <p className="font-medium text-text-primary">{entrada.descripcion}</p>
                 <p className="text-xs text-muted-foreground">
-                  {CATEGORIA_COSTO_LABELS[entrada.categoria]} · {entrada.moneda}{" "}
+                  {entrada.categoria === "OTRO" && entrada.categoriaOtroDetalle
+                    ? `Otro: ${entrada.categoriaOtroDetalle}`
+                    : CATEGORIA_COSTO_LABELS[entrada.categoria]}{" "}
+                  · {entrada.moneda}{" "}
                   {formatearMonto(entrada.monto)}
                   {mostrarEmpresa && ` · ${entrada.empresaNombre}`}
                 </p>

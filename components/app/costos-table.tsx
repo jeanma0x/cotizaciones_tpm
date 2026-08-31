@@ -20,6 +20,7 @@ export type FilaCosto = {
   proyectoId: string | null;
   proyectoNombre: string | null;
   categoria: keyof typeof CATEGORIA_COSTO_LABELS;
+  categoriaOtroDetalle: string | null;
   descripcion: string;
   monto: number;
   fechaGasto: string;
@@ -59,7 +60,13 @@ export function CostosTable({
     {
       accessorKey: "categoria",
       header: "Categoría",
-      cell: ({ row }) => <Badge variant="outline">{CATEGORIA_COSTO_LABELS[row.original.categoria]}</Badge>,
+      cell: ({ row }) => (
+        <Badge variant="outline">
+          {row.original.categoria === "OTRO" && row.original.categoriaOtroDetalle
+            ? `Otro: ${row.original.categoriaOtroDetalle}`
+            : CATEGORIA_COSTO_LABELS[row.original.categoria]}
+        </Badge>
+      ),
     },
     {
       accessorKey: "descripcion",

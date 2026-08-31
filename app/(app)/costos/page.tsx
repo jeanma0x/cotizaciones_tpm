@@ -19,11 +19,12 @@ export default async function CostosPage({
   searchParams: Promise<{
     q?: string;
     categoria?: string;
+    otroDetalle?: string;
     desde?: string;
     hasta?: string;
   }>;
 }) {
-  const { q, categoria, desde, hasta } = await searchParams;
+  const { q, categoria, otroDetalle, desde, hasta } = await searchParams;
   const [empresasPermitidas, empresaActivaId] = await Promise.all([
     getEmpresasPermitidas(),
     getEmpresaActivaId(),
@@ -44,12 +45,13 @@ export default async function CostosPage({
         }
       : undefined;
 
-  const [costos, empresas, clientes, auditoria] = await Promise.all([
+  const [costos, empresas, clientes, auditoria, otrosDetalles] = await Promise.all([
     db.costoOperativo.findMany({
       where: {
         empresaId: empresaFiltrada ?? { in: empresasPermitidas },
         ...(q ? { descripcion: { contains: q, mode: "insensitive" } } : {}),
         ...(categoriaFiltrada ? { categoria: categoriaFiltrada } : {}),
+        ...(otroDetalle ? { categoria: "OTRO", categoriaOtroDetalle: otroDetalle } : {}),
         ...(fechaGastoFiltro ? { fechaGasto: fechaGastoFiltro } : {}),
       },
       include: { empresa: true, cliente: true, proyecto: true },
@@ -72,6 +74,19 @@ export default async function CostosPage({
       orderBy: { fecha: "desc" },
       take: 100,
     }),
+    // Pedido de Oldemar: "Otro" debe poder filtrarse después como si fuera
+    // una categoría más — se listan los valores ya usados por esta empresa
+    // para ofrecerlos como opciones adicionales en el filtro de categoría.
+    db.costoOperativo.findMany({
+      where: {
+        empresaId: empresaFiltrada ?? { in: empresasPermitidas },
+        categoria: "OTRO",
+        categoriaOtroDetalle: { not: null },
+      },
+      select: { categoriaOtroDetalle: true },
+      distinct: ["categoriaOtroDetalle"],
+      orderBy: { categoriaOtroDetalle: "asc" },
+    }),
   ]);
 
   const filas: FilaCosto[] = costos.map((c) => ({
@@ -84,6 +99,7 @@ export default async function CostosPage({
     proyectoId: c.proyectoId,
     proyectoNombre: c.proyecto?.nombre ?? null,
     categoria: c.categoria,
+    categoriaOtroDetalle: c.categoriaOtroDetalle,
     descripcion: c.descripcion,
     monto: Number(c.monto),
     fechaGasto: c.fechaGasto.toISOString().slice(0, 10),
@@ -93,6 +109,7 @@ export default async function CostosPage({
     id: a.id,
     accion: a.accion,
     categoria: a.categoria,
+    categoriaOtroDetalle: a.categoriaOtroDetalle,
     descripcion: a.descripcion,
     monto: Number(a.monto),
     moneda: a.empresa.moneda,
@@ -127,7 +144,11 @@ export default async function CostosPage({
 
       <div className="flex flex-wrap items-center gap-2">
         <BuscadorLista basePath="/costos" placeholder="Buscar por descripción…" />
-        <CostosFiltros />
+        <CostosFiltros
+          otrosDetalles={otrosDetalles
+            .map((o) => o.categoriaOtroDetalle)
+            .filter((d): d is string => Boolean(d))}
+        />
       </div>
 
       <CostosTable

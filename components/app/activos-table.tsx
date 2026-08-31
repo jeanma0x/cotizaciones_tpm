@@ -19,6 +19,8 @@ export type FilaActivo = {
   categoria: keyof typeof CATEGORIA_FURGON_LABELS | null;
   placa: string | null;
   modelo: string | null;
+  marca: string | null;
+  descripcion: string | null;
   costo: number;
   valor: number;
   activo: boolean;
@@ -55,6 +57,11 @@ export function ActivosTable({
       cell: ({ row }) => (
         <span className="font-mono text-xs">{row.original.placa ?? "—"}</span>
       ),
+    },
+    {
+      accessorKey: "marca",
+      header: "Marca",
+      cell: ({ row }) => row.original.marca ?? "—",
     },
     {
       accessorKey: "modelo",

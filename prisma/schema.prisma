@@ -141,14 +141,14 @@ model Cliente {
   activo     Boolean     @default(true) // permite ocultar clientes viejos sin borrarlos
   createdAt  DateTime    @default(now())
 
-  documentos Documento[]
+  documentos       Documento[]
   // Solo se usan cuando tipo = EMPRESA — ver TipoCliente. Un cliente
   // INDIVIDUAL sigue usando el campo `email` de acá arriba, sin tocar nada.
-  contactos  ContactoCliente[]
-  auditoria  ClienteAuditoria[]
+  contactos        ContactoCliente[]
+  auditoria        ClienteAuditoria[]
   // Fase 3: un cliente puede tener varios proyectos, y costos asociados
   // directamente a él (sin proyecto específico) — ver modelo Proyecto.
-  proyectos  Proyecto[]
+  proyectos        Proyecto[]
   costosOperativos CostoOperativo[]
 
   @@index([empresaId])
@@ -225,6 +225,11 @@ enum CategoriaCosto {
   PREDIO
   LUZ
   CONSUMIBLES
+  // Agregadas por pedido de Oldemar (feedback sobre el módulo ya
+  // entregado) — no rompen datos existentes, un enum de Postgres solo
+  // admite agregar valores, nunca quitarlos sin migrar filas primero.
+  REPUESTOS
+  LLANTAS
   OTRO
 }
 
@@ -235,16 +240,21 @@ enum CategoriaCosto {
 // ISR/IVA queda pendiente de la fórmula exacta que Oldemar va a mandar — no
 // se inventa acá.
 model CostoOperativo {
-  id          String         @id @default(cuid())
-  empresaId   String
-  empresa     Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  categoria   CategoriaCosto
-  descripcion String
-  monto       Decimal        @db.Decimal(12, 2)
+  id                   String         @id @default(cuid())
+  empresaId            String
+  empresa              Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  categoria            CategoriaCosto
+  // Solo se usa (y se exige, ver lib/validations/costo.ts) cuando
+  // categoria = OTRO — el texto específico que escribe el usuario (ej.
+  // "Seguros", "Multas"), para poder filtrar por él después como si fuera
+  // una categoría más, sin tener que ampliar el enum fijo cada vez.
+  categoriaOtroDetalle String?
+  descripcion          String
+  monto                Decimal        @db.Decimal(12, 2)
   // Independiente de createdAt: un reporte de julio puede llegar y
   // registrarse recién el 5 de agosto, pero debe contar para julio.
-  fechaGasto  DateTime
-  createdAt   DateTime       @default(now())
+  fechaGasto           DateTime
+  createdAt            DateTime       @default(now())
 
   // Fase 3: opcionales — un costo registrado antes de esta fase, o uno que
   // el usuario decide no ligar a ningún cliente/proyecto en particular,
@@ -279,19 +289,20 @@ enum AccionCosto {
 // él — y por eso categoria/descripcion/monto/fechaGasto se copian acá tal
 // cual quedaron en ese momento, no se leen por relación.
 model CostoOperativoAuditoria {
-  id               String          @id @default(cuid())
-  costoOperativoId String?
-  costoOperativo   CostoOperativo? @relation(fields: [costoOperativoId], references: [id], onDelete: SetNull)
-  empresaId        String
-  empresa          Empresa         @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  accion           AccionCosto
-  categoria        CategoriaCosto
-  descripcion      String
-  monto            Decimal         @db.Decimal(12, 2)
-  fechaGasto       DateTime
-  usuarioId        String?
-  usuario          Usuario?        @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  fecha            DateTime        @default(now())
+  id                   String          @id @default(cuid())
+  costoOperativoId     String?
+  costoOperativo       CostoOperativo? @relation(fields: [costoOperativoId], references: [id], onDelete: SetNull)
+  empresaId            String
+  empresa              Empresa         @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  accion               AccionCosto
+  categoria            CategoriaCosto
+  categoriaOtroDetalle String?
+  descripcion          String
+  monto                Decimal         @db.Decimal(12, 2)
+  fechaGasto           DateTime
+  usuarioId            String?
+  usuario              Usuario?        @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  fecha                DateTime        @default(now())
 
   @@index([empresaId, fecha])
   @@map("costos_operativos_auditoria")
@@ -470,17 +481,23 @@ enum CategoriaFurgon {
 // Guatemala. `modelo` reemplaza el concepto de "año" — pedido explícito del
 // cliente. `categoria` solo aplica cuando tipo = FURGON_O_PLATAFORMA.
 model Activo {
-  id        String           @id @default(cuid())
-  empresaId String
-  empresa   Empresa          @relation(fields: [empresaId], references: [id])
-  tipo      TipoActivo
-  categoria CategoriaFurgon?
-  placa     String?
-  modelo    String?
-  costo     Decimal          @db.Decimal(12, 2)
-  valor     Decimal          @db.Decimal(12, 2)
-  activo    Boolean          @default(true)
-  createdAt DateTime         @default(now())
+  id          String           @id @default(cuid())
+  empresaId   String
+  empresa     Empresa          @relation(fields: [empresaId], references: [id])
+  tipo        TipoActivo
+  categoria   CategoriaFurgon?
+  placa       String?
+  modelo      String?
+  // Pedido de Oldemar (feedback sobre el módulo ya entregado, no parte del
+  // alcance original de Fase 3.5): marca del vehículo/equipo, y una
+  // descripción libre — sin límite de longitud, mismo criterio de "nunca
+  // truncar texto libre" que ya rige el resto del sistema.
+  marca       String?
+  descripcion String?          @db.Text
+  costo       Decimal          @db.Decimal(12, 2)
+  valor       Decimal          @db.Decimal(12, 2)
+  activo      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
 
   @@index([empresaId])
   @@map("activos")

@@ -33,8 +33,11 @@ export async function obtenerReporteCostos({
   const rangoFecha =
     desde || hasta ? { ...(desde ? { gte: desde } : {}), ...(hasta ? { lte: hasta } : {}) } : undefined;
 
+  // "categoriaOtroDetalle" en el group by: sin esto, todos los "Otro"
+  // (Seguros, Multas, etc.) colapsan en una sola fila genérica "Otro" —
+  // justo lo que Oldemar pidió poder distinguir.
   const grupos = await db.costoOperativo.groupBy({
-    by: ["empresaId", "categoria"],
+    by: ["empresaId", "categoria", "categoriaOtroDetalle"],
     where: {
       empresaId: { in: empresaIds },
       ...(rangoFecha ? { fechaGasto: rangoFecha } : {}),
@@ -59,7 +62,10 @@ export async function obtenerReporteCostos({
         empresaNombre: empresa.nombre,
         moneda: empresa.moneda,
         categoria: g.categoria,
-        categoriaLabel: CATEGORIA_COSTO_LABELS[g.categoria],
+        categoriaLabel:
+          g.categoria === "OTRO" && g.categoriaOtroDetalle
+            ? `Otro: ${g.categoriaOtroDetalle}`
+            : CATEGORIA_COSTO_LABELS[g.categoria],
         total: Number(g._sum.monto ?? 0),
         cantidad: g._count,
       };

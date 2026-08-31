@@ -46,6 +46,10 @@ export const activoSchema = z
     // Reemplaza el concepto de "año" — pedido explícito del cliente (ver
     // docs/fase3-clientes-proyectos-costos-activos.md).
     modelo: z.string().trim().optional().or(z.literal("")),
+    // Marca y descripción: feedback de Oldemar sobre el módulo ya
+    // entregado (no estaban en el alcance original de Fase 3.5).
+    marca: z.string().trim().optional().or(z.literal("")),
+    descripcion: z.string().trim().optional().or(z.literal("")),
     costo: z.coerce
       .number({ message: "Costo inválido" })
       .nonnegative("El costo no puede ser negativo"),

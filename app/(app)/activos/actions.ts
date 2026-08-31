@@ -15,6 +15,8 @@ function normalizar(datos: ActivoInput) {
     categoria: datos.tipo === "FURGON_O_PLATAFORMA" ? datos.categoria || null : null,
     placa: datos.placa || null,
     modelo: datos.modelo || null,
+    marca: datos.marca || null,
+    descripcion: datos.descripcion || null,
     costo: datos.costo,
     valor: datos.valor,
     activo: datos.activo,

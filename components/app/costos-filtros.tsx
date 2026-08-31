@@ -12,38 +12,61 @@ import {
 } from "@/components/ui/select";
 import { CATEGORIA_COSTO_LABELS } from "@/lib/validations/costo";
 
-const CATEGORIAS_ITEMS = {
-  TODAS: "Todas las categorías",
-  ...CATEGORIA_COSTO_LABELS,
-};
+// Prefijo interno para distinguir, dentro del mismo <Select>, un valor de
+// "otroDetalle" específico (ej. "Otro: Seguros") de una categoría fija —
+// nunca llega a la URL tal cual, setParam lo traduce al par de searchParams
+// real (categoria=OTRO + otroDetalle=Seguros).
+const PREFIJO_OTRO_DETALLE = "OTRO_DETALLE:";
 
 // Fase 3.2: el filtro de empresa que vivía acá se reemplazó por el selector
 // de empresa global (ver components/app/selector-empresa-global.tsx).
-export function CostosFiltros() {
+export function CostosFiltros({ otrosDetalles = [] }: { otrosDetalles?: string[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
-  function setParam(key: string, value: string) {
+  function setParams(nuevos: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString());
-    if (!value || value === "TODOS" || value === "TODAS") params.delete(key);
-    else params.set(key, value);
+    for (const [key, value] of Object.entries(nuevos)) {
+      if (!value || value === "TODOS" || value === "TODAS") params.delete(key);
+      else params.set(key, value);
+    }
     startTransition(() => {
       router.push(`/costos?${params.toString()}`);
     });
   }
 
+  function onCategoriaChange(valor: string) {
+    if (valor.startsWith(PREFIJO_OTRO_DETALLE)) {
+      setParams({ categoria: "", otroDetalle: valor.slice(PREFIJO_OTRO_DETALLE.length) });
+    } else {
+      setParams({ categoria: valor, otroDetalle: "" });
+    }
+  }
+
   const desde = searchParams.get("desde") ?? "";
   const hasta = searchParams.get("hasta") ?? "";
+  const otroDetalleActivo = searchParams.get("otroDetalle") ?? "";
+
+  // Pedido de Oldemar: "Otro" debe poder registrarse y filtrarse después
+  // como si fuera una categoría más, sin ampliar el enum fijo cada vez que
+  // aparece un gasto que no encaja en las categorías existentes.
+  const CATEGORIAS_ITEMS = {
+    TODAS: "Todas las categorías",
+    ...CATEGORIA_COSTO_LABELS,
+    ...Object.fromEntries(
+      otrosDetalles.map((d) => [`${PREFIJO_OTRO_DETALLE}${d}`, `Otro: ${d}`]),
+    ),
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Select
         items={CATEGORIAS_ITEMS}
-        value={searchParams.get("categoria") ?? "TODAS"}
-        onValueChange={(v) => setParam("categoria", v as string)}
+        value={otroDetalleActivo ? `${PREFIJO_OTRO_DETALLE}${otroDetalleActivo}` : searchParams.get("categoria") ?? "TODAS"}
+        onValueChange={(v) => onCategoriaChange(v as string)}
       >
-        <SelectTrigger className="w-44">
+        <SelectTrigger className="w-48">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -59,8 +82,8 @@ export function CostosFiltros() {
         idPrefix="costos-filtros"
         desde={desde}
         hasta={hasta}
-        onDesdeChange={(v) => setParam("desde", v)}
-        onHastaChange={(v) => setParam("hasta", v)}
+        onDesdeChange={(v) => setParams({ desde: v })}
+        onHastaChange={(v) => setParams({ hasta: v })}
       />
     </div>
   );

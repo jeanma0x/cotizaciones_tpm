@@ -12,6 +12,9 @@ function normalizar(datos: CostoOperativoInput) {
     clienteId: datos.clienteId || null,
     proyectoId: datos.proyectoId || null,
     categoria: datos.categoria,
+    // Nunca guardar el detalle si la categoría no es OTRO — evita que quede
+    // un residuo de texto huérfano si se cambia de OTRO a otra categoría.
+    categoriaOtroDetalle: datos.categoria === "OTRO" ? datos.categoriaOtroDetalle || null : null,
     descripcion: datos.descripcion,
     monto: datos.monto,
     fechaGasto: new Date(`${datos.fechaGasto}T00:00:00.000Z`),
@@ -49,6 +52,7 @@ async function registrarAuditoria(datos: {
   empresaId: string;
   accion: "CREADO" | "EDITADO" | "ELIMINADO";
   categoria: string;
+  categoriaOtroDetalle?: string | null;
   descripcion: string;
   monto: number | string;
   fechaGasto: Date;
@@ -61,6 +65,7 @@ async function registrarAuditoria(datos: {
         empresaId: datos.empresaId,
         accion: datos.accion,
         categoria: datos.categoria as never,
+        categoriaOtroDetalle: datos.categoriaOtroDetalle ?? null,
         descripcion: datos.descripcion,
         monto: datos.monto,
         fechaGasto: datos.fechaGasto,
@@ -85,6 +90,7 @@ export async function crearCostoOperativo(input: unknown) {
     empresaId: costo.empresaId,
     accion: "CREADO",
     categoria: normalizado.categoria,
+    categoriaOtroDetalle: normalizado.categoriaOtroDetalle,
     descripcion: normalizado.descripcion,
     monto: normalizado.monto,
     fechaGasto: normalizado.fechaGasto,
@@ -111,6 +117,7 @@ export async function actualizarCostoOperativo(id: string, input: unknown) {
     empresaId: normalizado.empresaId,
     accion: "EDITADO",
     categoria: normalizado.categoria,
+    categoriaOtroDetalle: normalizado.categoriaOtroDetalle,
     descripcion: normalizado.descripcion,
     monto: normalizado.monto,
     fechaGasto: normalizado.fechaGasto,
@@ -134,6 +141,7 @@ export async function eliminarCostoOperativo(id: string) {
     empresaId: existente.empresaId,
     accion: "ELIMINADO",
     categoria: existente.categoria,
+    categoriaOtroDetalle: existente.categoriaOtroDetalle,
     descripcion: existente.descripcion,
     monto: Number(existente.monto),
     fechaGasto: existente.fechaGasto,
