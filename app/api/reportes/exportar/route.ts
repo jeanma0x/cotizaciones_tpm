@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
 
   type Fila = {
     fecha: Date;
+    empresa: string;
     cliente: string;
     proyecto: string;
     tipo: string;
@@ -45,9 +46,14 @@ export async function GET(request: NextRequest) {
     monto: number;
   };
 
+  // Columna "Empresa" — sin ella, un reporte consolidado (varias empresas a
+  // la vez) no permite saber a cuál pertenece cada fila, justo el caso
+  // donde más hace falta distinguirlo (hallazgo del usuario al revisar el
+  // reporte generado).
   const filas: Fila[] = [
     ...documentos.map((d) => ({
       fecha: d.fecha,
+      empresa: d.empresaNombre,
       cliente: d.clienteNombre,
       proyecto: d.proyectoNombre ?? "",
       tipo: d.tipoLabel,
@@ -56,6 +62,7 @@ export async function GET(request: NextRequest) {
     })),
     ...costos.map((c) => ({
       fecha: c.fecha,
+      empresa: c.empresaNombre,
       cliente: c.clienteNombre ?? "",
       proyecto: c.proyectoNombre ?? "",
       tipo: `Costo · ${c.categoriaLabel}`,
@@ -68,6 +75,7 @@ export async function GET(request: NextRequest) {
     hoja: "Reporte",
     columnas: [
       { header: "Fecha", key: "fecha", valor: (f) => f.fecha.toISOString().slice(0, 10) },
+      { header: "Empresa", key: "empresa", valor: (f) => f.empresa },
       { header: "Cliente", key: "cliente", valor: (f) => f.cliente },
       { header: "Proyecto", key: "proyecto", valor: (f) => f.proyecto },
       { header: "Tipo", key: "tipo", valor: (f) => f.tipo },

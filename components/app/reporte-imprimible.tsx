@@ -109,7 +109,10 @@ export function ReporteImprimible({
             <tbody>
               {desgloseProyecto.map((f) => (
                 <tr key={`${f.clienteId}-${f.proyectoId ?? "directo"}`} className="border-b border-border last:border-b-0">
-                  <td className="py-1.5 pr-2">{f.clienteNombre}</td>
+                  <td className="py-1.5 pr-2">
+                    {f.clienteNombre}
+                    {mostrarDesgloseEmpresa && <span className="text-muted-foreground"> · {f.empresaNombre}</span>}
+                  </td>
                   <td className="py-1.5 pr-2 text-muted-foreground">{f.proyectoNombre ?? "Sin proyecto"}</td>
                   <td className="py-1.5 pr-2 text-right font-mono">
                     {f.moneda} {formatearMonto(f.facturado)}

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 export type FilaReporteCliente = {
   clienteId: string;
   clienteNombre: string;
+  empresaNombre: string;
   proyectoId: string | null;
   proyectoNombre: string | null;
   moneda: string;
@@ -39,7 +40,7 @@ export async function obtenerReporteClientes({
       ...(clienteId ? { id: clienteId } : {}),
     },
     include: {
-      empresa: { select: { moneda: true } },
+      empresa: { select: { nombre: true, moneda: true } },
       proyectos: proyectoId ? { where: { id: proyectoId } } : true,
     },
     orderBy: { nombre: "asc" },
@@ -107,6 +108,7 @@ export async function obtenerReporteClientes({
       filas.push({
         clienteId: cliente.id,
         clienteNombre: cliente.nombre,
+        empresaNombre: cliente.empresa.nombre,
         proyectoId: proyecto.id,
         proyectoNombre: proyecto.nombre,
         moneda: cliente.empresa.moneda,
@@ -125,6 +127,7 @@ export async function obtenerReporteClientes({
       filas.push({
         clienteId: cliente.id,
         clienteNombre: cliente.nombre,
+        empresaNombre: cliente.empresa.nombre,
         proyectoId: null,
         proyectoNombre: null,
         moneda: cliente.empresa.moneda,

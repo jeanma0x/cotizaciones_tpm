@@ -74,6 +74,15 @@ test("la página de reportes carga y muestra resumen ejecutivo + desglose por em
   const tabla = page.locator("table").last();
   await expect(tabla.getByText("QA_PLAYWRIGHT_Empresa de Pruebas", { exact: false })).toBeVisible();
   await expect(tabla.getByText("QA_PLAYWRIGHT_Empresa B", { exact: false })).toBeVisible();
+
+  // "Desglose por proyecto" también debe distinguir la empresa cuando el
+  // reporte está consolidado — antes solo "Costos por categoría" lo hacía.
+  const tablaProyecto = page.locator("table").first();
+  await expect(
+    tablaProyecto.getByText(`QA_PLAYWRIGHT_Cliente Reportes ${SUFIJO}`, { exact: false }),
+  ).toHaveCount(2);
+  await expect(tablaProyecto.getByText("QA_PLAYWRIGHT_Empresa de Pruebas", { exact: false })).toBeVisible();
+  await expect(tablaProyecto.getByText("QA_PLAYWRIGHT_Empresa B", { exact: false })).toBeVisible();
 });
 
 test("filtrando a una sola empresa, desaparece el desglose por empresa y la otra empresa", async ({
@@ -106,6 +115,29 @@ test("exportar Excel responde con un .xlsx real (no CSV)", async ({ page }) => {
   );
   const buffer = await res.body();
   expect(buffer.length).toBeGreaterThan(1000);
+});
+
+test("el Excel exportado tiene columna Empresa (para distinguir filas en consolidado)", async ({ page }) => {
+  await page.goto("/dashboard");
+  const res = await page.request.get("/api/reportes/exportar?desde=2020-01-01&hasta=2030-12-31");
+  const buffer = Buffer.from(await res.body());
+
+  const ExcelJS = (await import("exceljs")).default;
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+  const sheet = workbook.worksheets[0];
+  const encabezados = (sheet.getRow(1).values as unknown[]).filter(Boolean).map(String);
+  expect(encabezados).toContain("Empresa");
+
+  const columnaEmpresa = encabezados.indexOf("Empresa") + 1; // getCell es 1-indexado
+  const empresasEnFilas = new Set<string>();
+  sheet.eachRow((fila, numero) => {
+    if (numero === 1) return;
+    const valor = fila.getCell(columnaEmpresa).value;
+    if (valor) empresasEnFilas.add(String(valor));
+  });
+  expect(empresasEnFilas.has("QA_PLAYWRIGHT_Empresa de Pruebas (dato de prueba, no real)")).toBe(true);
+  expect(empresasEnFilas.has("QA_PLAYWRIGHT_Empresa B (dato de prueba, no real)")).toBe(true);
 });
 
 test("Imprimir/PDF abre el diálogo con el membrete institucional (logo real)", async ({ page }) => {
