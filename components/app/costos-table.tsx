@@ -4,7 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { PencilIcon } from "lucide-react";
 import { accionesRevelablesClassName, DataTable } from "@/components/app/data-table";
 import { CostoFormDialog } from "@/components/app/costo-form-dialog";
-import { EliminarCostoDialog } from "@/components/app/eliminar-costo-dialog";
+import { ToggleActivoCosto } from "@/components/app/toggle-activo-costo";
 import { formatearMonto } from "@/lib/formato-numero";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,8 @@ export type FilaCosto = {
   descripcion: string;
   monto: number;
   fechaGasto: string;
+  activo: boolean;
+  updatedAt: string;
 };
 
 type ClienteConProyectos = {
@@ -101,6 +103,15 @@ export function CostosTable({
       ),
     },
     {
+      accessorKey: "activo",
+      header: "Estado",
+      cell: ({ row }) => (
+        <Badge variant={row.original.activo ? "default" : "outline"}>
+          {row.original.activo ? "Activo" : "Inactivo"}
+        </Badge>
+      ),
+    },
+    {
       id: "acciones",
       header: () => <span className="block text-right">Acciones</span>,
       enableSorting: false,
@@ -117,7 +128,11 @@ export function CostosTable({
               </Button>
             }
           />
-          <EliminarCostoDialog id={row.original.id} descripcion={row.original.descripcion} />
+          <ToggleActivoCosto
+            id={row.original.id}
+            descripcion={row.original.descripcion}
+            activo={row.original.activo}
+          />
         </div>
       ),
     },

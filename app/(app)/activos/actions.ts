@@ -2,8 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { assertAccesoEmpresa } from "@/lib/auth";
+import { diffCampos } from "@/lib/auditoria";
+import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
-import { type ActivoInput, activoSchema } from "@/lib/validations/activo";
+import { type ActivoInput, activoSchema, TIPO_ACTIVO_LABELS } from "@/lib/validations/activo";
+
+const ETIQUETAS_ACTIVO = {
+  empresaId: "Empresa",
+  tipo: "Tipo",
+  categoria: "Categoría",
+  placa: "Placa",
+  modelo: "Modelo",
+  marca: "Marca",
+  descripcion: "Descripción",
+  costo: "Costo",
+  valor: "Valor",
+  activo: "Activo",
+};
 
 function normalizar(datos: ActivoInput) {
   return {
@@ -23,11 +38,52 @@ function normalizar(datos: ActivoInput) {
   };
 }
 
+// Identificador legible del activo en la bitácora — Activo no tiene un campo
+// "nombre" propio (ver activos-table.tsx, mismo criterio ahí).
+function nombreActivo(tipo: ActivoInput["tipo"], placa: string | null) {
+  return `${TIPO_ACTIVO_LABELS[tipo]}${placa ? ` (${placa})` : ""}`;
+}
+
+// Tanda 3 del audit crítico: Activo era, junto con Proyecto, el único modelo
+// sin bitácora — mismo patrón try/catch-y-loguear que Cliente/Servicio/Costo
+// (un fallo de auditoría nunca debe tumbar la operación principal).
+async function registrarAuditoriaActivo(datos: {
+  activoId: string | null;
+  empresaId: string;
+  accion: "CREADO" | "EDITADO";
+  activoNombre: string;
+  detalle: string;
+}) {
+  try {
+    const actor = await getUsuarioActual();
+    await db.activoAuditoria.create({
+      data: {
+        activoId: datos.activoId,
+        empresaId: datos.empresaId,
+        accion: datos.accion,
+        activoNombre: datos.activoNombre,
+        detalle: datos.detalle,
+        usuarioId: actor?.id ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("No se pudo registrar auditoría de activo:", error);
+  }
+}
+
 export async function crearActivo(input: unknown) {
   const datos = activoSchema.parse(input);
   await assertAccesoEmpresa(datos.empresaId);
 
-  await db.activo.create({ data: normalizar(datos) });
+  const normalizado = normalizar(datos);
+  const activo = await db.activo.create({ data: normalizado });
+  await registrarAuditoriaActivo({
+    activoId: activo.id,
+    empresaId: activo.empresaId,
+    accion: "CREADO",
+    activoNombre: nombreActivo(normalizado.tipo, normalizado.placa),
+    detalle: "Activo creado",
+  });
   revalidatePath("/activos");
 }
 
@@ -40,7 +96,19 @@ export async function actualizarActivo(id: string, input: unknown) {
   await assertAccesoEmpresa(existente.empresaId);
   await assertAccesoEmpresa(datos.empresaId);
 
-  await db.activo.update({ where: { id }, data: normalizar(datos) });
+  const nuevo = normalizar(datos);
+  await db.activo.update({ where: { id }, data: nuevo });
+  await registrarAuditoriaActivo({
+    activoId: id,
+    empresaId: nuevo.empresaId,
+    accion: "EDITADO",
+    activoNombre: nombreActivo(nuevo.tipo, nuevo.placa),
+    detalle: diffCampos(
+      { ...existente, costo: Number(existente.costo), valor: Number(existente.valor) },
+      nuevo,
+      ETIQUETAS_ACTIVO,
+    ),
+  });
   revalidatePath("/activos");
 }
 
@@ -50,9 +118,17 @@ export async function alternarActivoRegistroActivo(id: string) {
 
   await assertAccesoEmpresa(existente.empresaId);
 
+  const nuevoActivo = !existente.activo;
   await db.activo.update({
     where: { id },
-    data: { activo: !existente.activo },
+    data: { activo: nuevoActivo },
+  });
+  await registrarAuditoriaActivo({
+    activoId: id,
+    empresaId: existente.empresaId,
+    accion: "EDITADO",
+    activoNombre: nombreActivo(existente.tipo, existente.placa),
+    detalle: `Activo: ${existente.activo ? "Sí" : "No"} → ${nuevoActivo ? "Sí" : "No"}`,
   });
   revalidatePath("/activos");
 }

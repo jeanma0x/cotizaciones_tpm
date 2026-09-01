@@ -61,7 +61,7 @@ export async function obtenerReporteFinanciero({
       select: { empresaId: true, fecha: true, total: true },
     }),
     db.costoOperativo.findMany({
-      where: { empresaId: { in: empresaIds }, fechaGasto: { gte: desde, lte: hasta } },
+      where: { empresaId: { in: empresaIds }, activo: true, fechaGasto: { gte: desde, lte: hasta } },
       select: { empresaId: true, fechaGasto: true, monto: true },
     }),
   ]);

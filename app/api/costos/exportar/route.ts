@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
         empresaId && empresasPermitidas.includes(empresaId)
           ? empresaId
           : { in: empresasPermitidas },
+      activo: true,
       fechaGasto: { gte: desde, lte: hasta },
     },
     include: { empresa: true },

@@ -211,7 +211,7 @@ export default async function DashboardPage({
       },
     }),
     db.costoOperativo.findMany({
-      where: { ...where, fechaGasto: { gte: inicioMes } },
+      where: { ...where, activo: true, fechaGasto: { gte: inicioMes } },
       select: { monto: true, categoria: true, empresa: { select: { moneda: true } } },
     }),
     // Fase 3.4 — catálogo completo de clientes/proyectos (sin filtrar por
@@ -272,6 +272,7 @@ export default async function DashboardPage({
             by: ["proyectoId"],
             where: {
               proyectoId: { in: proyectoIdsFiltrados },
+              activo: true,
               ...(rangoFechaUtilidad ? { fechaGasto: rangoFechaUtilidad } : {}),
             },
             _sum: { monto: true },

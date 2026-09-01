@@ -103,6 +103,8 @@ export default async function CostosPage({
     descripcion: c.descripcion,
     monto: Number(c.monto),
     fechaGasto: c.fechaGasto.toISOString().slice(0, 10),
+    activo: c.activo,
+    updatedAt: c.updatedAt.toISOString(),
   }));
 
   const filasAuditoria: FilaAuditoriaCosto[] = auditoria.map((a) => ({

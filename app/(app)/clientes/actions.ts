@@ -150,6 +150,24 @@ export async function actualizarCliente(id: string, input: unknown) {
   revalidatePath("/clientes");
 }
 
+// Tanda 3 del audit crítico: antes de esto, desactivar un Cliente no
+// avisaba si tenía proyectos o documentos en curso — informativo, no
+// bloquea (el usuario decide con el dato a la vista, no se le impide nada).
+export async function contarDependientesCliente(clienteId: string) {
+  const cliente = await db.cliente.findUnique({ where: { id: clienteId } });
+  if (!cliente) throw new Error("Cliente no encontrado");
+  await assertAccesoEmpresa(cliente.empresaId);
+
+  const [documentosActivos, proyectosActivos] = await Promise.all([
+    db.documento.count({
+      where: { clienteId, estado: { notIn: ["FACTURADA", "RECHAZADA", "VENCIDA"] } },
+    }),
+    db.proyecto.count({ where: { clienteId, activo: true } }),
+  ]);
+
+  return { documentosActivos, proyectosActivos };
+}
+
 export async function alternarActivoCliente(id: string) {
   const existente = await db.cliente.findUnique({ where: { id } });
   if (!existente) throw new Error("Cliente no encontrado");
@@ -169,6 +187,35 @@ export async function alternarActivoCliente(id: string) {
     detalle: `Activo: ${existente.activo ? "Sí" : "No"} → ${nuevoActivo ? "Sí" : "No"}`,
   });
   revalidatePath("/clientes");
+}
+
+// Tanda 3 del audit crítico: Proyecto era, junto con Activo, el único modelo
+// sin bitácora — mismo patrón try/catch-y-loguear que el resto (un fallo de
+// auditoría nunca debe tumbar la operación principal).
+async function registrarAuditoriaProyecto(datos: {
+  proyectoId: string | null;
+  clienteId: string;
+  empresaId: string;
+  accion: "CREADO" | "EDITADO";
+  proyectoNombre: string;
+  detalle: string;
+}) {
+  try {
+    const actor = await getUsuarioActual();
+    await db.proyectoAuditoria.create({
+      data: {
+        proyectoId: datos.proyectoId,
+        clienteId: datos.clienteId,
+        empresaId: datos.empresaId,
+        accion: datos.accion,
+        proyectoNombre: datos.proyectoNombre,
+        detalle: datos.detalle,
+        usuarioId: actor?.id ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("No se pudo registrar auditoría de proyecto:", error);
+  }
 }
 
 // Fase 3.3 — catálogo de Proyectos por cliente. Proyecto no tiene empresaId
@@ -193,8 +240,16 @@ export async function crearProyecto(input: unknown) {
     }
   }
 
-  await db.proyecto.create({
+  const proyecto = await db.proyecto.create({
     data: { clienteId: datos.clienteId, nombre: datos.nombre, activo: datos.activo },
+  });
+  await registrarAuditoriaProyecto({
+    proyectoId: proyecto.id,
+    clienteId: cliente.id,
+    empresaId: cliente.empresaId,
+    accion: "CREADO",
+    proyectoNombre: proyecto.nombre,
+    detalle: `Proyecto creado para ${cliente.nombre}`,
   });
   revalidatePath("/clientes");
 }
@@ -219,6 +274,17 @@ export async function actualizarProyecto(id: string, input: unknown) {
     where: { id },
     data: { nombre: datos.nombre, activo: datos.activo },
   });
+  await registrarAuditoriaProyecto({
+    proyectoId: id,
+    clienteId: existente.clienteId,
+    empresaId: existente.cliente.empresaId,
+    accion: "EDITADO",
+    proyectoNombre: datos.nombre,
+    detalle: diffCampos(existente, { nombre: datos.nombre, activo: datos.activo }, {
+      nombre: "Nombre",
+      activo: "Activo",
+    }),
+  });
   revalidatePath("/clientes");
 }
 
@@ -230,9 +296,18 @@ export async function alternarActivoProyecto(id: string) {
   if (!existente) throw new Error("Proyecto no encontrado");
   await assertAccesoEmpresa(existente.cliente.empresaId);
 
+  const nuevoActivo = !existente.activo;
   await db.proyecto.update({
     where: { id },
-    data: { activo: !existente.activo },
+    data: { activo: nuevoActivo },
+  });
+  await registrarAuditoriaProyecto({
+    proyectoId: id,
+    clienteId: existente.clienteId,
+    empresaId: existente.cliente.empresaId,
+    accion: "EDITADO",
+    proyectoNombre: existente.nombre,
+    detalle: `Activo: ${existente.activo ? "Sí" : "No"} → ${nuevoActivo ? "Sí" : "No"}`,
   });
   revalidatePath("/clientes");
 }

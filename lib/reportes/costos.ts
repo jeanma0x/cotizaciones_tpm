@@ -40,6 +40,7 @@ export async function obtenerReporteCostos({
     by: ["empresaId", "categoria", "categoriaOtroDetalle"],
     where: {
       empresaId: { in: empresaIds },
+      activo: true,
       ...(rangoFecha ? { fechaGasto: rangoFecha } : {}),
       ...(categoria ? { categoria } : {}),
       ...(clienteId ? { clienteId } : {}),

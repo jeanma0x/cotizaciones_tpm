@@ -61,7 +61,11 @@ export async function obtenerReporteClientes({
       proyectoIds.length > 0
         ? db.costoOperativo.groupBy({
             by: ["proyectoId"],
-            where: { proyectoId: { in: proyectoIds }, ...(rangoFecha ? { fechaGasto: rangoFecha } : {}) },
+            where: {
+              proyectoId: { in: proyectoIds },
+              activo: true,
+              ...(rangoFecha ? { fechaGasto: rangoFecha } : {}),
+            },
             _sum: { monto: true },
           })
         : [],
@@ -86,6 +90,7 @@ export async function obtenerReporteClientes({
             where: {
               clienteId: { in: clienteIds },
               proyectoId: null,
+              activo: true,
               ...(rangoFecha ? { fechaGasto: rangoFecha } : {}),
             },
             _sum: { monto: true },

@@ -32,6 +32,7 @@ export default async function EditarDocumentoPage({
       firmanteUsuarioId: true,
       nombreResponsable: true,
       fechaAceptacion: true,
+      updatedAt: true,
       items: {
         orderBy: { orden: "asc" },
         select: { cantidad: true, descripcion: true, precioUnitario: true },

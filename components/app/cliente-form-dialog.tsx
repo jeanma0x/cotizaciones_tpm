@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { esErrorDuplicado, mensajeDuplicado } from "@/lib/duplicado";
+import { pareceNitValido, pareceTelefonoValido } from "@/lib/formato-laxo";
 import {
   type ClienteFormValues,
   type ClienteInput,
@@ -210,6 +211,12 @@ export function ClienteFormDialog({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nit">NIT</Label>
             <Input id="nit" {...register("nit")} />
+            {!pareceNitValido(watch("nit") ?? "") && (
+              <p className="text-xs text-muted-foreground">
+                Este NIT se ve distinto a lo usual — revisalo si no es a propósito
+                (empresas fuera de Guatemala pueden tener otro formato).
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -226,6 +233,11 @@ export function ClienteFormDialog({
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="telefono">Teléfono</Label>
               <Input id="telefono" {...register("telefono")} />
+              {!pareceTelefonoValido(watch("telefono") ?? "") && (
+                <p className="text-xs text-muted-foreground">
+                  Se ve distinto a un teléfono usual — revisalo si no es a propósito.
+                </p>
+              )}
             </div>
             <div className="flex w-36 flex-col gap-1.5">
               <Label htmlFor="codigoPais">Cód. país</Label>

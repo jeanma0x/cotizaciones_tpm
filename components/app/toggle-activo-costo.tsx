@@ -1,10 +1,10 @@
 "use client";
 
-import { TrashIcon, XIcon } from "lucide-react";
+import { PowerIcon, PowerOffIcon, XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { eliminarCostoOperativo } from "@/app/(app)/costos/actions";
+import { alternarActivoCostoOperativo } from "@/app/(app)/costos/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,22 +16,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-export function EliminarCostoDialog({
+export function ToggleActivoCosto({
   id,
   descripcion,
+  activo,
 }: {
   id: string;
   descripcion: string;
+  activo: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  function eliminar() {
+  function alternar() {
     startTransition(async () => {
       try {
-        await eliminarCostoOperativo(id);
-        toast.success("Costo eliminado");
+        await alternarActivoCostoOperativo(id);
+        toast.success(activo ? "Costo desactivado" : "Costo activado");
         router.refresh();
         setOpen(false);
       } catch (error) {
@@ -40,25 +42,33 @@ export function EliminarCostoDialog({
     });
   }
 
+  // Ver nota en toggle-activo-cliente.tsx: solo se confirma la dirección de
+  // "Desactivar", no la de "Activar".
+  if (!activo) {
+    return (
+      <Button variant="outline" size="sm" onClick={alternar} disabled={isPending}>
+        <PowerIcon className="h-4 w-4" />
+        Activar
+      </Button>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
           <Button variant="destructive" size="sm">
-            <TrashIcon className="h-4 w-4" />
-            Eliminar
+            <PowerOffIcon className="h-4 w-4" />
+            Desactivar
           </Button>
         }
       />
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>¿Eliminar &ldquo;{descripcion}&rdquo;?</DialogTitle>
+          <DialogTitle>¿Desactivar &ldquo;{descripcion}&rdquo;?</DialogTitle>
           <DialogDescription>
-            Esto quita el registro del costo por completo de la tabla — a
-            diferencia de cotizaciones/facturas, no queda como fila para
-            editar o reactivar después. Sí queda un rastro en el historial de
-            auditoría (quién y cuándo lo borró), pero el costo en sí no se
-            puede recuperar.
+            Deja de contar en el panel y en los reportes, pero el registro no se
+            borra — podés reactivarlo después desde acá mismo.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -66,9 +76,9 @@ export function EliminarCostoDialog({
             <XIcon className="h-4 w-4" />
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={eliminar} disabled={isPending}>
-            <TrashIcon className="h-4 w-4" />
-            Sí, eliminar
+          <Button variant="destructive" onClick={alternar} disabled={isPending}>
+            <PowerOffIcon className="h-4 w-4" />
+            Sí, desactivar
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -50,10 +50,19 @@ type Costo = {
   descripcion: string;
   monto: number;
   fechaGasto: string;
+  updatedAt: string;
 };
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+// Punto 6, Tanda 3 — advertencia visual (no bloqueante): un gasto a futuro sí
+// puede ser legítimo (ej. una renovación de seguro ya pagada por adelantado),
+// solo se avisa por si fue un error de tipeo en la fecha.
+function esFechaFutura(fechaGasto: string) {
+  if (!fechaGasto) return false;
+  return fechaGasto > hoyISO();
 }
 
 export function CostoFormDialog({
@@ -117,7 +126,7 @@ export function CostoFormDialog({
   async function onSubmit(datos: CostoOperativoInput) {
     try {
       if (esEdicion && costo) {
-        await actualizarCostoOperativo(costo.id, datos);
+        await actualizarCostoOperativo(costo.id, costo.updatedAt, datos);
         toast.success("Costo actualizado");
       } else {
         await crearCostoOperativo(datos);
@@ -277,6 +286,12 @@ export function CostoFormDialog({
               <Input id="fechaGasto" type="date" {...register("fechaGasto")} />
               {errors.fechaGasto && (
                 <p className="text-xs text-destructive">{errors.fechaGasto.message}</p>
+              )}
+              {!errors.fechaGasto && esFechaFutura(watch("fechaGasto") ?? "") && (
+                <p className="text-xs text-muted-foreground">
+                  Esta fecha es a futuro — revisala si no es a propósito (ej. un
+                  gasto pagado por adelantado).
+                </p>
               )}
             </div>
           </div>

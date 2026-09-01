@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { parecePlacaValida } from "@/lib/formato-laxo";
 import {
   type ActivoFormValues,
   type ActivoInput,
@@ -194,6 +195,11 @@ export function ActivoFormDialog({
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="placa">Placa</Label>
               <Input id="placa" {...register("placa")} />
+              {!parecePlacaValida(watch("placa") ?? "") && (
+                <p className="text-xs text-muted-foreground">
+                  Se ve distinta a una placa usual — revisala si no es a propósito.
+                </p>
+              )}
             </div>
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="marca">Marca</Label>

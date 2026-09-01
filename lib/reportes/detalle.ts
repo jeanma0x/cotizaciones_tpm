@@ -62,6 +62,7 @@ export async function obtenerDetalleReporte({
     db.costoOperativo.findMany({
       where: {
         empresaId: { in: empresaIds },
+        activo: true,
         fechaGasto: { gte: desde, lte: hasta },
         ...(clienteId ? { clienteId } : {}),
         ...(proyectoId ? { proyectoId } : {}),

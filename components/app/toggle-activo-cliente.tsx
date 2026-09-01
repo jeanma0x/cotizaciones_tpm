@@ -4,7 +4,7 @@ import { PowerIcon, PowerOffIcon, XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { alternarActivoCliente } from "@/app/(app)/clientes/actions";
+import { alternarActivoCliente, contarDependientesCliente } from "@/app/(app)/clientes/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,6 +27,10 @@ export function ToggleActivoCliente({
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [dependientes, setDependientes] = useState<{
+    documentosActivos: number;
+    proyectosActivos: number;
+  } | null>(null);
   const router = useRouter();
 
   function alternar() {
@@ -42,6 +46,17 @@ export function ToggleActivoCliente({
     });
   }
 
+  // Se consulta al abrir el diálogo de Desactivar (no antes) — es
+  // informativo, no bloquea: el usuario ve el dato y decide igual.
+  function abrir(valor: boolean) {
+    setOpen(valor);
+    if (valor && !dependientes) {
+      contarDependientesCliente(id)
+        .then(setDependientes)
+        .catch(() => setDependientes(null));
+    }
+  }
+
   // Reactivar es la dirección segura (deshace un "Desactivar" anterior) — no
   // hace falta confirmarla. Punto 5, ronda de cierre de huecos: un clic
   // accidental en "Desactivar" con datos reales no debería pasar sin
@@ -55,8 +70,11 @@ export function ToggleActivoCliente({
     );
   }
 
+  const hayDependientes =
+    dependientes && (dependientes.documentosActivos > 0 || dependientes.proyectosActivos > 0);
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={abrir}>
       <DialogTrigger
         render={
           <Button variant="destructive" size="sm">
@@ -71,6 +89,17 @@ export function ToggleActivoCliente({
           <DialogDescription>
             No va a aparecer para elegir en documentos nuevos. Podés reactivarlo
             después desde acá mismo.
+            {hayDependientes && (
+              <span className="mt-2 block font-medium text-status-enviada">
+                Este cliente tiene{" "}
+                {dependientes.proyectosActivos > 0 &&
+                  `${dependientes.proyectosActivos} proyecto${dependientes.proyectosActivos === 1 ? "" : "s"} activo${dependientes.proyectosActivos === 1 ? "" : "s"}`}
+                {dependientes.proyectosActivos > 0 && dependientes.documentosActivos > 0 && " y "}
+                {dependientes.documentosActivos > 0 &&
+                  `${dependientes.documentosActivos} documento${dependientes.documentosActivos === 1 ? "" : "s"} en curso`}
+                .
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

@@ -90,6 +90,7 @@ type DocumentoExistente = {
   firmanteUsuarioId: string | null;
   nombreResponsable: string | null;
   fechaAceptacion: Date | null;
+  updatedAt: Date;
 };
 
 function aFechaInput(fecha: Date) {
@@ -168,6 +169,19 @@ export function DocumentoForm({
   const descuento = watch("descuento") ?? 0;
   const firmanteUsuarioId = watch("firmanteUsuarioId");
   const clienteId = watch("clienteId");
+  const fecha = watch("fecha");
+  const vigenciaDias = watch("vigenciaDias");
+  // Punto 6, Tanda 3 — advertencia visual (no bloqueante): un documento
+  // retroactivo con vigencia corta es un caso legítimo (ver plan de la
+  // Tanda 3), así que esto solo avisa, nunca impide guardar.
+  const vencimientoYaPasado = useMemo(() => {
+    if (!fecha || !vigenciaDias) return false;
+    const vencimiento = new Date(`${fecha}T00:00:00.000Z`);
+    vencimiento.setUTCDate(vencimiento.getUTCDate() + Number(vigenciaDias));
+    const hoy = new Date();
+    const hoyUTC = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));
+    return vencimiento < hoyUTC;
+  }, [fecha, vigenciaDias]);
 
   const itemsArray = useFieldArray({ control, name: "items" });
   const notasArray = useFieldArray({ control, name: "notas" });
@@ -252,7 +266,7 @@ export function DocumentoForm({
     setSubmitting(true);
     try {
       if (esEdicion && documento) {
-        await actualizarDocumento(documento.id, datos);
+        await actualizarDocumento(documento.id, documento.updatedAt.toISOString(), datos);
       } else {
         await crearDocumento(datos);
       }
@@ -372,6 +386,12 @@ export function DocumentoForm({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="vigenciaDias">Oferta válida hasta (días)</Label>
             <Input id="vigenciaDias" type="number" {...register("vigenciaDias")} />
+            {vencimientoYaPasado && (
+              <p className="text-xs text-muted-foreground">
+                Con esta fecha y vigencia, la oferta ya estaría vencida — revisalo
+                si no es a propósito (ej. un documento retroactivo).
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">

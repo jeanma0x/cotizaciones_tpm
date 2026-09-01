@@ -103,7 +103,13 @@ export async function crearDocumento(input: unknown) {
   redirect(`/documentos/${documento.id}`);
 }
 
-export async function actualizarDocumento(id: string, input: unknown) {
+// Tanda 3 del audit crítico: dos personas editando el mismo documento a la
+// vez (ej. Oldemar y su socio) hacía que la segunda en guardar pisara los
+// cambios de la primera en silencio. `updatedAtOriginal` es el valor que el
+// formulario cargó al abrirse — si ya no coincide con el de la base, alguien
+// más guardó primero. updateMany (no update) porque el where de update solo
+// admite el id único, no una condición compuesta.
+export async function actualizarDocumento(id: string, updatedAtOriginal: string, input: unknown) {
   const datos = documentoSchema.parse(input);
 
   const existente = await db.documento.findUnique({ where: { id } });
@@ -134,10 +140,16 @@ export async function actualizarDocumento(id: string, input: unknown) {
   // esta acción no cambia el estado del documento, solo su contenido.
   const usuarioActual = await getUsuarioActual();
 
+  const mensajeConflicto =
+    "Este documento cambió mientras lo editabas — recargá la página para ver la versión más reciente.";
+  if (existente.updatedAt.toISOString() !== new Date(updatedAtOriginal).toISOString()) {
+    throw new Error(mensajeConflicto);
+  }
+
   await db.$transaction(async (tx) => {
     await tx.itemDocumento.deleteMany({ where: { documentoId: id } });
-    await tx.documento.update({
-      where: { id },
+    const actualizados = await tx.documento.updateMany({
+      where: { id, updatedAt: existente.updatedAt },
       data: {
         tipo: datos.tipo,
         clienteId: datos.clienteId,
@@ -152,10 +164,13 @@ export async function actualizarDocumento(id: string, input: unknown) {
         notas: datos.notas,
         anexos: datos.tipo === "PROPUESTA" ? datos.anexos : undefined,
         ...datosFirma(datos),
-        items: {
-          create: datos.items.map((item, i) => ({ ...item, orden: i })),
-        },
       },
+    });
+    if (actualizados.count === 0) {
+      throw new Error(mensajeConflicto);
+    }
+    await tx.itemDocumento.createMany({
+      data: datos.items.map((item, i) => ({ ...item, documentoId: id, orden: i })),
     });
     await tx.historialEstado.create({
       data: {

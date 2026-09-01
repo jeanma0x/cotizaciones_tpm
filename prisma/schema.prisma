@@ -75,6 +75,8 @@ model Empresa {
   serviciosAuditoria        ServicioAuditoria[]
   auditoria                 EmpresaAuditoria[]
   activos                   Activo[]
+  activosAuditoria          ActivoAuditoria[]
+  proyectosAuditoria        ProyectoAuditoria[]
 
   @@map("empresas")
 }
@@ -99,6 +101,8 @@ model Usuario {
   clientesAuditados      ClienteAuditoria[]
   serviciosAuditados     ServicioAuditoria[]
   empresasAuditadas      EmpresaAuditoria[]
+  proyectosAuditados     ProyectoAuditoria[]
+  activosAuditados       ActivoAuditoria[]
   // Dos relaciones distintas hacia Usuario en UsuarioAuditoria: una fila
   // registra tanto "a quién le cambiaron algo" (usuarioId) como "quién lo
   // hizo" (actorUsuarioId) — Prisma exige nombrar cada lado cuando hay más
@@ -141,15 +145,16 @@ model Cliente {
   activo     Boolean     @default(true) // permite ocultar clientes viejos sin borrarlos
   createdAt  DateTime    @default(now())
 
-  documentos       Documento[]
+  documentos         Documento[]
   // Solo se usan cuando tipo = EMPRESA — ver TipoCliente. Un cliente
   // INDIVIDUAL sigue usando el campo `email` de acá arriba, sin tocar nada.
-  contactos        ContactoCliente[]
-  auditoria        ClienteAuditoria[]
+  contactos          ContactoCliente[]
+  auditoria          ClienteAuditoria[]
   // Fase 3: un cliente puede tener varios proyectos, y costos asociados
   // directamente a él (sin proyecto específico) — ver modelo Proyecto.
-  proyectos        Proyecto[]
-  costosOperativos CostoOperativo[]
+  proyectos          Proyecto[]
+  costosOperativos   CostoOperativo[]
+  proyectosAuditoria ProyectoAuditoria[]
 
   @@index([empresaId])
   @@map("clientes")
@@ -168,6 +173,7 @@ model Proyecto {
 
   documentos Documento[]
   costos     CostoOperativo[]
+  auditoria  ProyectoAuditoria[]
 
   @@index([clienteId])
   @@map("proyectos")
@@ -254,7 +260,15 @@ model CostoOperativo {
   // Independiente de createdAt: un reporte de julio puede llegar y
   // registrarse recién el 5 de agosto, pero debe contar para julio.
   fechaGasto           DateTime
+  // Costos era el único módulo con borrado físico — contradice "nunca se
+  // pierde el historial" (CLAUDE.md). Mismo criterio que
+  // Cliente.activo/Servicio.activo/Activo.activo: desactivar en vez de
+  // eliminar.
+  activo               Boolean        @default(true)
   createdAt            DateTime       @default(now())
+  // Para optimistic locking en actualizarCostoOperativo (Tanda 3 del audit
+  // crítico) — Documento ya lo tenía, Costo no.
+  updatedAt            DateTime       @updatedAt
 
   // Fase 3: opcionales — un costo registrado antes de esta fase, o uno que
   // el usuario decide no ligar a ningún cliente/proyecto en particular,
@@ -342,6 +356,57 @@ model ServicioAuditoria {
 
   @@index([empresaId, fecha])
   @@map("servicios_auditoria")
+}
+
+enum AccionProyecto {
+  CREADO
+  EDITADO
+}
+
+// Proyecto y Activo eran los únicos modelos con mutaciones sin bitácora —
+// Tanda 3 del audit crítico. Mismo shape que ServicioAuditoria.
+// empresaId se guarda denormalizado (Proyecto en sí solo tiene clienteId,
+// no empresaId directo) para poder filtrar/aislar por empresa sin tener
+// que atravesar la relación con Cliente en cada query.
+model ProyectoAuditoria {
+  id             String         @id @default(cuid())
+  proyectoId     String?
+  proyecto       Proyecto?      @relation(fields: [proyectoId], references: [id], onDelete: SetNull)
+  clienteId      String?
+  cliente        Cliente?       @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  empresaId      String
+  empresa        Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  accion         AccionProyecto
+  proyectoNombre String
+  detalle        String
+  usuarioId      String?
+  usuario        Usuario?       @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  fecha          DateTime       @default(now())
+
+  @@index([empresaId, fecha])
+  @@map("proyectos_auditoria")
+}
+
+enum AccionActivo {
+  CREADO
+  EDITADO
+}
+
+model ActivoAuditoria {
+  id             String       @id @default(cuid())
+  activoId       String?
+  activoRegistro Activo?      @relation(fields: [activoId], references: [id], onDelete: SetNull)
+  empresaId      String
+  empresa        Empresa      @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  accion         AccionActivo
+  activoNombre   String
+  detalle        String
+  usuarioId      String?
+  usuario        Usuario?     @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  fecha          DateTime     @default(now())
+
+  @@index([empresaId, fecha])
+  @@map("activos_auditoria")
 }
 
 // Empresa no tiene alta/baja desde la UI (las 4 vienen precargadas) — solo
@@ -498,6 +563,8 @@ model Activo {
   valor       Decimal          @db.Decimal(12, 2)
   activo      Boolean          @default(true)
   createdAt   DateTime         @default(now())
+
+  auditoria ActivoAuditoria[]
 
   @@index([empresaId])
   @@map("activos")

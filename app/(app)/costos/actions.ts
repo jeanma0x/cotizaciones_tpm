@@ -99,7 +99,14 @@ export async function crearCostoOperativo(input: unknown) {
   revalidatePath("/dashboard");
 }
 
-export async function actualizarCostoOperativo(id: string, input: unknown) {
+// Tanda 3 del audit crítico — mismo criterio de optimistic locking que
+// Documento (ver comentario en documentos/actions.ts): updatedAtOriginal es
+// el valor que el formulario cargó al abrirse.
+export async function actualizarCostoOperativo(
+  id: string,
+  updatedAtOriginal: string,
+  input: unknown,
+) {
   const datos = costoOperativoSchema.parse(input);
 
   const existente = await db.costoOperativo.findUnique({ where: { id } });
@@ -110,8 +117,20 @@ export async function actualizarCostoOperativo(id: string, input: unknown) {
   await assertClienteDeEmpresa(datos.clienteId ?? "", datos.empresaId);
   await assertProyectoDeCliente(datos.proyectoId ?? "", datos.clienteId ?? "");
 
+  const mensajeConflicto =
+    "Este costo cambió mientras lo editabas — recargá la página para ver la versión más reciente.";
+  if (existente.updatedAt.toISOString() !== new Date(updatedAtOriginal).toISOString()) {
+    throw new Error(mensajeConflicto);
+  }
+
   const normalizado = normalizar(datos);
-  await db.costoOperativo.update({ where: { id }, data: normalizado });
+  const actualizados = await db.costoOperativo.updateMany({
+    where: { id, updatedAt: existente.updatedAt },
+    data: normalizado,
+  });
+  if (actualizados.count === 0) {
+    throw new Error(mensajeConflicto);
+  }
   await registrarAuditoria({
     costoOperativoId: id,
     empresaId: normalizado.empresaId,
@@ -126,20 +145,23 @@ export async function actualizarCostoOperativo(id: string, input: unknown) {
   revalidatePath("/dashboard");
 }
 
-export async function eliminarCostoOperativo(id: string) {
+// Tanda 3 del audit crítico: Costos era el único módulo con borrado físico,
+// contradiciendo "nunca se pierde el historial" — ahora se alterna igual que
+// Cliente/Servicio/Activo. La acción de auditoría queda como EDITADO (el
+// registro sigue existiendo, solo cambia su estado); ELIMINADO se deja en el
+// enum solo por las filas históricas ya escritas antes de este cambio.
+export async function alternarActivoCostoOperativo(id: string) {
   const existente = await db.costoOperativo.findUnique({ where: { id } });
   if (!existente) throw new Error("Costo no encontrado");
 
   await assertAccesoEmpresa(existente.empresaId);
 
-  await db.costoOperativo.delete({ where: { id } });
-  // costoOperativoId: null a propósito — la fila que se acaba de borrar ya
-  // no existe, onDelete: SetNull la dejaría en null de todas formas; se
-  // pasa explícito para no depender de ese efecto secundario.
+  const nuevoActivo = !existente.activo;
+  await db.costoOperativo.update({ where: { id }, data: { activo: nuevoActivo } });
   await registrarAuditoria({
-    costoOperativoId: null,
+    costoOperativoId: id,
     empresaId: existente.empresaId,
-    accion: "ELIMINADO",
+    accion: "EDITADO",
     categoria: existente.categoria,
     categoriaOtroDetalle: existente.categoriaOtroDetalle,
     descripcion: existente.descripcion,
