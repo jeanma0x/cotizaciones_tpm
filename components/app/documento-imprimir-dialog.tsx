@@ -68,7 +68,18 @@ export function DocumentoImprimirDialog({
               toolbar heredan el "color" YA RESUELTO por <body> (que puede
               estar en oscuro) en vez de recalcularlo con el --foreground
               claro que este div acaba de fijar — variables CSS nuevas no
-              "reviven" un valor heredado que ya se resolvió más arriba. */}
+              "reviven" un valor heredado que ya se resolvió más arriba.
+
+              bg-[#EAE6DC]: color fijo a propósito, no un token del sistema
+              (Tanda 4 del audit crítico — ver docs/design-system.md, --paper-*).
+              Es el fondo de la VISTA PREVIA en pantalla (nunca se imprime:
+              @media print en globals.css lo resetea a blanco), un tono más
+              oscuro que --paper-50 elegido para que se note que esto es un
+              "escritorio" sosteniendo una hoja de papel, no la hoja en sí —
+              usar un token de superficie ahí se vería como un panel vacío más
+              del sistema, no como el papel del documento. Repetido en 3
+              lugares (acá, documentos/[id]/imprimir/page.tsx,
+              reporte-acciones.tsx): si cambia, cambiar los 3. */}
           <div
             data-theme="light"
             className="fondo-imprimible bg-[#EAE6DC] text-foreground"

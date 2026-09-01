@@ -40,6 +40,8 @@ export default async function ImprimirDocumentoPage({
     // que tenga activo quien lo esté viendo en la app — incluye la toolbar.
     // text-foreground: ver comentario equivalente en documento-imprimir-dialog.tsx
     // (sin esto, la toolbar hereda el "color" ya resuelto por <body> en oscuro).
+    // bg-[#EAE6DC]: color fijo a propósito, no un token — ver el comentario
+    // completo (Tanda 4 del audit crítico) en documento-imprimir-dialog.tsx.
     <div
       data-theme="light"
       className="fondo-imprimible min-h-screen bg-[#EAE6DC] text-foreground"

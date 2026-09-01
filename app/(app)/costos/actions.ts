@@ -113,6 +113,14 @@ export async function actualizarCostoOperativo(
   if (!existente) throw new Error("Costo no encontrado");
 
   await assertAccesoEmpresa(existente.empresaId);
+  // Tanda 4 del audit crítico: a diferencia de Documento (que bloquea
+  // reasignar empresa porque el correlativo ya quedó asignado dentro de la
+  // empresa original — ver actualizarDocumento en documentos/actions.ts),
+  // un Costo sí puede moverse de empresa al editar. No tiene un identificador
+  // secuencial propio ni ningún otro dato que dependa de "haber nacido" en
+  // esa empresa — es un simple registro de gasto, así que corregir "lo cargué
+  // en la empresa equivocada" no tiene el mismo riesgo que reescribir a qué
+  // empresa pertenece un documento ya entregado/firmado por un cliente.
   await assertAccesoEmpresa(datos.empresaId);
   await assertClienteDeEmpresa(datos.clienteId ?? "", datos.empresaId);
   await assertProyectoDeCliente(datos.proyectoId ?? "", datos.clienteId ?? "");

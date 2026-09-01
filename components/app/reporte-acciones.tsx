@@ -49,6 +49,9 @@ export function ReporteAcciones({
             [&>[data-slot=dialog-close]]:print:hidden"
         >
           <div className="max-h-[92vh] overflow-y-auto rounded-xl print:max-h-none print:overflow-visible print:rounded-none">
+            {/* bg-[#EAE6DC]: color fijo a propósito, no un token — ver el
+                comentario completo (Tanda 4 del audit crítico) en
+                documento-imprimir-dialog.tsx. */}
             <div data-theme="light" className="fondo-imprimible bg-[#EAE6DC] text-foreground">
               <div className="no-imprimir flex justify-center pt-6">
                 <Button size="sm" onClick={() => window.print()}>

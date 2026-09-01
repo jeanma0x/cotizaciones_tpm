@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { assertSuperusuario } from "@/lib/auth";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
+import { mapearErrorPrisma } from "@/lib/prisma-error";
 import {
   type AccesoUsuarioInput,
   accesoUsuarioSchema,
@@ -164,16 +165,28 @@ export async function actualizarAccesoUsuario(usuarioId: string, input: unknown)
   });
   if (!antes) throw new Error("Usuario no encontrado");
 
-  const [usuario] = await db.$transaction([
-    db.usuario.update({ where: { id: usuarioId }, data: { rol: datos.rol } }),
-    db.usuarioEmpresa.deleteMany({ where: { usuarioId } }),
-    db.usuarioEmpresa.createMany({
-      data: datos.empresaIds.map((empresaId) => ({ usuarioId, empresaId })),
-    }),
-  ]);
+  // Tanda 4 del audit crítico: el <select> del formulario ya evita elegir la
+  // misma empresa dos veces, pero un envío manipulado a mano sí podría —
+  // eso chocaría con @@unique([usuarioId, empresaId]) dentro del mismo
+  // createMany. Deduplicar acá es la validación de negocio real; el catch de
+  // abajo es solo la red de seguridad si algo igual se cuela.
+  const empresaIdsUnicos = Array.from(new Set(datos.empresaIds));
+
+  let usuario;
+  try {
+    [usuario] = await db.$transaction([
+      db.usuario.update({ where: { id: usuarioId }, data: { rol: datos.rol } }),
+      db.usuarioEmpresa.deleteMany({ where: { usuarioId } }),
+      db.usuarioEmpresa.createMany({
+        data: empresaIdsUnicos.map((empresaId) => ({ usuarioId, empresaId })),
+      }),
+    ]);
+  } catch (error) {
+    throw mapearErrorPrisma(error);
+  }
 
   const empresasDespues = await db.empresa.findMany({
-    where: { id: { in: datos.empresaIds } },
+    where: { id: { in: empresaIdsUnicos } },
     select: { nombre: true },
   });
   const rolAntes = ROL_LABELS[antes.rol];

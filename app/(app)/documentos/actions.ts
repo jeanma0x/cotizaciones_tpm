@@ -6,6 +6,7 @@ import { assertAccesoEmpresa } from "@/lib/auth";
 import { asignarCorrelativo } from "@/lib/correlativo";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
+import { mapearErrorPrisma } from "@/lib/prisma-error";
 import {
   type DocumentoInput,
   documentoSchema,
@@ -69,35 +70,45 @@ export async function crearDocumento(input: unknown) {
 
   const { subtotal, total } = calcularTotales(datos.items, datos.descuento);
 
-  const documento = await db.$transaction(async (tx) => {
-    const correlativo = await asignarCorrelativo(tx, datos.empresaId);
+  // Tanda 4 del audit crítico: si dos personas crean un documento a la vez
+  // para la misma empresa, existe una ventana real (aunque angosta) para que
+  // asignarCorrelativo entregue el mismo número dos veces y la constraint
+  // única @@unique([empresaId, correlativo]) rechace la segunda — sin esto,
+  // ese rechazo llegaba como un error crudo de Postgres.
+  let documento;
+  try {
+    documento = await db.$transaction(async (tx) => {
+      const correlativo = await asignarCorrelativo(tx, datos.empresaId);
 
-    return tx.documento.create({
-      data: {
-        empresaId: datos.empresaId,
-        tipo: datos.tipo,
-        correlativo,
-        clienteId: datos.clienteId,
-        proyectoId: datos.proyectoId || null,
-        fecha: new Date(datos.fecha),
-        vigenciaDias: datos.vigenciaDias,
-        condicionesPago: datos.condicionesPago || null,
-        descripcionGeneral: datos.descripcionGeneral || null,
-        subtotal,
-        descuento: datos.descuento,
-        total,
-        notas: datos.notas,
-        anexos: datos.tipo === "PROPUESTA" ? datos.anexos : undefined,
-        ...datosFirma(datos),
-        items: {
-          create: datos.items.map((item, i) => ({ ...item, orden: i })),
+      return tx.documento.create({
+        data: {
+          empresaId: datos.empresaId,
+          tipo: datos.tipo,
+          correlativo,
+          clienteId: datos.clienteId,
+          proyectoId: datos.proyectoId || null,
+          fecha: new Date(datos.fecha),
+          vigenciaDias: datos.vigenciaDias,
+          condicionesPago: datos.condicionesPago || null,
+          descripcionGeneral: datos.descripcionGeneral || null,
+          subtotal,
+          descuento: datos.descuento,
+          total,
+          notas: datos.notas,
+          anexos: datos.tipo === "PROPUESTA" ? datos.anexos : undefined,
+          ...datosFirma(datos),
+          items: {
+            create: datos.items.map((item, i) => ({ ...item, orden: i })),
+          },
+          historial: {
+            create: { estado: "BORRADOR" },
+          },
         },
-        historial: {
-          create: { estado: "BORRADOR" },
-        },
-      },
+      });
     });
-  });
+  } catch (error) {
+    throw mapearErrorPrisma(error);
+  }
 
   revalidatePath("/documentos");
   redirect(`/documentos/${documento.id}`);

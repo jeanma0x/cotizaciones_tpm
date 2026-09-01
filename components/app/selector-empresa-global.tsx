@@ -76,7 +76,18 @@ export function SelectorEmpresaGlobal({
       >
         {colapsado ? <Building2Icon className="h-4 w-4" /> : <SelectValue />}
       </SelectTrigger>
-      <SelectContent>
+      {/* Colapsado, el trigger es un botón de 32px (solo ícono) dentro de un
+          sidebar de 64px — el comportamiento default (alignItemWithTrigger,
+          centrado sobre el trigger) hace que el popup, con min-w-36 (144px),
+          quede centrado sobre ese botón angosto y termine tapando la propia
+          columna de íconos del sidebar. side="right" lo abre como flyout
+          hacia el contenido, igual que ya hacen los Tooltip de los ítems del
+          nav cuando el sidebar está colapsado. */}
+      <SelectContent
+        side={colapsado ? "right" : "bottom"}
+        align={colapsado ? "start" : "center"}
+        alignItemWithTrigger={!colapsado}
+      >
         {Object.entries(items).map(([value, label]) => (
           <SelectItem key={value} value={value}>
             {label}
