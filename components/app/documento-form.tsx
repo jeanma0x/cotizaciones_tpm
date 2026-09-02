@@ -80,7 +80,7 @@ type DocumentoExistente = {
   clienteId: string | null;
   proyectoId: string | null;
   fecha: Date;
-  vigenciaDias: number | null;
+  validoHasta: Date | null;
   condicionesPago: string | null;
   descripcionGeneral: string | null;
   descuento: unknown;
@@ -142,7 +142,7 @@ export function DocumentoForm({
       clienteId: documento?.clienteId ?? "",
       proyectoId: documento?.proyectoId ?? "",
       fecha: documento ? aFechaInput(documento.fecha) : aFechaInput(new Date()),
-      vigenciaDias: documento?.vigenciaDias ?? 15,
+      validoHasta: documento?.validoHasta ? aFechaInput(documento.validoHasta) : "",
       condicionesPago: documento?.condicionesPago ?? "",
       descripcionGeneral: documento?.descripcionGeneral ?? "",
       descuento: documento ? Number(documento.descuento) : 0,
@@ -169,19 +169,19 @@ export function DocumentoForm({
   const descuento = watch("descuento") ?? 0;
   const firmanteUsuarioId = watch("firmanteUsuarioId");
   const clienteId = watch("clienteId");
-  const fecha = watch("fecha");
-  const vigenciaDias = watch("vigenciaDias");
+  const validoHasta = watch("validoHasta");
   // Punto 6, Tanda 3 — advertencia visual (no bloqueante): un documento
   // retroactivo con vigencia corta es un caso legítimo (ver plan de la
-  // Tanda 3), así que esto solo avisa, nunca impide guardar.
+  // Tanda 3), así que esto solo avisa, nunca impide guardar. Sin
+  // `validoHasta` (pedido de Oldemar, 02/09/26 — servicios ya prestados no
+  // tienen nada que "vencer") simplemente no hay nada que advertir.
   const vencimientoYaPasado = useMemo(() => {
-    if (!fecha || !vigenciaDias) return false;
-    const vencimiento = new Date(`${fecha}T00:00:00.000Z`);
-    vencimiento.setUTCDate(vencimiento.getUTCDate() + Number(vigenciaDias));
+    if (!validoHasta) return false;
+    const vencimiento = new Date(`${validoHasta}T00:00:00.000Z`);
     const hoy = new Date();
     const hoyUTC = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));
     return vencimiento < hoyUTC;
-  }, [fecha, vigenciaDias]);
+  }, [validoHasta]);
 
   const itemsArray = useFieldArray({ control, name: "items" });
   const notasArray = useFieldArray({ control, name: "notas" });
@@ -384,12 +384,12 @@ export function DocumentoForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="vigenciaDias">Oferta válida hasta (días)</Label>
-            <Input id="vigenciaDias" type="number" {...register("vigenciaDias")} />
+            <Label htmlFor="validoHasta">Válido hasta (opcional)</Label>
+            <Input id="validoHasta" type="date" {...register("validoHasta")} />
             {vencimientoYaPasado && (
               <p className="text-xs text-muted-foreground">
-                Con esta fecha y vigencia, la oferta ya estaría vencida — revisalo
-                si no es a propósito (ej. un documento retroactivo).
+                Con esta fecha, la oferta ya estaría vencida — revisalo si no
+                es a propósito (ej. un documento retroactivo).
               </p>
             )}
           </div>
@@ -416,13 +416,19 @@ export function DocumentoForm({
           <div className="flex gap-2">
             {serviciosDeEmpresa.length > 0 && (
               <Select onValueChange={agregarDesdeServicio} value="">
-                <SelectTrigger size="sm" className="w-56">
+                <SelectTrigger size="sm" className="w-72 sm:w-80">
                   <SelectValue placeholder="Agregar del catálogo…" />
                 </SelectTrigger>
-                <SelectContent>
+                {/* Pedido de Oldemar (WhatsApp, 02/09/26): hay varios
+                    servicios que empiezan igual (ej. "TORITO...") y no se
+                    podían distinguir con el nombre cortado. Ancho fijo
+                    propio (no el del trigger) + texto que envuelve en vez
+                    de cortarse — solo en esta instancia, no se toca el
+                    primitivo compartido. */}
+                <SelectContent align="start" className="w-80 sm:w-96">
                   {serviciosDeEmpresa.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.nombre}
+                      <span className="whitespace-normal break-words">{s.nombre}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>

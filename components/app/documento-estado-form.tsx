@@ -116,7 +116,14 @@ export function DocumentoEstadoForm({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="flex-1">
             <Select items={opcionesEstado} value={estado} onValueChange={(v) => setEstado(v as string)}>
-              <SelectTrigger className="w-full">
+              {/* Pedido de Oldemar (WhatsApp, 02/09/26): con el estilo por
+                  defecto no se notaba que este select dispara una acción
+                  real (cambiar el estado del documento) — se le da el mismo
+                  acento que ya usa el badge "Actual" más abajo, no un color
+                  nuevo. */}
+              <SelectTrigger
+                className="w-full border-accent/50 bg-accent/5 hover:border-accent hover:bg-accent/10 focus-visible:border-accent data-placeholder:font-medium data-placeholder:text-accent-hover"
+              >
                 <SelectValue placeholder="Elegí el nuevo estado" />
               </SelectTrigger>
               <SelectContent>

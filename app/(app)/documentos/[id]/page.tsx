@@ -103,7 +103,7 @@ export default async function DocumentoDetallePage({
             empresaNombre: documento.empresa.nombre,
             clienteNombre: documento.cliente?.nombre ?? "—",
             fecha: documento.fecha,
-            vigenciaDias: documento.vigenciaDias,
+            validoHasta: documento.validoHasta,
             condicionesPago: documento.condicionesPago,
             descripcionGeneral: documento.descripcionGeneral,
             moneda: documento.empresa.moneda,

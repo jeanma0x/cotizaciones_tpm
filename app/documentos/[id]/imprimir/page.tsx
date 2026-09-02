@@ -59,9 +59,8 @@ export default async function ImprimirDocumentoPage({
         contactos={documento.cliente?.contactos ?? []}
         moneda={documento.empresa.moneda === "USD" ? "USD" : "GTQ"}
         total={Number(documento.total)}
-        vigenciaDias={documento.vigenciaDias}
+        validoHasta={documento.validoHasta}
         condicionesPago={documento.condicionesPago}
-        fecha={documento.fecha}
         empresaCodigoPais={documento.empresa.codigoPais}
         clienteCodigoPais={documento.cliente?.codigoPais ?? null}
       />

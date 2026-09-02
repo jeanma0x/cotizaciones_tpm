@@ -12,7 +12,7 @@ export type DocumentoResumenData = {
   empresaNombre: string;
   clienteNombre: string;
   fecha: Date;
-  vigenciaDias: number | null;
+  validoHasta: Date | null;
   condicionesPago: string | null;
   descripcionGeneral?: string | null;
   moneda: string;
@@ -50,12 +50,16 @@ export function DocumentoResumen({ data }: { data: DocumentoResumenData }) {
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Fecha</p>
           <p className="font-mono text-sm">{data.fecha.toISOString().slice(0, 10)}</p>
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Oferta válida hasta
-          </p>
-          <p>{data.vigenciaDias ?? "—"} días</p>
-        </div>
+        {data.validoHasta && (
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Válido hasta
+            </p>
+            <p className="font-mono text-sm">
+              {data.validoHasta.toISOString().slice(0, 10)}
+            </p>
+          </div>
+        )}
         {data.condicionesPago && (
           <div className="doc-resumen-span-full">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">

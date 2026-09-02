@@ -89,7 +89,7 @@ export default async function DocumentosPage({
     anulado: doc.anulado,
     diasSinRespuesta: diasSinRespuesta(doc),
     fecha: doc.fecha.toISOString(),
-    vigenciaDias: doc.vigenciaDias,
+    validoHasta: doc.validoHasta ? doc.validoHasta.toISOString() : null,
     condicionesPago: doc.condicionesPago,
   }));
 

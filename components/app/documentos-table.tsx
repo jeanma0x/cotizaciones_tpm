@@ -26,7 +26,7 @@ export type FilaDocumento = {
   anulado: boolean;
   diasSinRespuesta: number | null;
   fecha: string;
-  vigenciaDias: number | null;
+  validoHasta: string | null;
   condicionesPago: string | null;
 };
 
@@ -91,7 +91,7 @@ const columns: ColumnDef<FilaDocumento, unknown>[] = [
             empresaNombre: row.original.empresaNombre,
             clienteNombre: row.original.clienteNombre,
             fecha: new Date(row.original.fecha),
-            vigenciaDias: row.original.vigenciaDias,
+            validoHasta: row.original.validoHasta ? new Date(row.original.validoHasta) : null,
             condicionesPago: row.original.condicionesPago,
             moneda: row.original.empresaMoneda,
             total: row.original.total,

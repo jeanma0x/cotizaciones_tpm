@@ -468,7 +468,11 @@ model Documento {
   proyectoId         String?
   proyecto           Proyecto?       @relation(fields: [proyectoId], references: [id], onDelete: SetNull)
   fecha              DateTime
-  vigenciaDias       Int?            @default(15)
+  // Pedido de Oldemar por WhatsApp (02/09/26): reemplaza el viejo
+  // "vigenciaDias" (número de días desde `fecha`) por una fecha de
+  // calendario directa, y realmente opcional — a veces se cotiza un
+  // servicio que ya se prestó y no hay nada que "vencer" hacia el futuro.
+  validoHasta        DateTime?
   condicionesPago    String?
   descripcionGeneral String?         @db.Text // campo "Descripción general" pedido por el cliente
   subtotal           Decimal         @db.Decimal(12, 2)

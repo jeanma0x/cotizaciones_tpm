@@ -255,14 +255,20 @@ export function DocumentoImprimible({ documento }: { documento: DocumentoImprimi
                 </p>
               </td>
               <td className="border border-border p-2.5 align-top">
-                <p className="text-sm">
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Oferta válida hasta:
-                  </span>{" "}
-                  <span className="font-mono">
-                    {documento.vigenciaDias ?? "—"} días a partir de la fecha
-                  </span>
-                </p>
+                {/* Pedido de Oldemar (WhatsApp, 02/09/26): sin vigencia
+                    declarada (servicios ya prestados) no se imprime nada acá
+                    — ni un "—" de relleno, esta oferta no tiene nada que
+                    vencer. */}
+                {documento.validoHasta && (
+                  <p className="text-sm">
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Válido hasta:
+                    </span>{" "}
+                    <span className="font-mono">
+                      {formatearFecha(documento.validoHasta)}
+                    </span>
+                  </p>
+                )}
               </td>
             </tr>
             <tr>

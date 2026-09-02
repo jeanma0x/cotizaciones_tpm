@@ -53,11 +53,10 @@ export const documentoSchema = z.object({
   // ligado solo al cliente en general), mismo criterio que firmanteUsuarioId.
   proyectoId: z.string().optional().or(z.literal("")),
   fecha: z.string().min(1, "La fecha es obligatoria"),
-  vigenciaDias: z.coerce
-    .number()
-    .int()
-    .positive("La vigencia debe ser mayor a 0 días")
-    .optional(),
+  // Pedido de Oldemar (WhatsApp, 02/09/26): fecha de calendario directa en
+  // vez de un número de días, y realmente opcional — a veces se cotiza un
+  // servicio que ya se prestó y no hay nada que "vencer" hacia el futuro.
+  validoHasta: z.string().optional().or(z.literal("")),
   condicionesPago: z.string().trim().optional().or(z.literal("")),
   descripcionGeneral: z.string().trim().optional().or(z.literal("")),
   descuento: z.coerce.number().nonnegative("El descuento no puede ser negativo").default(0),

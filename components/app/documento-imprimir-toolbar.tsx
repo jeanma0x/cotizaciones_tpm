@@ -58,9 +58,8 @@ export function DocumentoImprimirToolbar({
   contactos,
   moneda,
   total,
-  vigenciaDias,
+  validoHasta,
   condicionesPago,
-  fecha,
   empresaCodigoPais,
   clienteCodigoPais,
   dentroDeModal = false,
@@ -77,9 +76,8 @@ export function DocumentoImprimirToolbar({
   contactos: Contacto[];
   moneda: string;
   total: number;
-  vigenciaDias: number | null;
+  validoHasta: Date | null;
   condicionesPago: string | null;
-  fecha: Date;
   // wa.me exige el número completo con código de país — Cliente.telefono
   // nunca lo incluye. El del cliente (si lo tiene) gana sobre el de su
   // empresa — ver comentario en schema.prisma.
@@ -119,7 +117,7 @@ export function DocumentoImprimirToolbar({
     "",
     "Resumen:",
     `- Total: ${moneda} ${formatearMonto(total)}`,
-    vigenciaDias ? `- Oferta válida por ${vigenciaDias} días a partir del ${formatearFecha(fecha)}.` : null,
+    validoHasta ? `- Oferta válida hasta el ${formatearFecha(validoHasta)}.` : null,
     condicionesPago ? `- Condiciones de pago: ${condicionesPago}` : null,
     "",
     "Cualquier consulta, quedamos atentos.",
@@ -178,7 +176,7 @@ export function DocumentoImprimirToolbar({
   const telefonoConCodigo = telefono ? `${codigoPais}${telefono}` : "";
   const textoWhatsapp = [
     `Hola ${clienteNombre}, te comparto la ${tipoLabel.toLowerCase()} TPM-${correlativo} de ${empresaNombre}.`,
-    `Total: ${moneda} ${formatearMonto(total)}${vigenciaDias ? ` · válida ${vigenciaDias} días` : ""}.`,
+    `Total: ${moneda} ${formatearMonto(total)}${validoHasta ? ` · válida hasta el ${formatearFecha(validoHasta)}` : ""}.`,
     "Adjunto el PDF a continuación.",
   ].join("\n");
   const whatsappHref = telefonoConCodigo

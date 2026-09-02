@@ -370,26 +370,32 @@ export default async function DashboardPage({
   // ---- Zona 1 + 3: atención requerida (vencida / sin respuesta / por vencer) ----
   const itemsAtencion: ItemAtencion[] = [];
   for (const doc of candidatosAtencion) {
-    const vigenciaDias = doc.vigenciaDias ?? 15;
-    const vencimiento = new Date(doc.fecha.getTime() + vigenciaDias * UN_DIA_MS);
     const clienteNombre = doc.cliente?.nombre ?? "—";
 
-    if (doc.estado === "VENCIDA") {
-      const dias = Math.max(0, Math.floor((hoy.getTime() - vencimiento.getTime()) / UN_DIA_MS));
-      itemsAtencion.push({ id: doc.id, correlativo: doc.correlativo, clienteNombre, motivo: "vencida", dias });
-      continue;
-    }
+    // Pedido de Oldemar (WhatsApp, 02/09/26): sin `validoHasta` declarado
+    // (servicios ya prestados, sin nada que vencer hacia el futuro) este
+    // documento no entra en el aviso de vencido/por-vencer — sigue pudiendo
+    // aparecer más abajo por "sin respuesta", que es independiente.
+    if (doc.validoHasta) {
+      const vencimiento = doc.validoHasta;
 
-    const diasParaVencer = Math.ceil((vencimiento.getTime() - hoy.getTime()) / UN_DIA_MS);
-    if (diasParaVencer >= 0 && diasParaVencer <= 3) {
-      itemsAtencion.push({
-        id: doc.id,
-        correlativo: doc.correlativo,
-        clienteNombre,
-        motivo: "por_vencer",
-        dias: diasParaVencer,
-      });
-      continue;
+      if (doc.estado === "VENCIDA") {
+        const dias = Math.max(0, Math.floor((hoy.getTime() - vencimiento.getTime()) / UN_DIA_MS));
+        itemsAtencion.push({ id: doc.id, correlativo: doc.correlativo, clienteNombre, motivo: "vencida", dias });
+        continue;
+      }
+
+      const diasParaVencer = Math.ceil((vencimiento.getTime() - hoy.getTime()) / UN_DIA_MS);
+      if (diasParaVencer >= 0 && diasParaVencer <= 3) {
+        itemsAtencion.push({
+          id: doc.id,
+          correlativo: doc.correlativo,
+          clienteNombre,
+          motivo: "por_vencer",
+          dias: diasParaVencer,
+        });
+        continue;
+      }
     }
 
     const ultimoCambio = doc.historial[0]?.fecha ?? doc.createdAt;

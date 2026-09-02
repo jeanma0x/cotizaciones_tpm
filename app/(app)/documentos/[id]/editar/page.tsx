@@ -23,7 +23,7 @@ export default async function EditarDocumentoPage({
       clienteId: true,
       proyectoId: true,
       fecha: true,
-      vigenciaDias: true,
+      validoHasta: true,
       condicionesPago: true,
       descripcionGeneral: true,
       descuento: true,
