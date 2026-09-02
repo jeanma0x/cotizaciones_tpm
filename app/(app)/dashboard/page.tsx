@@ -21,6 +21,7 @@ import { ServiciosRankingChart } from "@/components/app/servicios-ranking-chart"
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { TendenciaMensualChart } from "@/components/app/tendencia-mensual-chart";
+import { UtilidadNetaInfoDialog } from "@/components/app/utilidad-neta-info-dialog";
 import { UtilidadProyectoFiltros } from "@/components/app/utilidad-proyecto-filtros";
 import { UtilidadProyectoChart } from "@/components/app/utilidad-proyecto-chart";
 import { UtilidadProyectoTable } from "@/components/app/utilidad-proyecto-table";
@@ -650,6 +651,7 @@ export default async function DashboardPage({
         />
         <StatCard
           label="Utilidad neta (mes)"
+          labelExtra={<UtilidadNetaInfoDialog isrEntradas={isrEntradas} ivaEntradas={ivaEntradas} />}
           icon={<PiggyBankIcon className="h-4.5 w-4.5" />}
           tono={utilidadNetaNegativa ? "danger" : "success"}
           size="hero"

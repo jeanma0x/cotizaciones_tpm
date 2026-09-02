@@ -69,6 +69,17 @@ test("Panel: la Utilidad neta muestra el desglose de ISR e IVA estimados (pedido
   await expect(page.getByText("12%, escenario pesimista", { exact: false })).toBeVisible();
 });
 
+test("Panel: el ícono de información junto a Utilidad neta abre el detalle de ISR/IVA (pedido de Oldemar, 02/09/26)", async ({
+  page,
+}) => {
+  await page.goto("/dashboard");
+  await page.waitForTimeout(300);
+  await page.getByLabel("Cómo se calcula Utilidad neta").click();
+  await expect(page.getByText("Cómo se calcula Utilidad neta", { exact: true })).toBeVisible();
+  await expect(page.getByText("régimen opcional simplificado", { exact: false }).last()).toBeVisible();
+  await expect(page.getByText("escenario pesimista", { exact: false }).last()).toBeVisible();
+});
+
 test("Reportes: el resumen ejecutivo menciona el IVA estimado", async ({ page }) => {
   await page.goto("/reportes");
   await page.waitForTimeout(300);

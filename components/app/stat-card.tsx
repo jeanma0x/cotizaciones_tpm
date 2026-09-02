@@ -15,6 +15,7 @@ const TONOS: Record<Tono, { bg: string; fg: string; linea: string }> = {
 
 export function StatCard({
   label,
+  labelExtra,
   value,
   icon,
   tono = "brand",
@@ -22,6 +23,11 @@ export function StatCard({
   size = "default",
 }: {
   label: string;
+  // Nodo ya renderizado, junto al label (ej. un ícono "i" que abre un
+  // diálogo con el detalle de cómo se calcula la cifra) — mismo criterio
+  // que `icon`: nunca una referencia a componente cruzando el límite
+  // Server/Client.
+  labelExtra?: React.ReactNode;
   value: React.ReactNode;
   // Nodo ya renderizado (ej. <WalletIcon className="h-4.5 w-4.5" />), NUNCA
   // una referencia a componente — este componente es "use client" y se usa
@@ -52,7 +58,10 @@ export function StatCard({
               {icon}
             </span>
           )}
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+          <p className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+            {label}
+            {labelExtra}
+          </p>
         </div>
 
         <div className="flex items-end justify-between gap-3">
