@@ -64,6 +64,11 @@ test("Activos: tipo Otro exige el detalle específico, y se muestra como 'Otro: 
   await page.getByLabel("Tipo").click();
   await page.getByRole("option", { name: "Otro", exact: true }).click();
   await expect(page.getByLabel("¿A qué tipo corresponde?")).toBeVisible();
+  // "Otro" no siempre es un vehículo (ej. maquinaria de soldar) — Placa/
+  // Marca/Modelo no aplican y no deben pedirse para no complicar el registro.
+  await expect(page.getByLabel("Placa")).toHaveCount(0);
+  await expect(page.getByLabel("Marca")).toHaveCount(0);
+  await expect(page.getByLabel("Modelo")).toHaveCount(0);
 
   await expect(page.getByText(`Otro: ${DETALLE_OTRO}`)).toBeVisible();
 });

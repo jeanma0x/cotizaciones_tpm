@@ -147,7 +147,18 @@ export function ActivoFormDialog({
             <Select
               items={TIPO_ACTIVO_LABELS}
               value={tipo}
-              onValueChange={(v) => setValue("tipo", v as ActivoInput["tipo"])}
+              onValueChange={(v) => {
+                setValue("tipo", v as ActivoInput["tipo"]);
+                // Placa/Marca/Modelo solo tienen sentido para los tipos que
+                // son vehículos — "Otro" es el único que no lo es
+                // necesariamente (ej. maquinaria de soldar), así que se
+                // limpian para no arrastrar un valor que ya no aplica.
+                if (v === "OTRO") {
+                  setValue("placa", "");
+                  setValue("marca", "");
+                  setValue("modelo", "");
+                }
+              }}
             >
               <SelectTrigger id="tipo" className="w-full">
                 <SelectValue />
@@ -180,25 +191,27 @@ export function ActivoFormDialog({
             </div>
           )}
 
-          <div className="flex gap-3">
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="placa">Placa</Label>
-              <Input id="placa" {...register("placa")} />
-              {!parecePlacaValida(watch("placa") ?? "") && (
-                <p className="text-xs text-muted-foreground">
-                  Se ve distinta a una placa usual — revisala si no es a propósito.
-                </p>
-              )}
+          {tipo !== "OTRO" && (
+            <div className="flex gap-3">
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Label htmlFor="placa">Placa</Label>
+                <Input id="placa" {...register("placa")} />
+                {!parecePlacaValida(watch("placa") ?? "") && (
+                  <p className="text-xs text-muted-foreground">
+                    Se ve distinta a una placa usual — revisala si no es a propósito.
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Label htmlFor="marca">Marca</Label>
+                <Input id="marca" {...register("marca")} />
+              </div>
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Label htmlFor="modelo">Modelo</Label>
+                <Input id="modelo" {...register("modelo")} />
+              </div>
             </div>
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="marca">Marca</Label>
-              <Input id="marca" {...register("marca")} />
-            </div>
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="modelo">Modelo</Label>
-              <Input id="modelo" {...register("modelo")} />
-            </div>
-          </div>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="descripcion">Descripción (opcional)</Label>
