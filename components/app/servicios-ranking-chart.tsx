@@ -10,8 +10,10 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
+import { crearTickTruncado } from "@/components/app/chart-tick-truncado";
 
 const config = { cantidad: { label: "Veces cotizado" } } satisfies ChartConfig;
+const TickNombre = crearTickTruncado(20);
 
 export function ServiciosRankingChart({
   data,
@@ -54,7 +56,7 @@ export function ServiciosRankingChart({
           tickLine={false}
           axisLine={false}
           width={140}
-          tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
+          tick={TickNombre}
         />
         <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="nombre" />} />
         <Bar

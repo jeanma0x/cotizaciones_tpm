@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/chart";
 import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
 import { formatearCompacto } from "@/lib/formato-numero";
+import { crearTickTruncado } from "@/components/app/chart-tick-truncado";
 
 const config = { facturado: { label: "Facturado" } } satisfies ChartConfig;
+const TickNombre = crearTickTruncado(13);
 const TONOS = ["var(--navy-300)", "var(--navy-500)", "var(--navy-700)", "var(--navy-900)"];
 
 // Pedido de Oldemar: una gráfica por cliente/proyecto "similar a Costos por
@@ -64,7 +66,7 @@ export function UtilidadProyectoChart({
           tickLine={false}
           axisLine={false}
           width={96}
-          tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
+          tick={TickNombre}
         />
         <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="label" />} />
         <Bar

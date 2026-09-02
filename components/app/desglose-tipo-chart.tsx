@@ -10,8 +10,10 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
+import { crearTickTruncado } from "@/components/app/chart-tick-truncado";
 
 const config = { cantidad: { label: "Documentos" } } satisfies ChartConfig;
+const TickCategoria = crearTickTruncado(13);
 const TONOS = ["var(--navy-300)", "var(--navy-500)", "var(--navy-700)"];
 
 export function DesgloseTipoChart({
@@ -52,7 +54,7 @@ export function DesgloseTipoChart({
           tickLine={false}
           axisLine={false}
           width={96}
-          tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
+          tick={TickCategoria}
         />
         <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="label" />} />
         <Bar

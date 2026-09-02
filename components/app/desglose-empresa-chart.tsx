@@ -10,6 +10,9 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
+import { crearTickTruncado } from "@/components/app/chart-tick-truncado";
+
+const TickNombre = crearTickTruncado(19);
 
 // Barra horizontal por empresa (cantidad de documentos — currency-agnóstico,
 // nunca mezclar montos de distintas monedas en el mismo eje). Igual criterio
@@ -60,7 +63,7 @@ export function DesgloseEmpresaChart({
           tickLine={false}
           axisLine={false}
           width={132}
-          tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
+          tick={TickNombre}
         />
         <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="nombre" />} />
         <Bar

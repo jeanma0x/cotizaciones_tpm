@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/chart";
 import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
 import { formatearCompacto } from "@/lib/formato-numero";
+import { crearTickTruncado } from "@/components/app/chart-tick-truncado";
 
 const config = { monto: { label: "Monto" } } satisfies ChartConfig;
+const TickCategoria = crearTickTruncado(13);
 const TONOS = ["var(--navy-300)", "var(--navy-500)", "var(--navy-700)", "var(--navy-900)"];
 
 export function CostosCategoriaChart({
@@ -57,7 +59,7 @@ export function CostosCategoriaChart({
           tickLine={false}
           axisLine={false}
           width={96}
-          tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
+          tick={TickCategoria}
         />
         <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="label" />} />
         <Bar
