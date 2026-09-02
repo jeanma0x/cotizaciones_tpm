@@ -486,6 +486,15 @@ model Documento {
   firmante           Usuario?        @relation("DocumentoFirmante", fields: [firmanteUsuarioId], references: [id], onDelete: SetNull)
   nombreResponsable  String?
   fechaAceptacion    DateTime?
+  // Alternativa al "soft delete" original que se descartó (liberar/reusar
+  // el correlativo choca con "nunca se pierde el historial", ver
+  // CLAUDE.md) — anulado es ortogonal a `estado`: aplica en cualquier
+  // estado (incluida FACTURADA, para cancelaciones reales de una factura ya
+  // cobrada), nunca borra la fila ni libera el correlativo, y solo saca al
+  // documento de los totales de dinero (panel/reportes/exportaciones). El
+  // documento sigue visible en el listado con un badge, siempre.
+  anulado            Boolean         @default(false)
+  motivoAnulacion    String?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 

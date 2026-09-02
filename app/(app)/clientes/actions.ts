@@ -160,7 +160,11 @@ export async function contarDependientesCliente(clienteId: string) {
 
   const [documentosActivos, proyectosActivos] = await Promise.all([
     db.documento.count({
-      where: { clienteId, estado: { notIn: ["FACTURADA", "RECHAZADA", "VENCIDA"] } },
+      where: {
+        clienteId,
+        estado: { notIn: ["FACTURADA", "RECHAZADA", "VENCIDA"] },
+        anulado: false,
+      },
     }),
     db.proyecto.count({ where: { clienteId, activo: true } }),
   ]);

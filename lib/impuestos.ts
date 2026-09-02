@@ -12,13 +12,6 @@
 // y Servicios Generales TPM): Panamá y Estados Unidos tributan bajo sus
 // propias leyes, no la guatemalteca, y no se les aplica este descuento.
 //
-// IVA NO se descuenta acá a propósito: es un impuesto de traslado (se
-// cobra al cliente y se acredita contra el IVA pagado en compras), no un
-// costo del negocio — reducir "Facturado" por el 12% de IVA solo sería
-// correcto si supiéramos cuánto IVA se pagó en compras (crédito fiscal),
-// que este sistema no registra. Restarlo sin eso sobreestimaría el
-// impuesto real y subestimaría la utilidad.
-//
 // Extraído de app/(app)/dashboard/page.tsx para reusarlo también en los
 // reportes financieros — antes solo vivía inline ahí, con riesgo de que
 // una futura corrección de tasa se aplicara en un solo lugar y no en el
@@ -35,4 +28,22 @@ export function calcularIsrSimplificado(ingresoMensual: number) {
     ISR_LIMITE_TRAMO_1 * ISR_TASA_TRAMO_1 +
     (ingresoMensual - ISR_LIMITE_TRAMO_1) * ISR_TASA_TRAMO_2
   );
+}
+
+// IVA — pedido explícito de Oldemar (audio, 02/09/26), y un cambio
+// deliberado de criterio respecto a la versión anterior de este archivo
+// (que a propósito NO restaba IVA, por ser un impuesto de traslado con
+// crédito fiscal real). Oldemar conoce ese matiz — sabe que el IVA pagado
+// en compras se acredita contra el IVA cobrado, y que este sistema no
+// rastrea ese crédito fiscal — y aun así prefiere tratar el 12% como un
+// costo fijo en un escenario PESIMISTA: así, cualquier crédito fiscal real
+// que termine aplicando se ve reflejado como una ganancia extra sobre lo ya
+// mostrado, nunca como una utilidad que resultó ser menor de lo esperado.
+// Mismo criterio de gate por país que ISR (solo Guatemala) y misma base
+// (facturado del mes) — plano, sin tramos.
+export const IVA_TASA_GUATEMALA = 0.12;
+
+export function calcularIvaPesimista(ingresoMensual: number) {
+  if (ingresoMensual <= 0) return 0;
+  return ingresoMensual * IVA_TASA_GUATEMALA;
 }

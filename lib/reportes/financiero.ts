@@ -1,5 +1,9 @@
 import { db } from "@/lib/db";
-import { GUATEMALA_CODIGO_PAIS, calcularIsrSimplificado } from "@/lib/isr";
+import {
+  GUATEMALA_CODIGO_PAIS,
+  calcularIsrSimplificado,
+  calcularIvaPesimista,
+} from "@/lib/impuestos";
 
 export type FilaReporteFinanciero = {
   empresaId: string;
@@ -11,6 +15,7 @@ export type FilaReporteFinanciero = {
   facturado: number;
   costos: number;
   isr: number;
+  iva: number;
   utilidadNeta: number;
 };
 
@@ -49,6 +54,7 @@ export async function obtenerReporteFinanciero({
         fecha: { gte: desde, lte: hasta },
         tipo: { not: "FACTURA" },
         estado: { not: "RECHAZADA" },
+        anulado: false,
       },
       select: { empresaId: true, fecha: true, total: true },
     }),
@@ -57,7 +63,12 @@ export async function obtenerReporteFinanciero({
     // facturado real. Mismo criterio que "Facturado (histórico)" y
     // "Utilidad neta (mes)" del panel.
     db.documento.findMany({
-      where: { empresaId: { in: empresaIds }, fecha: { gte: desde, lte: hasta }, estado: "FACTURADA" },
+      where: {
+        empresaId: { in: empresaIds },
+        fecha: { gte: desde, lte: hasta },
+        estado: "FACTURADA",
+        anulado: false,
+      },
       select: { empresaId: true, fecha: true, total: true },
     }),
     db.costoOperativo.findMany({
@@ -85,6 +96,7 @@ export async function obtenerReporteFinanciero({
         facturado: 0,
         costos: 0,
         isr: 0,
+        iva: 0,
         utilidadNeta: 0,
       };
       filaPorEmpresaYMes.set(llave, fila);
@@ -109,8 +121,9 @@ export async function obtenerReporteFinanciero({
     const empresa = empresas.find((e) => e.id === fila.empresaId)!;
     if (empresa.codigoPais === GUATEMALA_CODIGO_PAIS) {
       fila.isr = calcularIsrSimplificado(fila.facturado);
+      fila.iva = calcularIvaPesimista(fila.facturado);
     }
-    fila.utilidadNeta = fila.facturado - fila.costos - fila.isr;
+    fila.utilidadNeta = fila.facturado - fila.costos - fila.isr - fila.iva;
   }
 
   return Array.from(filaPorEmpresaYMes.values()).sort((a, b) => {

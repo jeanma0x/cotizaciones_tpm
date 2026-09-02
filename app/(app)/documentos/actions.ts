@@ -237,6 +237,78 @@ export async function cambiarEstadoDocumento(
   revalidatePath("/documentos");
 }
 
+// Alternativa al "soft delete" descartado (ver comentario en schema.prisma):
+// ortogonal a `estado` — aplica en cualquier estado, incluida FACTURADA
+// (una factura ya cobrada que se cancela de verdad es exactamente el caso
+// real que esto resuelve). Nunca borra la fila ni libera el correlativo,
+// solo saca al documento de los totales de dinero (ver el filtro
+// `anulado: false` repetido en dashboard/page.tsx y lib/reportes/*.ts).
+export async function anularDocumento(id: string, motivo: string) {
+  const motivoLimpio = motivo.trim();
+  if (!motivoLimpio) {
+    throw new Error("Escribí el motivo de la anulación");
+  }
+
+  const existente = await db.documento.findUnique({ where: { id } });
+  if (!existente) throw new Error("Documento no encontrado");
+  await assertAccesoEmpresa(existente.empresaId);
+  if (existente.anulado) {
+    throw new Error("Este documento ya está anulado");
+  }
+
+  const usuarioActual = await getUsuarioActual();
+
+  await db.$transaction([
+    db.documento.update({
+      where: { id },
+      data: { anulado: true, motivoAnulacion: motivoLimpio },
+    }),
+    db.historialEstado.create({
+      data: {
+        documentoId: id,
+        estado: existente.estado,
+        nota: `Documento anulado por ${usuarioActual?.nombre ?? "un usuario"}: ${motivoLimpio}`,
+      },
+    }),
+  ]);
+
+  revalidatePath("/documentos");
+  revalidatePath(`/documentos/${id}`);
+  revalidatePath("/dashboard");
+}
+
+// Dirección segura (deshace un "Anular" anterior) — sin confirmación doble,
+// mismo criterio que "Activar" en los toggles de Cliente/Servicio/Costo/
+// Activo.
+export async function reactivarDocumento(id: string) {
+  const existente = await db.documento.findUnique({ where: { id } });
+  if (!existente) throw new Error("Documento no encontrado");
+  await assertAccesoEmpresa(existente.empresaId);
+  if (!existente.anulado) {
+    throw new Error("Este documento no está anulado");
+  }
+
+  const usuarioActual = await getUsuarioActual();
+
+  await db.$transaction([
+    db.documento.update({
+      where: { id },
+      data: { anulado: false, motivoAnulacion: null },
+    }),
+    db.historialEstado.create({
+      data: {
+        documentoId: id,
+        estado: existente.estado,
+        nota: `Documento reactivado por ${usuarioActual?.nombre ?? "un usuario"}`,
+      },
+    }),
+  ]);
+
+  revalidatePath("/documentos");
+  revalidatePath(`/documentos/${id}`);
+  revalidatePath("/dashboard");
+}
+
 export async function duplicarDocumento(id: string) {
   const original = await db.documento.findUnique({
     where: { id },

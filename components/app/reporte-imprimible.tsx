@@ -86,6 +86,13 @@ export function ReporteImprimible({
             ))}
           </div>
         )}
+        {totalesPorMoneda.size > 0 && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Utilidad neta incluye ISR estimado (régimen opcional simplificado, 5%/7%
+            sobre ingresos) e IVA estimado (12%, escenario pesimista) — solo empresas de
+            Guatemala. Excluye documentos anulados.
+          </p>
+        )}
       </section>
 
       <section className="mb-8">

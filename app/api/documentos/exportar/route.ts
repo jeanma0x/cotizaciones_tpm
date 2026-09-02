@@ -62,6 +62,10 @@ export async function GET(request: NextRequest) {
     where: {
       empresaId: { in: empresasPermitidas },
       fecha: { gte: desde, lte: hasta },
+      // Mismo criterio que el export de Costos: un documento anulado (ver
+      // comentario en schema.prisma) no debería colarse en un export
+      // contable, que existe justo para conciliar contra Digifact.
+      anulado: false,
     },
     include: { empresa: true, cliente: true },
     orderBy: [{ empresa: { nombre: "asc" } }, { fecha: "asc" }, { correlativo: "asc" }],

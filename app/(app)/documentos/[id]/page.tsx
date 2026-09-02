@@ -1,6 +1,7 @@
-import { PencilIcon } from "lucide-react";
+import { BanIcon, PencilIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AnularDocumentoDialog } from "@/components/app/anular-documento-dialog";
 import { ConvertirAFacturaButton } from "@/components/app/convertir-a-factura-button";
 import { DocumentoEstadoForm } from "@/components/app/documento-estado-form";
 import { DocumentoImprimirDialog } from "@/components/app/documento-imprimir-dialog";
@@ -74,8 +75,25 @@ export default async function DocumentoDetallePage({
               correlativo={documento.correlativo}
             />
           )}
+          <AnularDocumentoDialog
+            id={documento.id}
+            correlativo={documento.correlativo}
+            anulado={documento.anulado}
+          />
         </div>
       </div>
+
+      {documento.anulado && documento.motivoAnulacion && (
+        <div className="-mt-4 flex items-center gap-3 rounded-xl border border-danger/30 bg-danger-bg p-4 shadow-sm">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger/15">
+            <BanIcon className="h-4.5 w-4.5 text-danger" />
+          </span>
+          <p className="text-xs text-danger">
+            <span className="font-semibold">Documento anulado.</span>{" "}
+            {documento.motivoAnulacion}
+          </p>
+        </div>
+      )}
 
       <div className="rounded border border-border bg-card p-4">
         <DocumentoResumen
@@ -91,6 +109,7 @@ export default async function DocumentoDetallePage({
             moneda: documento.empresa.moneda,
             total: Number(documento.total),
             estado: documento.estado,
+            anulado: documento.anulado,
           }}
         />
       </div>

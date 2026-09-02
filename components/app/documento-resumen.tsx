@@ -1,3 +1,4 @@
+import { BanIcon } from "lucide-react";
 import { EstadoBadge } from "@/components/app/estado-badge";
 import { formatearMonto } from "@/lib/formato-numero";
 
@@ -17,6 +18,9 @@ export type DocumentoResumenData = {
   moneda: string;
   total: number;
   estado: string;
+  // Ortogonal a `estado` (ver comentario en schema.prisma) — opcional
+  // porque documento-vista-rapida-sheet.tsx todavía no lo pasa.
+  anulado?: boolean;
 };
 
 export function DocumentoResumen({ data }: { data: DocumentoResumenData }) {
@@ -26,6 +30,12 @@ export function DocumentoResumen({ data }: { data: DocumentoResumenData }) {
         <span className="correlativo-tag">TPM-{data.correlativo}</span>
         <span className="font-semibold text-text-primary">{data.tipoLabel}</span>
         <EstadoBadge estado={data.estado} />
+        {data.anulado && (
+          <span className="inline-flex items-center gap-1 rounded bg-danger-bg px-2 py-0.5 text-xs font-medium text-danger">
+            <BanIcon className="h-3 w-3" />
+            Anulada
+          </span>
+        )}
       </div>
       <div className="doc-resumen-grid">
         <div>

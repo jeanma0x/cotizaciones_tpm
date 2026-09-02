@@ -29,7 +29,11 @@ import { getEmpresasPermitidas } from "@/lib/auth";
 import { getUsuarioActual } from "@/lib/current-usuario";
 import { db } from "@/lib/db";
 import { formatearMonto } from "@/lib/formato-numero";
-import { GUATEMALA_CODIGO_PAIS, calcularIsrSimplificado } from "@/lib/isr";
+import {
+  GUATEMALA_CODIGO_PAIS,
+  calcularIsrSimplificado,
+  calcularIvaPesimista,
+} from "@/lib/impuestos";
 import { getEmpresaActivaId } from "@/lib/empresa-activa";
 import { CATEGORIA_COSTO_LABELS } from "@/lib/validations/costo";
 
@@ -137,73 +141,90 @@ export default async function DashboardPage({
     proyectosFiltrados,
   ] = await Promise.all([
     db.documento.findMany({
-      where: { ...where, estado: { in: ["ENVIADA", "EN_NEGOCIACION"] } },
+      where: { ...where, anulado: false, estado: { in: ["ENVIADA", "EN_NEGOCIACION"] } },
       select: { id: true, total: true, empresa: { select: { moneda: true } } },
     }),
     // notIn RECHAZADA, no solo "not BORRADOR": una rechazada no debería
     // seguir inflando el denominador de la tasa de conversión — es
     // justamente el número que Oldemar pidió que dejara de reflejar
     // negocios que no van a cerrar (ronda de reunión con cliente, 14/08).
+    // anulado: false — mismo criterio, un documento anulado tampoco es un
+    // negocio real que haya cerrado (ver comentario en schema.prisma).
     db.documento.groupBy({
       by: ["estado"],
-      where: { ...where, estado: { notIn: ["BORRADOR", "RECHAZADA"] } },
+      where: { ...where, anulado: false, estado: { notIn: ["BORRADOR", "RECHAZADA"] } },
       _count: true,
     }),
     db.documento.findMany({
-      where: { ...where, estado: { in: ["VENCIDA", "ENVIADA", "EN_NEGOCIACION"] } },
+      where: {
+        ...where,
+        anulado: false,
+        estado: { in: ["VENCIDA", "ENVIADA", "EN_NEGOCIACION"] },
+      },
       include: {
         cliente: true,
         historial: { orderBy: { fecha: "desc" }, take: 1 },
       },
     }),
     // Sin esto, "Desglose por empresa → N documentos" contaba también las
-    // rechazadas en el total.
+    // rechazadas (y ahora, las anuladas) en el total.
     db.documento.groupBy({
       by: ["empresaId", "estado"],
-      where: { ...where, estado: { not: "RECHAZADA" } },
+      where: { ...where, anulado: false, estado: { not: "RECHAZADA" } },
       _count: true,
       _sum: { total: true },
     }),
-    // Sin esto, "Desglose por tipo" contaba rechazadas en cada categoría.
+    // Sin esto, "Desglose por tipo" contaba rechazadas (y anuladas) en cada
+    // categoría.
     db.documento.groupBy({
       by: ["tipo"],
-      where: { ...where, estado: { not: "RECHAZADA" } },
+      where: { ...where, anulado: false, estado: { not: "RECHAZADA" } },
       _count: true,
     }),
     db.documento.groupBy({
       by: ["estado"],
-      where,
+      where: { ...where, anulado: false },
       _count: true,
     }),
     db.empresa.findMany({
       where: { id: { in: empresasPermitidas } },
       orderBy: { nombre: "asc" },
     }),
+    // Sin filtro de anulado a propósito — "Documentos recientes" es un
+    // listado informativo, no un total de dinero, y un documento anulado no
+    // debería desaparecer de la vista general (ver comentario en
+    // schema.prisma: nunca se oculta de la trazabilidad).
     db.documento.findMany({
       where,
       include: { cliente: true, empresa: true },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
-    // Sin esto, el monto de una rechazada seguía sumándose al gráfico de
-    // tendencia (como "cotizado" o "facturado" según su tipo).
+    // Sin esto, el monto de una rechazada (o anulada) seguía sumándose al
+    // gráfico de tendencia (como "cotizado" o "facturado" según su tipo).
     db.documento.findMany({
-      where: { ...where, fecha: { gte: hace12Meses }, estado: { not: "RECHAZADA" } },
+      where: { ...where, anulado: false, fecha: { gte: hace12Meses }, estado: { not: "RECHAZADA" } },
       select: { fecha: true, tipo: true, total: true, empresa: { select: { moneda: true } } },
     }),
-    // Sin esto, los ítems de una rechazada seguían inflando el ranking de
-    // "Servicios más cotizados".
+    // Sin esto, los ítems de una rechazada (o anulada) seguían inflando el
+    // ranking de "Servicios más cotizados".
     db.itemDocumento.findMany({
       where: {
-        documento: { empresaId: { in: empresasPermitidas }, estado: { not: "RECHAZADA" } },
+        documento: {
+          empresaId: { in: empresasPermitidas },
+          anulado: false,
+          estado: { not: "RECHAZADA" },
+        },
       },
       select: { descripcion: true, cantidad: true, precioUnitario: true },
     }),
     db.servicio.findMany({ where: { empresaId: { in: empresasPermitidas } } }),
     // "Facturado del mes" para Utilidad neta: por fecha del documento, no por
     // cuándo se marcó FACTURADA (no existe ese timestamp en el modelo).
+    // anulado: false — una factura anulada (cancelación real de un cobro ya
+    // hecho) no debe seguir sumando a la utilidad del mes.
     db.documento.findMany({
-      where: { ...where, estado: "FACTURADA", fecha: { gte: inicioMes } },
+      where: { ...where, anulado: false, estado: "FACTURADA", fecha: { gte: inicioMes } },
       select: {
         total: true,
         empresaId: true,
@@ -264,6 +285,7 @@ export default async function DashboardPage({
             where: {
               proyectoId: { in: proyectoIdsFiltrados },
               estado: "FACTURADA",
+              anulado: false,
               ...(rangoFechaUtilidad ? { fecha: rangoFechaUtilidad } : {}),
             },
             _sum: { total: true },
@@ -525,9 +547,9 @@ export default async function DashboardPage({
           ?.data.map((d) => d.facturado)
       : undefined;
 
-  // ---- Utilidad neta (mes): Facturado del mes − Costos del mes − ISR, por moneda.
-  // Fórmula y régimen documentados en lib/isr.ts (reusado también por los
-  // reportes financieros).
+  // ---- Utilidad neta (mes): Facturado del mes − Costos del mes − ISR − IVA,
+  // por moneda. Fórmula y régimen documentados en lib/impuestos.ts (reusado
+  // también por los reportes financieros).
   const facturadoPorEmpresaDelMes = new Map<
     string,
     { moneda: string; esGuatemala: boolean; total: number }
@@ -544,12 +566,17 @@ export default async function DashboardPage({
 
   const utilidadNetaPorMoneda: Record<string, number> = {};
   const isrPorMoneda: Record<string, number> = {};
+  const ivaPorMoneda: Record<string, number> = {};
   for (const { moneda, esGuatemala, total } of facturadoPorEmpresaDelMes.values()) {
     utilidadNetaPorMoneda[moneda] = (utilidadNetaPorMoneda[moneda] ?? 0) + total;
     if (esGuatemala) {
       const isr = calcularIsrSimplificado(total);
       isrPorMoneda[moneda] = (isrPorMoneda[moneda] ?? 0) + isr;
       utilidadNetaPorMoneda[moneda] -= isr;
+
+      const iva = calcularIvaPesimista(total);
+      ivaPorMoneda[moneda] = (ivaPorMoneda[moneda] ?? 0) + iva;
+      utilidadNetaPorMoneda[moneda] -= iva;
     }
   }
   // Costos por categoría — misma agrupación por moneda que el resto del
@@ -582,6 +609,7 @@ export default async function DashboardPage({
   const utilidadNetaEntradas = Object.entries(utilidadNetaPorMoneda);
   const utilidadNetaNegativa = utilidadNetaEntradas.some(([, monto]) => monto < 0);
   const isrEntradas = Object.entries(isrPorMoneda).filter(([, monto]) => monto > 0);
+  const ivaEntradas = Object.entries(ivaPorMoneda).filter(([, monto]) => monto > 0);
 
   return (
     <div className="flex flex-col gap-8">
@@ -663,23 +691,38 @@ export default async function DashboardPage({
         />
       </div>
 
-      {/* Transparencia del descuento de ISR en "Utilidad neta" — nunca un
+      {/* Transparencia del descuento de ISR/IVA en "Utilidad neta" — nunca un
           cálculo invisible. Solo aparece cuando hay algo que mostrar (mes
           sin facturación de empresas de Guatemala = sin línea). Mismo
           patrón visual que "Todo al día" (icono en círculo + tarjeta), pero
-          en tono neutro: esto es información, no un estado positivo. */}
-      {isrEntradas.length > 0 && (
+          en tono neutro: esto es información, no un estado positivo. IVA:
+          escenario pesimista a propósito (ver lib/impuestos.ts) — Oldemar
+          pidió tratarlo como costo fijo aunque haya crédito fiscal real. */}
+      {(isrEntradas.length > 0 || ivaEntradas.length > 0) && (
         <div className="-mt-4 flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-4 shadow-sm">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
             <InfoIcon className="h-4.5 w-4.5 text-muted-foreground" />
           </span>
-          <p className="text-xs text-muted-foreground">
-            Incluye ISR estimado (régimen opcional simplificado, 5%/7% sobre
-            ingresos, solo empresas de Guatemala):{" "}
-            <span className="font-mono font-medium text-text-primary">
-              {isrEntradas.map(([moneda, monto]) => `${moneda} ${formatearMonto(monto)}`).join(" · ")}
-            </span>
-          </p>
+          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+            {isrEntradas.length > 0 && (
+              <p>
+                Incluye ISR estimado (régimen opcional simplificado, 5%/7% sobre
+                ingresos, solo empresas de Guatemala):{" "}
+                <span className="font-mono font-medium text-text-primary">
+                  {isrEntradas.map(([moneda, monto]) => `${moneda} ${formatearMonto(monto)}`).join(" · ")}
+                </span>
+              </p>
+            )}
+            {ivaEntradas.length > 0 && (
+              <p>
+                Incluye IVA estimado (12%, escenario pesimista, solo empresas de
+                Guatemala):{" "}
+                <span className="font-mono font-medium text-text-primary">
+                  {ivaEntradas.map(([moneda, monto]) => `${moneda} ${formatearMonto(monto)}`).join(" · ")}
+                </span>
+              </p>
+            )}
+          </div>
         </div>
       )}
 

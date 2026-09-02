@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertTriangleIcon } from "lucide-react";
+import { AlertTriangleIcon, BanIcon } from "lucide-react";
 import Link from "next/link";
 import { DataTable } from "@/components/app/data-table";
 import { DocumentoVistaRapidaSheet } from "@/components/app/documento-vista-rapida-sheet";
@@ -23,6 +23,7 @@ export type FilaDocumento = {
   clienteNombre: string;
   total: number;
   estado: string;
+  anulado: boolean;
   diasSinRespuesta: number | null;
   fecha: string;
   vigenciaDias: number | null;
@@ -61,6 +62,12 @@ const columns: ColumnDef<FilaDocumento, unknown>[] = [
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <EstadoBadge estado={row.original.estado} />
+        {row.original.anulado && (
+          <span className="inline-flex items-center gap-1 rounded bg-danger-bg px-2 py-0.5 text-xs font-medium text-danger">
+            <BanIcon className="h-3 w-3" />
+            Anulada
+          </span>
+        )}
         {row.original.diasSinRespuesta !== null && (
           <span className="flex items-center gap-1 text-xs font-medium text-danger">
             <AlertTriangleIcon className="h-3 w-3" />
@@ -89,6 +96,7 @@ const columns: ColumnDef<FilaDocumento, unknown>[] = [
             moneda: row.original.empresaMoneda,
             total: row.original.total,
             estado: row.original.estado,
+            anulado: row.original.anulado,
           }}
         />
       </div>

@@ -54,7 +54,12 @@ export async function obtenerReporteClientes({
       proyectoIds.length > 0
         ? db.documento.groupBy({
             by: ["proyectoId"],
-            where: { proyectoId: { in: proyectoIds }, estado: "FACTURADA", ...(rangoFecha ? { fecha: rangoFecha } : {}) },
+            where: {
+              proyectoId: { in: proyectoIds },
+              estado: "FACTURADA",
+              anulado: false,
+              ...(rangoFecha ? { fecha: rangoFecha } : {}),
+            },
             _sum: { total: true },
           })
         : [],
@@ -79,6 +84,7 @@ export async function obtenerReporteClientes({
               clienteId: { in: clienteIds },
               proyectoId: null,
               estado: "FACTURADA",
+              anulado: false,
               ...(rangoFecha ? { fecha: rangoFecha } : {}),
             },
             _sum: { total: true },

@@ -86,6 +86,7 @@ export default async function DocumentosPage({
     clienteNombre: doc.cliente?.nombre ?? "—",
     total: Number(doc.total),
     estado: doc.estado,
+    anulado: doc.anulado,
     diasSinRespuesta: diasSinRespuesta(doc),
     fecha: doc.fecha.toISOString(),
     vigenciaDias: doc.vigenciaDias,

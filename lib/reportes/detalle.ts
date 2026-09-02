@@ -53,6 +53,7 @@ export async function obtenerDetalleReporte({
         empresaId: { in: empresaIds },
         fecha: { gte: desde, lte: hasta },
         estado: "FACTURADA",
+        anulado: false,
         ...(clienteId ? { clienteId } : {}),
         ...(proyectoId ? { proyectoId } : {}),
       },
