@@ -523,46 +523,48 @@ model HistorialEstado {
 }
 
 enum TipoActivo {
-  CAMION
-  MAQUINARIA_SOLDAR
-  EQUIPO_ARRASTRE
-  FURGON_O_PLATAFORMA
-  OTRO
-}
-
-enum CategoriaFurgon {
-  PORTACONTENEDOR_40
-  PORTACONTENEDOR_20
-  PLATAFORMA
-  CISTERNA
+  CABEZAL
   FURGON_SECO
   FURGON_REFRIGERADO
+  PLATAFORMA
   LOWBOY
+  CISTERNA
+  CAMION
+  CAMION_C3
+  CAMION_C2
+  PORTACONTENEDOR
+  // Pedido de Oldemar (feedback sobre el módulo ya entregado): igual que
+  // CostoOperativo.categoria = OTRO — un tipo que no encaja en la lista fija
+  // se registra acá con un detalle libre en tipoOtroDetalle, y se puede
+  // filtrar después como si fuera un tipo más.
+  OTRO
 }
 
 // Fase 3 — registro de camiones, maquinaria y equipo por empresa. `costo` es
 // lo que costó adquirirlo/traerlo (incluyendo traslado si vino del
 // extranjero); `valor` es su valor actual como activo ya operando en
 // Guatemala. `modelo` reemplaza el concepto de "año" — pedido explícito del
-// cliente. `categoria` solo aplica cuando tipo = FURGON_O_PLATAFORMA.
+// cliente.
 model Activo {
-  id          String           @id @default(cuid())
-  empresaId   String
-  empresa     Empresa          @relation(fields: [empresaId], references: [id])
-  tipo        TipoActivo
-  categoria   CategoriaFurgon?
-  placa       String?
-  modelo      String?
+  id              String     @id @default(cuid())
+  empresaId       String
+  empresa         Empresa    @relation(fields: [empresaId], references: [id])
+  tipo            TipoActivo
+  // Solo aplica (y se exige, ver refine en lib/validations/activo.ts) cuando
+  // tipo = OTRO — nunca se guarda si tipo es cualquier otro valor.
+  tipoOtroDetalle String?
+  placa           String?
+  modelo          String?
   // Pedido de Oldemar (feedback sobre el módulo ya entregado, no parte del
   // alcance original de Fase 3.5): marca del vehículo/equipo, y una
   // descripción libre — sin límite de longitud, mismo criterio de "nunca
   // truncar texto libre" que ya rige el resto del sistema.
-  marca       String?
-  descripcion String?          @db.Text
-  costo       Decimal          @db.Decimal(12, 2)
-  valor       Decimal          @db.Decimal(12, 2)
-  activo      Boolean          @default(true)
-  createdAt   DateTime         @default(now())
+  marca           String?
+  descripcion     String?    @db.Text
+  costo           Decimal    @db.Decimal(12, 2)
+  valor           Decimal    @db.Decimal(12, 2)
+  activo          Boolean    @default(true)
+  createdAt       DateTime   @default(now())
 
   auditoria ActivoAuditoria[]
 

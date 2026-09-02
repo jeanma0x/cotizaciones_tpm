@@ -4,9 +4,11 @@ import { cambiarEmpresaActiva } from "./helpers";
 
 // Verificación de regresión + criterio de salida de la Fase 3.5 (ver
 // docs/fase3-clientes-proyectos-costos-activos.md): "se puede registrar un
-// camión y un furgón con su categoría, costo, valor y modelo, y aparecen
+// camión y un furgón con su tipo, costo, valor y modelo, y aparecen
 // correctamente segmentados por empresa". Flujo real por UI, datos QA
-// efímeros limpiados al final.
+// efímeros limpiados al final. Tipo "furgón" ya no tiene una categoría
+// subordinada (se aplanó, ver pedido de Oldemar sobre tipos nuevos +
+// filtrable "Otro" en e2e/activos-tipos-oldemar.spec.ts).
 const SUFIJO = Date.now();
 const PLACA_CAMION = `QA-C-${SUFIJO}`;
 const MODELO_CAMION = `Modelo Camión ${SUFIJO}`;
@@ -50,8 +52,6 @@ test("registrar un camión y un furgón con categoría/costo/valor/modelo, segme
 
   await page.getByRole("button", { name: "Nuevo activo" }).click();
   await page.getByLabel("Tipo").click();
-  await page.getByRole("option", { name: "Furgón o plataforma" }).click();
-  await page.getByLabel("Categoría").click();
   await page.getByRole("option", { name: "Furgón refrigerado" }).click();
   await page.getByLabel("Placa").fill(PLACA_FURGON);
   await page.getByLabel("Modelo").fill(MODELO_FURGON);
@@ -61,7 +61,6 @@ test("registrar un camión y un furgón con categoría/costo/valor/modelo, segme
   await expect(page.getByText(PLACA_FURGON)).toBeVisible();
 
   const filaFurgon = page.getByRole("row").filter({ hasText: PLACA_FURGON });
-  await expect(filaFurgon).toContainText("Furgón o plataforma");
   await expect(filaFurgon).toContainText("Furgón refrigerado");
   await expect(filaFurgon).toContainText(MODELO_FURGON);
   await expect(filaFurgon).toContainText("280,000.00");

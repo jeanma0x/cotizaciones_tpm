@@ -31,7 +31,6 @@ import {
   type ActivoFormValues,
   type ActivoInput,
   activoSchema,
-  CATEGORIA_FURGON_LABELS,
   TIPO_ACTIVO_LABELS,
 } from "@/lib/validations/activo";
 
@@ -41,7 +40,7 @@ type Activo = {
   id: string;
   empresaId: string;
   tipo: keyof typeof TIPO_ACTIVO_LABELS;
-  categoria: keyof typeof CATEGORIA_FURGON_LABELS | null;
+  tipoOtroDetalle: string | null;
   placa: string | null;
   modelo: string | null;
   marca: string | null;
@@ -79,7 +78,7 @@ export function ActivoFormDialog({
     defaultValues: {
       empresaId: activo?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       tipo: activo?.tipo ?? "CAMION",
-      categoria: activo?.categoria ?? "",
+      tipoOtroDetalle: activo?.tipoOtroDetalle ?? "",
       placa: activo?.placa ?? "",
       modelo: activo?.modelo ?? "",
       marca: activo?.marca ?? "",
@@ -148,10 +147,7 @@ export function ActivoFormDialog({
             <Select
               items={TIPO_ACTIVO_LABELS}
               value={tipo}
-              onValueChange={(v) => {
-                setValue("tipo", v as ActivoInput["tipo"]);
-                if (v !== "FURGON_O_PLATAFORMA") setValue("categoria", "");
-              }}
+              onValueChange={(v) => setValue("tipo", v as ActivoInput["tipo"])}
             >
               <SelectTrigger id="tipo" className="w-full">
                 <SelectValue />
@@ -166,28 +162,21 @@ export function ActivoFormDialog({
             </Select>
           </div>
 
-          {tipo === "FURGON_O_PLATAFORMA" && (
+          {tipo === "OTRO" && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="categoria">Categoría</Label>
-              <Select
-                items={CATEGORIA_FURGON_LABELS}
-                value={watch("categoria") || ""}
-                onValueChange={(v) => setValue("categoria", v as ActivoInput["categoria"])}
-              >
-                <SelectTrigger id="categoria" className="w-full">
-                  <SelectValue placeholder="Seleccioná una categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CATEGORIA_FURGON_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.categoria && (
-                <p className="text-xs text-destructive">{errors.categoria.message}</p>
+              <Label htmlFor="tipoOtroDetalle">¿A qué tipo corresponde?</Label>
+              <Input
+                id="tipoOtroDetalle"
+                placeholder="Ej. Maquinaria de soldar, Equipo de arrastre…"
+                {...register("tipoOtroDetalle")}
+              />
+              {errors.tipoOtroDetalle && (
+                <p className="text-xs text-destructive">{errors.tipoOtroDetalle.message}</p>
               )}
+              <p className="text-xs text-muted-foreground">
+                Este texto queda disponible para filtrar más adelante, como si fuera un
+                tipo más.
+              </p>
             </div>
           )}
 

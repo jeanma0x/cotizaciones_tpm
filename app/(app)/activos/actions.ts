@@ -10,7 +10,7 @@ import { type ActivoInput, activoSchema, TIPO_ACTIVO_LABELS } from "@/lib/valida
 const ETIQUETAS_ACTIVO = {
   empresaId: "Empresa",
   tipo: "Tipo",
-  categoria: "Categoría",
+  tipoOtroDetalle: "Detalle",
   placa: "Placa",
   modelo: "Modelo",
   marca: "Marca",
@@ -24,10 +24,10 @@ function normalizar(datos: ActivoInput) {
   return {
     empresaId: datos.empresaId,
     tipo: datos.tipo,
-    // Nunca guardar una categoría "huérfana" si el tipo cambió a algo que no
-    // sea furgón/plataforma — el refine del schema ya exige categoría
-    // cuando corresponde, esto solo limpia el resto de los casos.
-    categoria: datos.tipo === "FURGON_O_PLATAFORMA" ? datos.categoria || null : null,
+    // Nunca guardar el detalle si el tipo no es OTRO — evita que quede un
+    // residuo de texto huérfano si se cambia de OTRO a otro tipo. Mismo
+    // criterio que CostoOperativo.categoriaOtroDetalle.
+    tipoOtroDetalle: datos.tipo === "OTRO" ? datos.tipoOtroDetalle || null : null,
     placa: datos.placa || null,
     modelo: datos.modelo || null,
     marca: datos.marca || null,
