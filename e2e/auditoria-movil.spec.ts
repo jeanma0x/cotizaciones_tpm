@@ -120,17 +120,28 @@ test("Nuevo documento: el selector de catálogo no desborda la tarjeta de Ítems
   expect(box!.x + box!.width).toBeLessThanOrEqual(375);
 });
 
-test("FAB: el botón flotante de Nuevo documento aparece en el Panel y desaparece en /documentos/nuevo", async ({
+test("FAB: el botón flotante de Nuevo documento solo aparece en Panel y Documentos", async ({
   page,
 }) => {
+  const fab = page.getByRole("link", { name: "Crear nuevo documento" });
+
   await page.goto("/dashboard");
   await page.waitForTimeout(400);
-  const fab = page.getByRole("link", { name: "Crear nuevo documento" });
   await expect(fab).toBeVisible();
   await expect(fab).toHaveAttribute("href", "/documentos/nuevo");
 
-  await fab.click();
-  await page.waitForURL("/documentos/nuevo");
-  // Redundante estar ahí encima del propio formulario que ya crea el documento.
-  await expect(page.getByRole("link", { name: "Crear nuevo documento" })).toHaveCount(0);
+  await page.goto("/documentos");
+  await page.waitForTimeout(400);
+  await expect(fab).toBeVisible();
+
+  // En cualquier otra pantalla ya se está en otra tarea específica — el
+  // botón tapaba controles reales en vez de ayudar (hallado por el
+  // usuario, 09/09/26). Caso concreto: /documentos/nuevo y
+  // /documentos/[id]/editar comparten el mismo formulario con su propia
+  // barra de Cancelar/Guardar fija al fondo, donde el FAB quedaba encima.
+  for (const ruta of ["/documentos/nuevo", "/clientes", "/servicios", "/costos", "/activos", "/reportes"]) {
+    await page.goto(ruta);
+    await page.waitForTimeout(400);
+    await expect(fab).toHaveCount(0);
+  }
 });

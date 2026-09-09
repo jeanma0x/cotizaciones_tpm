@@ -8,11 +8,19 @@ import { usePathname } from "next/navigation";
 // (md:hidden). Con 8+ destinos en el menú, un bottom tab bar no rendía
 // bien (necesitaría un "Más" de todos modos); en cambio, la acción que más
 // se repite en el día a día (crear una cotización/factura) queda a un
-// toque, sin abrir el panel lateral. Se oculta en /documentos/nuevo mismo
-// porque ahí ya está el formulario debajo.
+// toque, sin abrir el panel lateral.
+//
+// Solo en Panel y Documentos (confirmado con el usuario, 09/09/26) — en
+// cualquier otra pantalla ya se está en otra tarea específica (un
+// formulario, un detalle, un reporte) y el botón tapaba controles reales
+// en vez de ayudar. Ver ejemplo concreto: /documentos/[id]/editar usa el
+// mismo formulario que /documentos/nuevo, con su propia barra de
+// Cancelar/Guardar fija al fondo — el FAB quedaba encima.
+const PANTALLAS_CON_FAB = ["/dashboard", "/documentos"];
+
 export function FabNuevoDocumento() {
   const pathname = usePathname();
-  if (pathname === "/documentos/nuevo") return null;
+  if (!PANTALLAS_CON_FAB.includes(pathname)) return null;
 
   return (
     <Link
