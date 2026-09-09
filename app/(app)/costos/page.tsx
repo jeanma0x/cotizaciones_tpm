@@ -126,7 +126,7 @@ export default async function CostosPage({
         title="Costos operativos"
         icon={WalletIcon}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <HistorialCostosSheet entradas={filasAuditoria} mostrarEmpresa={empresas.length > 1} />
             <ExportarCostosDialog empresaId={empresaFiltrada} />
             <CostoFormDialog

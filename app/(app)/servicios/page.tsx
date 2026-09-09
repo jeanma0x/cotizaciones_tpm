@@ -73,7 +73,7 @@ export default async function ServiciosPage({
         title="Servicios"
         icon={TruckIcon}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <HistorialAuditoriaSheet titulo="Historial de servicios" entradas={filasAuditoria} />
             <ServicioFormDialog
               empresas={empresas}

@@ -13,7 +13,7 @@ import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
 import { crearTickTruncado } from "@/components/app/chart-tick-truncado";
 
 const config = { cantidad: { label: "Veces cotizado" } } satisfies ChartConfig;
-const TickNombre = crearTickTruncado(20);
+const TickNombre = crearTickTruncado(128);
 
 export function ServiciosRankingChart({
   data,

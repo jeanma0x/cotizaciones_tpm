@@ -24,7 +24,11 @@ export function FormSection({
         className,
       )}
     >
-      <div className="mb-4 flex items-center justify-between gap-2">
+      {/* flex-wrap: con `actions` presente (ej. "Ítems" en documento-form.tsx),
+          en una pantalla angosta el título y las acciones no caben en la
+          misma fila — sin esto, las acciones se salían de la tarjeta en vez
+          de bajar a su propia fila (hallado en la auditoría móvil, 08/09/26). */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-accent" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">

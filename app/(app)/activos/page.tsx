@@ -103,7 +103,7 @@ export default async function ActivosPage({
         title="Activos"
         icon={ContainerIcon}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <HistorialAuditoriaSheet titulo="Historial de activos" entradas={filasAuditoria} />
             <ActivoFormDialog
               empresas={empresas}

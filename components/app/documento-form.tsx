@@ -413,10 +413,15 @@ export function DocumentoForm({
         title="Ítems"
         icon={ListChecksIcon}
         actions={
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             {serviciosDeEmpresa.length > 0 && (
               <Select onValueChange={agregarDesdeServicio} value="">
-                <SelectTrigger size="sm" className="w-72 sm:w-80">
+                {/* w-full en mobile: el ancho fijo (w-72/w-80) que se le dio
+                    para mostrar el nombre completo del servicio (ver
+                    comentario del SelectContent, más abajo) desbordaba la
+                    tarjeta en una pantalla angosta — hallado en la
+                    auditoría móvil, 08/09/26. */}
+                <SelectTrigger size="sm" className="w-full sm:w-72 md:w-80">
                   <SelectValue placeholder="Agregar del catálogo…" />
                 </SelectTrigger>
                 {/* Pedido de Oldemar (WhatsApp, 02/09/26): hay varios
@@ -468,14 +473,20 @@ export function DocumentoForm({
                   type="number"
                   step="1"
                   min="1"
+                  placeholder="Cantidad"
+                  aria-label="Cantidad"
                   {...register(`items.${index}.cantidad` as const)}
                 />
                 <AutosizeTextarea
+                  placeholder="Descripción"
+                  aria-label="Descripción"
                   {...register(`items.${index}.descripcion` as const)}
                 />
                 <Input
                   type="number"
                   step="0.01"
+                  placeholder="Precio unitario"
+                  aria-label="Precio unitario"
                   {...register(`items.${index}.precioUnitario` as const)}
                 />
                 <div className="flex h-8 items-center font-mono text-sm">

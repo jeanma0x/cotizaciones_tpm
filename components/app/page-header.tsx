@@ -17,7 +17,12 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="relative flex items-center justify-between gap-4 overflow-hidden rounded-xl border border-border bg-card px-6 py-5 shadow-sm">
+    // flex-col en mobile: con `actions` presente, "justify-between" en una
+    // sola fila angosta le quitaba todo el espacio al título (shrink-0 en
+    // los botones, min-w-0 en el título) hasta dejarlo invisible — el
+    // título de la pantalla desaparecía por completo en un teléfono real.
+    // Hallado en la auditoría móvil, 08/09/26.
+    <div className="relative flex flex-col items-start gap-4 overflow-hidden rounded-xl border border-border bg-card px-6 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       {/* eslint-disable-next-line @next/next/no-img-element -- SVG estático de marca, no necesita optimización de next/image */}
       <img
         src="/marca/svg/icono-color.svg"
@@ -39,7 +44,9 @@ export function PageHeader({
         </div>
       </div>
       {actions && (
-        <div className={cn("relative flex shrink-0 items-center gap-2")}>{actions}</div>
+        <div className={cn("relative flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0")}>
+          {actions}
+        </div>
       )}
     </div>
   );

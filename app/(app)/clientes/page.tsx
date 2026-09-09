@@ -91,7 +91,7 @@ export default async function ClientesPage({
         title="Clientes"
         icon={UsersIcon}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <HistorialAuditoriaSheet titulo="Historial de clientes" entradas={filasAuditoria} />
             <ClienteFormDialog
               empresas={empresas}

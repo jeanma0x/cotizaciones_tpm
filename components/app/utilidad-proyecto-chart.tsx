@@ -14,7 +14,7 @@ import { formatearCompacto } from "@/lib/formato-numero";
 import { crearTickTruncado } from "@/components/app/chart-tick-truncado";
 
 const config = { facturado: { label: "Facturado" } } satisfies ChartConfig;
-const TickNombre = crearTickTruncado(13);
+const TickNombre = crearTickTruncado(84);
 const TONOS = ["var(--navy-300)", "var(--navy-500)", "var(--navy-700)", "var(--navy-900)"];
 
 // Pedido de Oldemar: una gráfica por cliente/proyecto "similar a Costos por

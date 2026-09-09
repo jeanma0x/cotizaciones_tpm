@@ -12,7 +12,7 @@ import {
 import { EstadoVacioGrafico } from "@/components/app/estado-vacio-grafico";
 import { crearTickTruncado } from "@/components/app/chart-tick-truncado";
 
-const TickNombre = crearTickTruncado(19);
+const TickNombre = crearTickTruncado(120);
 
 // Barra horizontal por empresa (cantidad de documentos — currency-agnóstico,
 // nunca mezclar montos de distintas monedas en el mismo eje). Igual criterio

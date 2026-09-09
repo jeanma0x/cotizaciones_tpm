@@ -53,7 +53,11 @@ export function DataTable<TData>({
   const mostrarPaginacion = table.getPageCount() > 1;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    // overflow-x-auto (no overflow-hidden): en una pantalla angosta la
+    // tabla es más ancha que la tarjeta — con overflow-hidden esas columnas
+    // no solo se veían cortadas, quedaban completamente inalcanzables (sin
+    // scroll posible). Hallado en la auditoría móvil, 08/09/26.
+    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
       <Table>
         <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
           {table.getHeaderGroups().map((headerGroup) => (

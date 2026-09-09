@@ -58,7 +58,7 @@ export default async function UsuariosPage() {
         title="Usuarios"
         icon={ShieldCheckIcon}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <HistorialAuditoriaSheet titulo="Historial de usuarios" entradas={filasAuditoria} />
             <InvitarUsuarioDialog empresas={empresas} />
           </div>

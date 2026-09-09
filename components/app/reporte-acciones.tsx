@@ -26,7 +26,7 @@ export function ReporteAcciones({
   contenidoImprimible: React.ReactNode;
 }) {
   return (
-    <div className="no-imprimir flex items-center gap-2">
+    <div className="no-imprimir flex flex-wrap items-center gap-2">
       <Button variant="outline" nativeButton={false} render={<a href={exportarHref} />}>
         <DownloadIcon className="h-4 w-4" />
         Exportar Excel
