@@ -71,8 +71,15 @@ test.beforeEach(async ({ page }) => {
   // que asume el sidebar de escritorio siempre visible.
   await page.getByRole("button", { name: "Abrir menú" }).click();
   await cambiarEmpresaActiva(page, EMPRESA_QA);
-  await page.getByRole("button", { name: "Cerrar menú" }).click();
-  await page.waitForTimeout(300);
+  // El panel ya se cierra solo al terminar de cambiar de empresa (mejora
+  // agregada 08/09/26) — ya no hace falta cerrarlo a mano. El botón
+  // "Cerrar menú" sigue "visible" para Playwright aunque el panel esté
+  // trasladado fuera de pantalla (translate-x no cuenta como oculto para
+  // isVisible), así que se espera la clase real en vez de eso.
+  await page.waitForFunction(() => {
+    const aside = document.querySelector("aside");
+    return aside?.className.includes("-translate-x-full");
+  });
 });
 
 test("PageHeader: el título de la pantalla sigue visible en mobile con varios botones de acción", async ({
@@ -111,4 +118,19 @@ test("Nuevo documento: el selector de catálogo no desborda la tarjeta de Ítems
   const box = await selectorCatalogo.boundingBox();
   expect(box).not.toBeNull();
   expect(box!.x + box!.width).toBeLessThanOrEqual(375);
+});
+
+test("FAB: el botón flotante de Nuevo documento aparece en el Panel y desaparece en /documentos/nuevo", async ({
+  page,
+}) => {
+  await page.goto("/dashboard");
+  await page.waitForTimeout(400);
+  const fab = page.getByRole("link", { name: "Crear nuevo documento" });
+  await expect(fab).toBeVisible();
+  await expect(fab).toHaveAttribute("href", "/documentos/nuevo");
+
+  await fab.click();
+  await page.waitForURL("/documentos/nuevo");
+  // Redundante estar ahí encima del propio formulario que ya crea el documento.
+  await expect(page.getByRole("link", { name: "Crear nuevo documento" })).toHaveCount(0);
 });

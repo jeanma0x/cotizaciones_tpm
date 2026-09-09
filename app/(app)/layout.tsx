@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { CommandPalette } from "@/components/app/command-palette";
+import { FabNuevoDocumento } from "@/components/app/fab-nuevo-documento";
 import { MobileTopBar } from "@/components/app/mobile-topbar";
 import { PageTransition } from "@/components/app/page-transition";
 import { Sidebar } from "@/components/app/sidebar";
@@ -49,6 +50,7 @@ export default async function AppLayout({
         </main>
       </div>
       <CommandPalette />
+      <FabNuevoDocumento />
     </div>
   );
 }

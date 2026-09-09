@@ -51,6 +51,7 @@ export function InvitarUsuarioDialog({
     reset,
   } = useForm<InvitacionFormValues, unknown, InvitacionInput>({
     resolver: zodResolver(invitacionSchema),
+    mode: "onBlur",
     defaultValues: { email: "", rol: "MIEMBRO", empresaIds: [] },
   });
 

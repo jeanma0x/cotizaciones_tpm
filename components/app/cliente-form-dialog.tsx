@@ -81,6 +81,7 @@ export function ClienteFormDialog({
     reset,
   } = useForm<ClienteFormValues, unknown, ClienteInput>({
     resolver: zodResolver(clienteSchema),
+    mode: "onBlur",
     defaultValues: {
       empresaId: cliente?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       tipo: cliente?.tipo ?? "INDIVIDUAL",
@@ -201,7 +202,9 @@ export function ClienteFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nombre">Nombre</Label>
+            <Label htmlFor="nombre">
+              Nombre <span className="text-accent">*</span>
+            </Label>
             <Input id="nombre" {...register("nombre")} />
             {errors.nombre && (
               <p className="text-xs text-destructive">{errors.nombre.message}</p>
@@ -232,7 +235,7 @@ export function ClienteFormDialog({
           <div className="flex gap-3">
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="telefono">Teléfono</Label>
-              <Input id="telefono" {...register("telefono")} />
+              <Input id="telefono" type="tel" {...register("telefono")} />
               {!pareceTelefonoValido(watch("telefono") ?? "") && (
                 <p className="text-xs text-muted-foreground">
                   Se ve distinto a un teléfono usual — revisalo si no es a propósito.

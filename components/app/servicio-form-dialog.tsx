@@ -72,6 +72,7 @@ export function ServicioFormDialog({
     reset,
   } = useForm<ServicioFormValues, unknown, ServicioInput>({
     resolver: zodResolver(servicioSchema),
+    mode: "onBlur",
     defaultValues: {
       empresaId: servicio?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       nombre: servicio?.nombre ?? "",
@@ -153,7 +154,9 @@ export function ServicioFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nombre">Nombre del servicio</Label>
+            <Label htmlFor="nombre">
+              Nombre del servicio <span className="text-accent">*</span>
+            </Label>
             <Input id="nombre" {...register("nombre")} />
             {errors.nombre && (
               <p className="text-xs text-destructive">{errors.nombre.message}</p>

@@ -59,6 +59,7 @@ export function AccesoUsuarioDialog({
     formState: { isSubmitting },
   } = useForm<AccesoUsuarioFormValues, unknown, AccesoUsuarioInput>({
     resolver: zodResolver(accesoUsuarioSchema),
+    mode: "onBlur",
     defaultValues: {
       rol: usuario.rol === "SUPERUSUARIO" ? "SUPERUSUARIO" : "MIEMBRO",
       empresaIds: usuario.empresas.map((e) => e.empresaId),

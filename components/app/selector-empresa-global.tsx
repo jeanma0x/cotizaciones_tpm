@@ -2,7 +2,7 @@
 
 import { Building2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import {
   Select,
   SelectContent,
@@ -26,6 +26,7 @@ export function SelectorEmpresaGlobal({
   empresaActivaId,
   colapsado,
   onPendingChange,
+  onChanged,
 }: {
   empresas: { id: string; nombre: string }[];
   empresaActivaId: string | null;
@@ -37,13 +38,26 @@ export function SelectorEmpresaGlobal({
   // navegación mientras isPending sea true, en vez de confiar en que nadie
   // haga clic demasiado rápido.
   onPendingChange?: (pending: boolean) => void;
+  // Mobile: el panel lateral se cierra solo al navegar a otra pantalla
+  // (ver sidebar.tsx), pero elegir una empresa no navega — sin esto, el
+  // panel se quedaba abierto tapando el Panel ya filtrado con la empresa
+  // nueva. Se llama recién cuando establecerEmpresaActiva + router.refresh
+  // ya terminaron, no al hacer clic.
+  onChanged?: () => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const yaHuboPendiente = useRef(false);
 
   useEffect(() => {
     onPendingChange?.(isPending);
-  }, [isPending, onPendingChange]);
+    if (isPending) {
+      yaHuboPendiente.current = true;
+    } else if (yaHuboPendiente.current) {
+      yaHuboPendiente.current = false;
+      onChanged?.();
+    }
+  }, [isPending, onPendingChange, onChanged]);
 
   if (empresas.length <= 1) return null;
 

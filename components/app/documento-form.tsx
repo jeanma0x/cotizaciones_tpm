@@ -136,6 +136,7 @@ export function DocumentoForm({
     formState: { errors, isSubmitting },
   } = useForm<DocumentoFormValues, unknown, DocumentoInput>({
     resolver: zodResolver(documentoSchema),
+    mode: "onBlur",
     defaultValues: {
       empresaId: documento?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       tipo: (documento?.tipo as DocumentoFormValues["tipo"]) ?? "COTIZACION",
@@ -290,7 +291,9 @@ export function DocumentoForm({
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
       <FormSection title="Cliente y empresa" icon={Building2Icon}>
         <div className="mb-4 flex flex-col gap-1.5">
-          <Label htmlFor="tipo">Tipo de documento</Label>
+          <Label htmlFor="tipo">
+            Tipo de documento <span className="text-accent">*</span>
+          </Label>
           <div className="pill-group" role="radiogroup" aria-label="Tipo de documento" id="tipo">
             {Object.entries(TIPO_LABELS).map(([value, label]) => (
               <button
@@ -335,7 +338,9 @@ export function DocumentoForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="clienteId">Cliente</Label>
+            <Label htmlFor="clienteId">
+              Cliente <span className="text-accent">*</span>
+            </Label>
             <ClienteCombobox
               clientes={clientesDeEmpresa}
               value={watch("clienteId")}
@@ -709,7 +714,12 @@ export function DocumentoForm({
         </div>
       </FormSection>
 
-      <div className="flex justify-end gap-2">
+      {/* sticky bottom-0 solo en mobile: este formulario es largo (varias
+          FormSection) — sin esto, había que bajar hasta el final cada vez
+          que se quería guardar. pb-[env(safe-area-inset-bottom)] respeta
+          el home indicator del iPhone. En desktop (md:) vuelve a su lugar
+          normal, sin fijarse. */}
+      <div className="sticky bottom-0 z-10 -mx-4 flex justify-end gap-2 border-t border-border bg-surface-sunken/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
         <Button
           type="button"
           variant="outline"

@@ -10,7 +10,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -37,6 +38,35 @@ export function DataTable<TData>({
   pageSize?: number;
 }) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  // Degradado en el borde derecho: aviso visual de que la tabla se puede
+  // deslizar horizontalmente (overflow-x-auto, ver comentario más abajo) —
+  // sin esto, en una pantalla angosta no hay ninguna pista de que faltan
+  // columnas a la derecha. Se oculta solo cuando ya no queda nada por
+  // scrollear.
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [puedeDeslizar, setPuedeDeslizar] = useState(false);
+
+  useEffect(() => {
+    // El scroll real no vive en este wrapper, sino en el "table-container"
+    // que el propio componente <Table> ya renderiza por su cuenta (ver
+    // components/ui/table.tsx) — un div interno que este componente no
+    // controla directamente, por eso se busca con querySelector en vez de
+    // un ref propio.
+    const el = wrapperRef.current?.querySelector<HTMLElement>('[data-slot="table-container"]');
+    if (!el) return;
+    function actualizar() {
+      if (!el) return;
+      setPuedeDeslizar(el.scrollWidth - el.scrollLeft - el.clientWidth > 1);
+    }
+    actualizar();
+    el.addEventListener("scroll", actualizar);
+    const observer = new ResizeObserver(actualizar);
+    observer.observe(el);
+    return () => {
+      el.removeEventListener("scroll", actualizar);
+      observer.disconnect();
+    };
+  }, [data]);
 
   const table = useReactTable({
     data,
@@ -53,12 +83,16 @@ export function DataTable<TData>({
   const mostrarPaginacion = table.getPageCount() > 1;
 
   return (
-    // overflow-x-auto (no overflow-hidden): en una pantalla angosta la
-    // tabla es más ancha que la tarjeta — con overflow-hidden esas columnas
-    // no solo se veían cortadas, quedaban completamente inalcanzables (sin
-    // scroll posible). Hallado en la auditoría móvil, 08/09/26.
-    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-      <Table>
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="relative">
+        {/* <Table> ya trae su propio "table-container" con overflow-x-auto
+            (ver components/ui/table.tsx) — acá NO hace falta otro. Ese
+            wrapper interno es justamente lo que permite deslizar en vez de
+            cortar columnas (antes esta tarjeta usaba overflow-hidden, que
+            las dejaba completamente inalcanzables). Hallado en la
+            auditoría móvil, 08/09/26. */}
+        <div ref={wrapperRef}>
+          <Table>
         <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="hover:bg-transparent">
@@ -111,7 +145,18 @@ export function DataTable<TData>({
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+          </Table>
+        </div>
+        {puedeDeslizar && (
+          <div
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-y-0 right-0 w-8",
+              "bg-gradient-to-l from-card to-transparent",
+            )}
+          />
+        )}
+      </div>
 
       {mostrarPaginacion && (
         <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm">

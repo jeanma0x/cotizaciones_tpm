@@ -203,6 +203,7 @@ export function Sidebar({
             empresaActivaId={empresaActivaId}
             colapsado={colapsadoEfectivo}
             onPendingChange={setCambiandoEmpresa}
+            onChanged={() => setMobileAbierto(false)}
           />
         </div>
       )}

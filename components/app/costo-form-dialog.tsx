@@ -93,6 +93,7 @@ export function CostoFormDialog({
     reset,
   } = useForm<CostoOperativoFormValues, unknown, CostoOperativoInput>({
     resolver: zodResolver(costoOperativoSchema),
+    mode: "onBlur",
     defaultValues: {
       empresaId: costo?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       clienteId: costo?.clienteId ?? "",

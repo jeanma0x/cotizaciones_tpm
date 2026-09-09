@@ -75,6 +75,7 @@ export function ActivoFormDialog({
     reset,
   } = useForm<ActivoFormValues, unknown, ActivoInput>({
     resolver: zodResolver(activoSchema),
+    mode: "onBlur",
     defaultValues: {
       empresaId: activo?.empresaId ?? empresaActivaId ?? empresas[0]?.id ?? "",
       tipo: activo?.tipo ?? "CAMION",

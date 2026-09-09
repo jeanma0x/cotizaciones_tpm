@@ -61,6 +61,7 @@ export function EmpresaFormDialog({
     formState: { errors, isSubmitting },
   } = useForm<EmpresaFormValues, unknown, EmpresaInput>({
     resolver: zodResolver(empresaSchema),
+    mode: "onBlur",
     defaultValues: {
       nombre: empresa.nombre,
       nit: empresa.nit ?? "",
@@ -93,7 +94,9 @@ export function EmpresaFormDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nombre">Nombre</Label>
+            <Label htmlFor="nombre">
+              Nombre <span className="text-accent">*</span>
+            </Label>
             <Input id="nombre" {...register("nombre")} />
             {errors.nombre && (
               <p className="text-xs text-destructive">{errors.nombre.message}</p>
@@ -122,7 +125,7 @@ export function EmpresaFormDialog({
           <div className="flex gap-3">
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="telefono">Teléfono</Label>
-              <Input id="telefono" {...register("telefono")} />
+              <Input id="telefono" type="tel" {...register("telefono")} />
             </div>
             <div className="flex w-32 flex-col gap-1.5">
               <Label htmlFor="codigoPais">Cód. país</Label>
